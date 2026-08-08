@@ -1,22 +1,46 @@
 /**
  * Tobi Lawson — Personal Website & Editorial Admin Console
- * State Manager & Realtime Sync Engine
+ * Full 1-to-1 Site Management & Supabase Sync Engine
  */
+
+import {
+  isSupabaseConfigured,
+  syncSiteSettingsFromSupabase,
+  saveSiteSettingsToSupabase,
+  syncPostsFromSupabase,
+  savePostToSupabase,
+  deletePostFromSupabase,
+  syncProjectsFromSupabase,
+  saveProjectToSupabase,
+  deleteProjectFromSupabase,
+  syncNowPageFromSupabase,
+  saveNowPageToSupabase,
+  syncBooksFromSupabase,
+  saveBookToSupabase,
+  deleteBookFromSupabase,
+  seedInitialDataToSupabase,
+  subscribeToSupabaseRealtime
+} from "./supabase.js";
 
 const STORAGE_KEY = "tobi_site_data_v1";
 const AUTH_KEY = "tobi_admin_authenticated";
 
-// Factory Defaults (Matches Tobi Lawson's website)
-const INITIAL_DATA = {
+// Factory Defaults (Matches Tobi Lawson's website 1-to-1)
+export const INITIAL_DATA = {
   settings: {
     siteTitle: "Tobi Lawson",
     heroTitle: "Building and investing with purpose.",
+    heroScribbleWord: "purpose.",
     heroSubtitle: "Notes on capital, cities, and the slow work of building things that last. Based in Lagos, working across fintech, SME services, and education technology.",
+    aboutHeroTitle: "About Tobi Lawson",
+    aboutHeroSubtitle: "Investor and builder based in Lagos. Background in investment analysis and development research, now running companies across fintech, SME services, and education technology.",
+    aboutBodyProse: "I'm an investor and builder based in Lagos. My background is in investment analysis and development research, work that shaped how I think about capital, institutions, and the slow processes that move a country's fortunes.\n\nToday I run and invest in companies across fintech, SME services technology, product development, and education technology. Alongside that, I co-founded 1914 Reader with Feyi Fawehinmi, where we read Nigeria and Africa's biggest stories through the lens of global economic and political change.\n\nI also work on Lagos Urban Project, a platform reimagining Lagos as a more inclusive and livable city, and Long Africa, a new institution focused on the long-run foundations of African prosperity.\n\nMy interests run wide: markets, cities, governance, technology, and the books that help make sense of them. This site is where I write about all of it, and keep a running account of what I'm building.",
     contactEmail: "olamilawson@gmail.com",
     adminPasscode: "tobi2026"
   },
   nowPage: {
     lastUpdated: "July 2026",
+    heroTitle: "What I'm spending time on",
     introSubtitle: "A running account of the projects I'm building, updated as things move. Last updated July 2026.",
     ongoingProse: "I run and invest in companies across fintech, SME services technology, product development, and education technology. Some are early-stage, some are further along. I share specifics and case studies here as each venture is ready to talk about publicly."
   },
@@ -75,17 +99,27 @@ const INITIAL_DATA = {
   books: [
     {
       id: "who-made-this",
-      title: "Who Made This?",
-      subtitle: "A History of Building and Craftsmanship in West Africa",
-      status: "Monograph Showcase",
-      summary: "An exploration of trade networks, master guilds, and architectural heritage from pre-colonial Lagos to modern West African cities.",
-      url: "books/who-made-this-preview.html"
+      title: "WHO MADE THIS?",
+      subtitle: "A microhistory of everyday things",
+      statusTag: "FORTHCOMING VOLUME • IN WRITING",
+      coverImageUrl: "assets/who-made-this-cover.jpg",
+      synopsisP1: "Every morning, millions of people reach for an aluminum octagonal pot, twist a metallic tap, or click a ballpoint pen without considering the fierce industrial battles, accidental metallurgical discoveries, and human obsession engineered into those geometric forms.",
+      synopsisP2: "Who Made This? traces the physical origins of modern domestic life. Moving object by object—from Alfonso Bialetti’s aluminum foundry in Piedmont to the early safety bicycle workshops of the 1890s—this volume recovers the sense of awe buried inside the ordinary objects surrounding us.",
+      author: "Tobi Lawson",
+      format: "Hardcover & Digital",
+      releaseDate: "Late 2026",
+      previewUrl: "books/who-made-this-preview.html",
+      chapters: [
+        { title: "The Eight Sides of Aluminum", status: "Chapter 01 • Available to Read", desc: "How Alfonso Bialetti observed laundry boilers in 1930s Crusinallo and engineered steam pressure to distill espresso inside an octagonal aluminum shell." },
+        { title: "Light Without Smoke", status: "Chapter 02 • In Editing", desc: "The night Wabash, Indiana illuminated its public square with arc lamps, ending thousands of years of indoor fire, candle smoke, and oil fumes." },
+        { title: "The Equal Wheels", status: "Chapter 03 • In Research", desc: "How the 1885 safety bicycle unlocked personal movement, dismantled social movement restrictions, and forced city engineers to pave muddy thoroughfares." }
+      ]
     }
   ]
 };
 
 // Data Helper Functions
-export function getSiteData() {
+export function getLocalSiteData() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) {
@@ -99,43 +133,73 @@ export function getSiteData() {
   }
 }
 
-export function saveSiteData(data) {
+export function saveLocalSiteData(data) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    // Dispatch custom event for live tab sync
     window.dispatchEvent(new Event("tobi_site_data_updated"));
   } catch (e) {
     console.error("Error saving site data to LocalStorage:", e);
   }
 }
 
+// Master Fetch with Supabase Hydration
+export async function getMasterSiteData() {
+  const local = getLocalSiteData();
+  if (!isSupabaseConfigured) return local;
+
+  try {
+    const [cloudSettings, cloudNow, cloudPosts, cloudProjects, cloudBooks] = await Promise.all([
+      syncSiteSettingsFromSupabase(),
+      syncNowPageFromSupabase(),
+      syncPostsFromSupabase(),
+      syncProjectsFromSupabase(),
+      syncBooksFromSupabase()
+    ]);
+
+    const merged = {
+      settings: cloudSettings || local.settings,
+      nowPage: cloudNow || local.nowPage,
+      posts: (cloudPosts && cloudPosts.length > 0) ? cloudPosts : local.posts,
+      projects: (cloudProjects && cloudProjects.length > 0) ? cloudProjects : local.projects,
+      books: (cloudBooks && cloudBooks.length > 0) ? cloudBooks : local.books
+    };
+
+    saveLocalSiteData(merged);
+    return merged;
+  } catch (e) {
+    console.warn("Falling back to local site data:", e);
+    return local;
+  }
+}
+
 // UI State Controller
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   const authOverlay = document.getElementById("authOverlay");
   const authForm = document.getElementById("authForm");
   const passcodeInput = document.getElementById("passcodeInput");
   const authError = document.getElementById("authError");
   const adminConsole = document.getElementById("adminConsole");
   const logoutBtn = document.getElementById("logoutBtn");
+  const cloudStatusIndicator = document.getElementById("cloudStatusIndicator");
 
   // Check Session Auth
   const isAuth = sessionStorage.getItem(AUTH_KEY) === "true";
   if (isAuth) {
-    showConsole();
+    await showConsole();
   }
 
   // Handle Authentication Submission
   if (authForm) {
-    authForm.addEventListener("submit", (e) => {
+    authForm.addEventListener("submit", async (e) => {
       e.preventDefault();
-      const currentData = getSiteData();
+      const currentData = await getMasterSiteData();
       const expectedPasscode = currentData.settings.adminPasscode || "tobi2026";
       
       if (passcodeInput.value.trim() === expectedPasscode) {
         sessionStorage.setItem(AUTH_KEY, "true");
         if (authError) authError.style.display = "none";
-        showConsole();
-        showToast("Authenticated successfully. Welcome back, Tobi!");
+        await showConsole();
+        showToast("Authenticated successfully. Welcome to your 1-to-1 site editor!");
       } else {
         if (authError) authError.style.display = "block";
         passcodeInput.value = "";
@@ -154,10 +218,25 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  function showConsole() {
+  async function showConsole() {
     if (authOverlay) authOverlay.style.display = "none";
     if (adminConsole) adminConsole.style.display = "block";
-    renderConsoleData();
+
+    if (cloudStatusIndicator) {
+      if (isSupabaseConfigured) {
+        cloudStatusIndicator.className = "cloud-status-pill meta";
+        cloudStatusIndicator.innerHTML = "☁️ Supabase Cloud Active";
+      } else {
+        cloudStatusIndicator.className = "cloud-status-pill offline meta";
+        cloudStatusIndicator.innerHTML = "💾 LocalStorage Mode";
+      }
+    }
+
+    await renderConsoleData();
+    subscribeToSupabaseRealtime(async () => {
+      await renderConsoleData();
+      showToast("Live updates synced from Supabase Cloud!");
+    });
   }
 
   // Tab Navigation Handler
@@ -178,13 +257,22 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // Render Console Data
-  function renderConsoleData() {
-    const data = getSiteData();
+  async function renderConsoleData() {
+    const data = await getMasterSiteData();
 
-    // 1. Render Posts List
+    // 1. Populate Homepage Form
+    const homeHeroTitle = document.getElementById("homeHeroTitle");
+    const homeHeroScribble = document.getElementById("homeHeroScribble");
+    const homeHeroSubtitle = document.getElementById("homeHeroSubtitle");
+
+    if (homeHeroTitle) homeHeroTitle.value = data.settings.heroTitle || "";
+    if (homeHeroScribble) homeHeroScribble.value = data.settings.heroScribbleWord || "purpose.";
+    if (homeHeroSubtitle) homeHeroSubtitle.value = data.settings.heroSubtitle || "";
+
+    // 2. Render Posts List
     renderPostsList(data.posts);
 
-    // 2. Populate Now Page Form
+    // 3. Populate Now Page Form
     const nowLastUpdated = document.getElementById("nowLastUpdated");
     const nowIntroSubtitle = document.getElementById("nowIntroSubtitle");
     const nowOngoingProse = document.getElementById("nowOngoingProse");
@@ -193,31 +281,54 @@ document.addEventListener("DOMContentLoaded", () => {
     if (nowIntroSubtitle) nowIntroSubtitle.value = data.nowPage.introSubtitle || "";
     if (nowOngoingProse) nowOngoingProse.value = data.nowPage.ongoingProse || "";
 
-    // 3. Render Books List
+    // 4. Render Books List
     renderBooksList(data.books);
 
-    // 4. Render Projects List
+    // 5. Populate About Form
+    const aboutHeroTitle = document.getElementById("aboutHeroTitle");
+    const aboutHeroSubtitle = document.getElementById("aboutHeroSubtitle");
+    const aboutBodyProse = document.getElementById("aboutBodyProse");
+
+    if (aboutHeroTitle) aboutHeroTitle.value = data.settings.aboutHeroTitle || "About Tobi Lawson";
+    if (aboutHeroSubtitle) aboutHeroSubtitle.value = data.settings.aboutHeroSubtitle || "";
+    if (aboutBodyProse) aboutBodyProse.value = data.settings.aboutBodyProse || "";
+
+    // 6. Render Projects List
     renderProjectsList(data.projects);
 
-    // 5. Populate Settings Form
+    // 7. Populate Settings Form
     const settingSiteTitle = document.getElementById("settingSiteTitle");
-    const settingHeroSubtitle = document.getElementById("settingHeroSubtitle");
     const settingContactEmail = document.getElementById("settingContactEmail");
     const settingAdminPasscode = document.getElementById("settingAdminPasscode");
 
     if (settingSiteTitle) settingSiteTitle.value = data.settings.siteTitle || "";
-    if (settingHeroSubtitle) settingHeroSubtitle.value = data.settings.heroSubtitle || "";
     if (settingContactEmail) settingContactEmail.value = data.settings.contactEmail || "";
     if (settingAdminPasscode) settingAdminPasscode.value = data.settings.adminPasscode || "tobi2026";
   }
 
-  // Render Writing Posts
+  // 1. Homepage Form Submission
+  const homepageForm = document.getElementById("homepageForm");
+  if (homepageForm) {
+    homepageForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const data = await getMasterSiteData();
+      data.settings.heroTitle = document.getElementById("homeHeroTitle").value.trim();
+      data.settings.heroScribbleWord = document.getElementById("homeHeroScribble").value.trim();
+      data.settings.heroSubtitle = document.getElementById("homeHeroSubtitle").value.trim();
+
+      saveLocalSiteData(data);
+      await saveSiteSettingsToSupabase(data.settings);
+      showToast("Homepage hero updated 1-to-1!");
+    });
+  }
+
+  // 2. Writing Posts Render & Listeners
   function renderPostsList(posts) {
     const postsList = document.getElementById("postsList");
     if (!postsList) return;
 
     if (!posts || posts.length === 0) {
-      postsList.innerHTML = `<div class="meta" style="padding: 2rem 0; color: var(--text-muted);">No published posts found. Click "+ Create New Post" above to add one.</div>`;
+      postsList.innerHTML = `<div class="meta" style="padding: 2rem 0; color: var(--text-muted);">No published articles found. Click "+ Create New Article" to add one.</div>`;
       return;
     }
 
@@ -239,7 +350,6 @@ document.addEventListener("DOMContentLoaded", () => {
       </div>
     `).join("");
 
-    // Attach Edit & Delete Listeners
     postsList.querySelectorAll(".edit-post-btn").forEach((btn) => {
       btn.addEventListener("click", () => openPostModal(btn.getAttribute("data-id")));
     });
@@ -249,7 +359,23 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Render Books
+  // 3. Now Page Submission
+  const nowPageForm = document.getElementById("nowPageForm");
+  if (nowPageForm) {
+    nowPageForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const data = await getMasterSiteData();
+      data.nowPage.lastUpdated = document.getElementById("nowLastUpdated").value.trim();
+      data.nowPage.introSubtitle = document.getElementById("nowIntroSubtitle").value.trim();
+      data.nowPage.ongoingProse = document.getElementById("nowOngoingProse").value.trim();
+
+      saveLocalSiteData(data);
+      await saveNowPageToSupabase(data.nowPage);
+      showToast('"Now" page updated 1-to-1!');
+    });
+  }
+
+  // 4. Books Render
   function renderBooksList(books) {
     const booksList = document.getElementById("booksList");
     if (!booksList) return;
@@ -257,17 +383,33 @@ document.addEventListener("DOMContentLoaded", () => {
     booksList.innerHTML = (books || []).map((book) => `
       <div class="admin-grid-item">
         <div class="admin-grid-item-content">
-          <span class="admin-badge meta">${book.status || 'Book'}</span>
+          <span class="admin-badge meta">${book.statusTag || 'FORTHCOMING VOLUME'}</span>
           <h4>${book.title}</h4>
           <p style="font-style: italic; color: var(--text-muted);">${book.subtitle || ''}</p>
-          <p style="margin-top: 0.5rem; font-size: 0.95rem;">${book.summary}</p>
+          <p style="margin-top: 0.5rem; font-size: 0.95rem;">${book.synopsisP1 || book.summary || ''}</p>
         </div>
-        <div class="meta" style="color: var(--text-muted);">${book.url}</div>
+        <div class="meta" style="color: var(--text-muted); flex-shrink: 0;">${book.previewUrl}</div>
       </div>
     `).join("");
   }
 
-  // Render Projects
+  // 5. About Form Submission
+  const aboutForm = document.getElementById("aboutForm");
+  if (aboutForm) {
+    aboutForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const data = await getMasterSiteData();
+      data.settings.aboutHeroTitle = document.getElementById("aboutHeroTitle").value.trim();
+      data.settings.aboutHeroSubtitle = document.getElementById("aboutHeroSubtitle").value.trim();
+      data.settings.aboutBodyProse = document.getElementById("aboutBodyProse").value.trim();
+
+      saveLocalSiteData(data);
+      await saveSiteSettingsToSupabase(data.settings);
+      showToast("About page content updated 1-to-1!");
+    });
+  }
+
+  // 6. Projects Render & Modal Listeners
   function renderProjectsList(projects) {
     const projectsList = document.getElementById("projectsList");
     if (!projectsList) return;
@@ -279,27 +421,31 @@ document.addEventListener("DOMContentLoaded", () => {
           <h4>${proj.title}</h4>
           <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.25rem;">${proj.description}</p>
         </div>
-        <a href="${proj.link}" target="_blank" class="meta" style="color: var(--text-muted); flex-shrink: 0;">${proj.link} ↗</a>
+        <div style="display: flex; gap: 0.5rem; flex-shrink: 0; align-items: center;">
+          <a href="${proj.link}" target="_blank" class="meta" style="color: var(--text-muted); margin-right: 0.5rem;">${proj.link} ↗</a>
+          <button class="admin-btn admin-btn-danger delete-project-btn" data-id="${proj.id}">Delete</button>
+        </div>
       </div>
     `).join("");
+
+    projectsList.querySelectorAll(".delete-project-btn").forEach((btn) => {
+      btn.addEventListener("click", () => deleteProject(btn.getAttribute("data-id")));
+    });
   }
 
-  // Modal Controllers for Articles
+  // Modal Handlers for Articles
   const postModal = document.getElementById("postModal");
   const newPostBtn = document.getElementById("newPostBtn");
   const closePostModalBtn = document.getElementById("closePostModalBtn");
   const cancelPostModalBtn = document.getElementById("cancelPostModalBtn");
   const postForm = document.getElementById("postForm");
 
-  if (newPostBtn) {
-    newPostBtn.addEventListener("click", () => openPostModal());
-  }
-
+  if (newPostBtn) newPostBtn.addEventListener("click", () => openPostModal());
   if (closePostModalBtn) closePostModalBtn.addEventListener("click", closePostModal);
   if (cancelPostModalBtn) cancelPostModalBtn.addEventListener("click", closePostModal);
 
-  function openPostModal(postId = null) {
-    const data = getSiteData();
+  async function openPostModal(postId = null) {
+    const data = await getMasterSiteData();
     const modalTitle = document.getElementById("postModalTitle");
     const idInput = document.getElementById("postId");
     const titleInput = document.getElementById("postTitle");
@@ -333,9 +479,9 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   if (postForm) {
-    postForm.addEventListener("submit", (e) => {
+    postForm.addEventListener("submit", async (e) => {
       e.preventDefault();
-      const data = getSiteData();
+      const data = await getMasterSiteData();
       const idInput = document.getElementById("postId").value;
       const title = document.getElementById("postTitle").value.trim();
       const category = document.getElementById("postType").value;
@@ -353,69 +499,118 @@ document.addEventListener("DOMContentLoaded", () => {
       };
 
       if (idInput) {
-        // Edit existing
         const idx = data.posts.findIndex((p) => p.id === idInput);
         if (idx !== -1) data.posts[idx] = newPost;
       } else {
-        // Add new to top
         data.posts.unshift(newPost);
       }
 
-      saveSiteData(data);
+      saveLocalSiteData(data);
+      await savePostToSupabase(newPost);
       closePostModal();
-      renderConsoleData();
+      await renderConsoleData();
       showToast(idInput ? "Article updated successfully." : "New article published successfully.");
     });
   }
 
-  function deletePost(postId) {
+  async function deletePost(postId) {
     if (!confirm("Are you sure you want to delete this article?")) return;
-    const data = getSiteData();
+    const data = await getMasterSiteData();
     data.posts = data.posts.filter((p) => p.id !== postId);
-    saveSiteData(data);
-    renderConsoleData();
+    saveLocalSiteData(data);
+    await deletePostFromSupabase(postId);
+    await renderConsoleData();
     showToast("Article deleted.");
   }
 
-  // Now Page Form Listener
-  const nowPageForm = document.getElementById("nowPageForm");
-  if (nowPageForm) {
-    nowPageForm.addEventListener("submit", (e) => {
-      e.preventDefault();
-      const data = getSiteData();
-      data.nowPage.lastUpdated = document.getElementById("nowLastUpdated").value.trim();
-      data.nowPage.introSubtitle = document.getElementById("nowIntroSubtitle").value.trim();
-      data.nowPage.ongoingProse = document.getElementById("nowOngoingProse").value.trim();
+  // Modal Handlers for Projects
+  const projectModal = document.getElementById("projectModal");
+  const newProjectBtn = document.getElementById("newProjectBtn");
+  const closeProjectModalBtn = document.getElementById("closeProjectModalBtn");
+  const cancelProjectModalBtn = document.getElementById("cancelProjectModalBtn");
+  const projectForm = document.getElementById("projectForm");
 
-      saveSiteData(data);
-      showToast('"Now" page updated successfully.');
+  if (newProjectBtn) newProjectBtn.addEventListener("click", () => {
+    if (projectForm) projectForm.reset();
+    if (projectModal) projectModal.style.display = "flex";
+  });
+
+  if (closeProjectModalBtn) closeProjectModalBtn.addEventListener("click", () => { if (projectModal) projectModal.style.display = "none"; });
+  if (cancelProjectModalBtn) cancelProjectModalBtn.addEventListener("click", () => { if (projectModal) projectModal.style.display = "none"; });
+
+  if (projectForm) {
+    projectForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const data = await getMasterSiteData();
+      const title = document.getElementById("projectTitle").value.trim();
+      const roleTag = document.getElementById("projectRoleTag").value.trim();
+      const status = document.getElementById("projectStatus").value.trim();
+      const description = document.getElementById("projectDesc").value.trim();
+      const link = document.getElementById("projectLink").value.trim();
+
+      const newProj = {
+        id: title.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+        title,
+        roleTag,
+        status,
+        description,
+        link
+      };
+
+      data.projects.push(newProj);
+      saveLocalSiteData(data);
+      await saveProjectToSupabase(newProj);
+
+      if (projectModal) projectModal.style.display = "none";
+      await renderConsoleData();
+      showToast("New project added!");
     });
   }
 
-  // Settings Form Listener
+  async function deleteProject(projId) {
+    if (!confirm("Delete this project?")) return;
+    const data = await getMasterSiteData();
+    data.projects = data.projects.filter((p) => p.id !== projId);
+    saveLocalSiteData(data);
+    await deleteProjectFromSupabase(projId);
+    await renderConsoleData();
+    showToast("Project removed.");
+  }
+
+  // 7. Global Settings Submission
   const settingsForm = document.getElementById("settingsForm");
   if (settingsForm) {
-    settingsForm.addEventListener("submit", (e) => {
+    settingsForm.addEventListener("submit", async (e) => {
       e.preventDefault();
-      const data = getSiteData();
+      const data = await getMasterSiteData();
       data.settings.siteTitle = document.getElementById("settingSiteTitle").value.trim();
-      data.settings.heroSubtitle = document.getElementById("settingHeroSubtitle").value.trim();
       data.settings.contactEmail = document.getElementById("settingContactEmail").value.trim();
       data.settings.adminPasscode = document.getElementById("settingAdminPasscode").value.trim();
 
-      saveSiteData(data);
+      saveLocalSiteData(data);
+      await saveSiteSettingsToSupabase(data.settings);
       showToast("Global site settings updated.");
     });
   }
 
-  // Backup Export & Import Handlers
+  // 8. Supabase Seeding & Backup Handlers
+  const seedSupabaseBtn = document.getElementById("seedSupabaseBtn");
   const exportJsonBtn = document.getElementById("exportJsonBtn");
   const importJsonInput = document.getElementById("importJsonInput");
   const resetDefaultsBtn = document.getElementById("resetDefaultsBtn");
 
+  if (seedSupabaseBtn) {
+    seedSupabaseBtn.addEventListener("click", async () => {
+      const data = getLocalSiteData();
+      showToast("Pushing local data snapshot to Supabase Cloud...");
+      await seedInitialDataToSupabase(data);
+      showToast("Supabase Cloud database seeded successfully!");
+    });
+  }
+
   if (exportJsonBtn) {
-    exportJsonBtn.addEventListener("click", () => {
-      const data = getSiteData();
+    exportJsonBtn.addEventListener("click", async () => {
+      const data = await getMasterSiteData();
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -433,13 +628,14 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!file) return;
 
       const reader = new FileReader();
-      reader.onload = (evt) => {
+      reader.onload = async (evt) => {
         try {
           const imported = JSON.parse(evt.target.result);
           if (imported && imported.settings && imported.posts) {
-            saveSiteData(imported);
-            renderConsoleData();
-            showToast("Database snapshot imported successfully.");
+            saveLocalSiteData(imported);
+            await seedInitialDataToSupabase(imported);
+            await renderConsoleData();
+            showToast("Database snapshot imported and pushed to Supabase Cloud.");
           } else {
             alert("Invalid backup file format.");
           }
@@ -452,10 +648,11 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   if (resetDefaultsBtn) {
-    resetDefaultsBtn.addEventListener("click", () => {
-      if (confirm("Reset all content to factory defaults? This will erase custom edits.")) {
-        saveSiteData(INITIAL_DATA);
-        renderConsoleData();
+    resetDefaultsBtn.addEventListener("click", async () => {
+      if (confirm("Reset all content to factory defaults?")) {
+        saveLocalSiteData(INITIAL_DATA);
+        await seedInitialDataToSupabase(INITIAL_DATA);
+        await renderConsoleData();
         showToast("Site data reset to factory defaults.");
       }
     });

@@ -1,80 +1,104 @@
-(function () {
-  // Smooth scroll for anchor links
-  document.querySelectorAll('a[href^="#"]').forEach(function (anchor) {
-    anchor.addEventListener('click', function (e) {
-      var targetId = this.getAttribute('href');
-      if (targetId === '#') return;
-      var targetEl = document.querySelector(targetId);
-      if (targetEl) {
-        e.preventDefault();
-        targetEl.scrollIntoView({
-          behavior: 'smooth',
-          block: 'start'
-        });
-      }
-    });
-  });
+import {
+  isSupabaseConfigured,
+  syncSiteSettingsFromSupabase,
+  syncPostsFromSupabase,
+  syncProjectsFromSupabase,
+  syncNowPageFromSupabase,
+  syncBooksFromSupabase,
+  subscribeToSupabaseRealtime
+} from "./supabase.js";
 
-  // Client-Side Dynamic Hydration from Admin Storage (If Present)
-  const STORAGE_KEY = "tobi_site_data_v1";
+const STORAGE_KEY = "tobi_site_data_v1";
 
-  function loadSiteData() {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      return raw ? JSON.parse(raw) : null;
-    } catch (e) {
-      return null;
+// Local Storage Fallback
+function getLocalSiteData() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+// Master Fetch Strategy: Supabase First -> LocalStorage Fallback
+async function fetchMasterData() {
+  const local = getLocalSiteData();
+  if (!isSupabaseConfigured) return local;
+
+  try {
+    const [cloudSettings, cloudNow, cloudPosts, cloudProjects, cloudBooks] = await Promise.all([
+      syncSiteSettingsFromSupabase(),
+      syncNowPageFromSupabase(),
+      syncPostsFromSupabase(),
+      syncProjectsFromSupabase(),
+      syncBooksFromSupabase()
+    ]);
+
+    const merged = {
+      settings: cloudSettings || (local ? local.settings : null),
+      nowPage: cloudNow || (local ? local.nowPage : null),
+      posts: (cloudPosts && cloudPosts.length > 0) ? cloudPosts : (local ? local.posts : null),
+      projects: (cloudProjects && cloudProjects.length > 0) ? cloudProjects : (local ? local.projects : null),
+      books: (cloudBooks && cloudBooks.length > 0) ? cloudBooks : (local ? local.books : null)
+    };
+
+    return merged;
+  } catch (e) {
+    console.warn("Using local cache for page render:", e);
+    return local;
+  }
+}
+
+// 1-to-1 Page Hydrator
+async function hydratePage() {
+  const data = await fetchMasterData();
+  if (!data) return;
+
+  const currentPath = window.location.pathname;
+
+  // 1. Hydrate Navigation & Brand across all pages
+  if (data.settings) {
+    if (data.settings.siteTitle) {
+      document.querySelectorAll(".meta-brand").forEach(el => {
+        if (!el.textContent.includes("[1-to-1")) {
+          el.textContent = data.settings.siteTitle;
+        }
+      });
+    }
+
+    if (data.settings.contactEmail) {
+      document.querySelectorAll('a[href^="mailto:"]').forEach(link => {
+        link.href = `mailto:${data.settings.contactEmail}`;
+      });
     }
   }
 
-  function hydratePage() {
-    const data = loadSiteData();
-    if (!data) return;
+  // 2. Hydrate Homepage (index.html)
+  if (currentPath.endsWith("index.html") || currentPath === "/" || currentPath.endsWith("/")) {
+    if (data.settings) {
+      const heroH1 = document.querySelector(".hero h1");
+      if (heroH1 && data.settings.heroTitle) {
+        const titleText = data.settings.heroTitle;
+        const scribbleWord = data.settings.heroScribbleWord || "purpose.";
+        
+        if (titleText.includes(scribbleWord)) {
+          const parts = titleText.split(scribbleWord);
+          heroH1.innerHTML = `${parts[0]} <span class="highlight-wrapper">${scribbleWord} <svg class="scribble" viewBox="0 0 200 80" preserveAspectRatio="none" aria-hidden="true"><path d="M 15,40 C 20,15 50,5 100,5 C 160,5 190,20 185,50 C 180,75 140,78 90,75 C 40,72 5,55 10,35 C 15,20 40,12 80,15"></path></svg></span> ${parts[1] || ''}`;
+        } else {
+          heroH1.textContent = titleText;
+        }
+      }
 
-    // 1. Hydrate Homepage & Writing Catalog
-    if (data.posts && data.posts.length > 0) {
-      const writingGrid = document.querySelector("#writing .grid-3") || document.querySelector("#writing-catalog .grid-3");
-      if (writingGrid) {
-        // Take top 3 for index page, or all for writing catalog page
-        const isCatalogPage = window.location.pathname.includes("writing");
-        const postsToRender = isCatalogPage ? data.posts : data.posts.slice(0, 3);
-        const prefix = isCatalogPage ? "" : "writing/";
-
-        writingGrid.innerHTML = postsToRender.map((post, idx) => `
-          <article class="grid-item fade-up delay-${(idx % 3) + 1}">
-            <a href="${post.url.startsWith("writing/") || isCatalogPage ? post.url.replace(/^writing\//, "") : prefix + post.url}">
-              <div class="grid-item-header">
-                <h3>${post.title}</h3>
-                <div class="meta">${post.category || 'Essay'} / ${post.date || ''}</div>
-              </div>
-              <p class="grid-item-desc">${post.summary}</p>
-              <span class="grid-item-link">Read ${post.category || 'Essay'} →</span>
-            </a>
-          </article>
-        `).join("");
+      const heroSubtitle = document.querySelector(".hero-subtitle");
+      if (heroSubtitle && data.settings.heroSubtitle) {
+        heroSubtitle.textContent = data.settings.heroSubtitle;
       }
     }
 
-    // 2. Hydrate "Now" Page
-    if (data.nowPage) {
-      const nowGrid = document.querySelector("#now-grid");
-      if (nowGrid) {
-        const subtitleEl = document.querySelector(".hero-subtitle");
-        if (subtitleEl && data.nowPage.introSubtitle) {
-          subtitleEl.textContent = data.nowPage.introSubtitle;
-        }
-
-        const proseEl = document.querySelector(".article-body");
-        if (proseEl && data.nowPage.ongoingProse) {
-          proseEl.innerHTML = `<p>${data.nowPage.ongoingProse}</p>`;
-        }
-      }
-    }
-
-    // 3. Hydrate Core Projects Showcase
+    // Projects Section
     if (data.projects && data.projects.length > 0) {
-      const projectsGrid = document.querySelector("#projects .grid-3") || document.querySelector("#now-grid .grid-3");
-      if (projectsGrid && !window.location.pathname.includes("writing")) {
+      const projectsGrid = document.querySelector("#projects .grid-3");
+      if (projectsGrid) {
         projectsGrid.innerHTML = data.projects.map((proj, idx) => `
           <article class="grid-item fade-up delay-${(idx % 3) + 1}">
             <a href="${proj.link}" target="_blank" rel="noopener noreferrer">
@@ -93,24 +117,156 @@
       }
     }
 
-    // 4. Hydrate Hero Subtitle & Email Settings
-    if (data.settings) {
-      if (data.settings.heroSubtitle) {
-        const heroSub = document.querySelector(".hero-subtitle");
-        if (heroSub && window.location.pathname.endsWith("index.html") || window.location.pathname === "/") {
-          heroSub.textContent = data.settings.heroSubtitle;
-        }
-      }
-
-      if (data.settings.contactEmail) {
-        document.querySelectorAll('a[href^="mailto:"]').forEach(link => {
-          link.href = `mailto:${data.settings.contactEmail}`;
-        });
+    // Recent Writing Section
+    if (data.posts && data.posts.length > 0) {
+      const writingGrid = document.querySelector("#writing .grid-3");
+      if (writingGrid) {
+        writingGrid.innerHTML = data.posts.slice(0, 3).map((post, idx) => `
+          <article class="grid-item fade-up delay-${(idx % 3) + 1}">
+            <a href="${post.url}">
+              <div class="grid-item-header">
+                <h3>${post.title}</h3>
+                <div class="meta">${post.category || 'Essay'} / ${post.date || ''}</div>
+              </div>
+              <p class="grid-item-desc">${post.summary}</p>
+              <span class="grid-item-link">Read ${post.category || 'Essay'} →</span>
+            </a>
+          </article>
+        `).join("");
       }
     }
   }
 
-  // Hydrate on initial load and listen for live updates
-  document.addEventListener("DOMContentLoaded", hydratePage);
+  // 3. Hydrate About Page (about.html)
+  if (currentPath.includes("about.html")) {
+    if (data.settings) {
+      const aboutH1 = document.querySelector(".hero h1");
+      if (aboutH1 && data.settings.aboutHeroTitle) {
+        aboutH1.textContent = data.settings.aboutHeroTitle;
+      }
+
+      const aboutSub = document.querySelector(".hero-subtitle");
+      if (aboutSub && data.settings.aboutHeroSubtitle) {
+        aboutSub.textContent = data.settings.aboutHeroSubtitle;
+      }
+
+      const aboutProse = document.querySelector(".article-body");
+      if (aboutProse && data.settings.aboutBodyProse) {
+        const paragraphs = data.settings.aboutBodyProse.split("\n\n");
+        aboutProse.innerHTML = paragraphs.map(p => `<p>${p}</p>`).join("");
+      }
+    }
+  }
+
+  // 4. Hydrate Writing Catalog (writing/index.html)
+  if (currentPath.includes("writing")) {
+    if (data.posts && data.posts.length > 0) {
+      const catalogGrid = document.querySelector("#writing-catalog .grid-3");
+      if (catalogGrid) {
+        catalogGrid.innerHTML = data.posts.map((post, idx) => `
+          <article class="grid-item fade-up delay-${(idx % 3) + 1}">
+            <a href="${post.url.replace(/^writing\//, '')}">
+              <div class="grid-item-header">
+                <h3>${post.title}</h3>
+                <div class="meta">${post.category || 'Essay'} / ${post.date || ''}</div>
+              </div>
+              <p class="grid-item-desc">${post.summary}</p>
+              <span class="grid-item-link">Read ${post.category || 'Essay'} →</span>
+            </a>
+          </article>
+        `).join("");
+      }
+    }
+  }
+
+  // 5. Hydrate "Now" Page (now.html)
+  if (currentPath.includes("now.html")) {
+    if (data.nowPage) {
+      const nowSub = document.querySelector(".hero-subtitle");
+      if (nowSub && data.nowPage.introSubtitle) {
+        nowSub.textContent = data.nowPage.introSubtitle;
+      }
+
+      const nowProse = document.querySelector(".article-body");
+      if (nowProse && data.nowPage.ongoingProse) {
+        nowProse.innerHTML = `<p>${data.nowPage.ongoingProse}</p>`;
+      }
+    }
+
+    if (data.projects && data.projects.length > 0) {
+      const nowProjectsGrid = document.querySelector("#now-grid .grid-3");
+      if (nowProjectsGrid) {
+        nowProjectsGrid.innerHTML = data.projects.map((proj) => `
+          <article class="grid-item">
+            <div class="grid-item-header">
+              <h3>${proj.title}</h3>
+              <div class="meta">${proj.status || 'Active'} · ${proj.roleTag}</div>
+            </div>
+            <p class="grid-item-desc">${proj.description}</p>
+            <a class="grid-item-link" href="${proj.link}" target="_blank" rel="noopener noreferrer">Visit ${proj.link.replace(/^https?:\/\//, '').replace(/\/$/, '')} ↗</a>
+          </article>
+        `).join("");
+      }
+    }
+  }
+
+  // 6. Hydrate Books Page (books.html)
+  if (currentPath.includes("books.html")) {
+    if (data.books && data.books.length > 0) {
+      const flagshipBook = data.books[0];
+      if (flagshipBook) {
+        const titleEl = document.querySelector(".book-title");
+        if (titleEl && flagshipBook.title) titleEl.textContent = flagshipBook.title;
+
+        const subEl = document.querySelector(".book-subtitle");
+        if (subEl && flagshipBook.subtitle) subEl.textContent = flagshipBook.subtitle;
+
+        const tagEl = document.querySelector(".book-status-tag .meta");
+        if (tagEl && flagshipBook.statusTag) tagEl.textContent = flagshipBook.statusTag;
+
+        const synEls = document.querySelectorAll(".book-synopsis");
+        if (synEls.length >= 2) {
+          if (flagshipBook.synopsisP1) synEls[0].textContent = flagshipBook.synopsisP1;
+          if (flagshipBook.synopsisP2) synEls[1].textContent = flagshipBook.synopsisP2;
+        }
+
+        // Chapters Table of Contents
+        if (flagshipBook.chapters && flagshipBook.chapters.length > 0) {
+          const tocGrid = document.querySelector("#table-of-contents .grid-3");
+          if (tocGrid) {
+            tocGrid.innerHTML = flagshipBook.chapters.map((chap, idx) => `
+              <article class="grid-item">
+                <div class="grid-item-header">
+                  <span class="meta" style="color: var(--accent);">${chap.status}</span>
+                  <h3>${chap.title}</h3>
+                </div>
+                <p class="grid-item-desc">${chap.desc}</p>
+                <a href="${flagshipBook.previewUrl}" class="grid-item-link">Read Chapter Preview →</a>
+              </article>
+            `).join("");
+          }
+        }
+      }
+    }
+  }
+}
+
+// Smooth Anchor Scroll
+document.addEventListener("DOMContentLoaded", () => {
+  document.querySelectorAll('a[href^="#"]').forEach(function (anchor) {
+    anchor.addEventListener('click', function (e) {
+      var targetId = this.getAttribute('href');
+      if (targetId === '#') return;
+      var targetEl = document.querySelector(targetId);
+      if (targetEl) {
+        e.preventDefault();
+        targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+  });
+
+  // Initial Hydration & Realtime Subscription Listener
+  hydratePage();
   window.addEventListener("tobi_site_data_updated", hydratePage);
-})();
+  subscribeToSupabaseRealtime(hydratePage);
+});
