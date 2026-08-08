@@ -1,0 +1,22 @@
+{
+  "name": "tobi-lawson-website",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Tobi Lawson — Personal Website & Editorial Admin Console",
+  "type": "module",
+  "scripts": {
+    "dev": "npx serve . -p 3000",
+    "serve": "npx serve . -p 3000",
+    "build": "echo 'Static build complete. Serving directly from root directory.'"
+  },
+  "keywords": [
+    "tobi-lawson",
+    "editorial",
+    "lagos",
+    "investor",
+    "1914-reader",
+    "lagos-urban-project"
+  ],
+  "author": "Tobi Lawson",
+  "license": "MIT"
+}
