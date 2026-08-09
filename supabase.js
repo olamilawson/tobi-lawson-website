@@ -24,7 +24,7 @@ export async function syncSiteSettingsFromSupabase() {
       aboutHeroSubtitle: data.about_hero_subtitle || "",
       aboutBodyProse: data.about_body_prose || "",
       contactEmail: data.contact_email || "olamilawson@gmail.com",
-      adminPasscode: data.admin_passcode || "tobi2026"
+      adminPasscode: data.admin_passcode || "Enlive0801@#"
     };
   } catch (err) {
     console.warn("Supabase site_settings fetch error:", err);

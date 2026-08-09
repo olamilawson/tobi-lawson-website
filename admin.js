@@ -25,7 +25,7 @@ import {
 const STORAGE_KEY = "tobi_site_data_v1";
 const AUTH_KEY = "tobi_admin_authenticated";
 
-// Factory Defaults (Matches Tobi Lawson's website 1-to-1)
+// Factory Defaults (Hardcoded Credentials)
 export const INITIAL_DATA = {
   settings: {
     siteTitle: "Tobi Lawson",
@@ -36,7 +36,7 @@ export const INITIAL_DATA = {
     aboutHeroSubtitle: "Investor and builder based in Lagos. Background in investment analysis and development research, now running companies across fintech, SME services, and education technology.",
     aboutBodyProse: "I'm an investor and builder based in Lagos. My background is in investment analysis and development research, work that shaped how I think about capital, institutions, and the slow processes that move a country's fortunes.\n\nToday I run and invest in companies across fintech, SME services technology, product development, and education technology. Alongside that, I co-founded 1914 Reader with Feyi Fawehinmi, where we read Nigeria and Africa's biggest stories through the lens of global economic and political change.\n\nI also work on Lagos Urban Project, a platform reimagining Lagos as a more inclusive and livable city, and Long Africa, a new institution focused on the long-run foundations of African prosperity.\n\nMy interests run wide: markets, cities, governance, technology, and the books that help make sense of them. This site is where I write about all of it, and keep a running account of what I'm building.",
     contactEmail: "olamilawson@gmail.com",
-    adminPasscode: "tobi2026"
+    adminPasscode: "Enlive0801@#"
   },
   nowPage: {
     lastUpdated: "July 2026",
@@ -126,7 +126,13 @@ export function getLocalSiteData() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_DATA));
       return INITIAL_DATA;
     }
-    return JSON.parse(raw);
+    const parsed = JSON.parse(raw);
+    // Ensure passcode is updated to new hardcoded default if old default was present
+    if (parsed && parsed.settings && (parsed.settings.adminPasscode === "tobi2026" || !parsed.settings.adminPasscode)) {
+      parsed.settings.adminPasscode = "Enlive0801@#";
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
+    }
+    return parsed;
   } catch (e) {
     console.error("Error reading site data from LocalStorage:", e);
     return INITIAL_DATA;
@@ -193,7 +199,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     authForm.addEventListener("submit", async (e) => {
       e.preventDefault();
       const currentData = await getMasterSiteData();
-      const expectedPasscode = currentData.settings.adminPasscode || "tobi2026";
+      const expectedPasscode = currentData.settings.adminPasscode || "Enlive0801@#";
       
       if (passcodeInput.value.trim() === expectedPasscode) {
         sessionStorage.setItem(AUTH_KEY, "true");
@@ -302,8 +308,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     const settingAdminPasscode = document.getElementById("settingAdminPasscode");
 
     if (settingSiteTitle) settingSiteTitle.value = data.settings.siteTitle || "";
-    if (settingContactEmail) settingContactEmail.value = data.settings.contactEmail || "";
-    if (settingAdminPasscode) settingAdminPasscode.value = data.settings.adminPasscode || "tobi2026";
+    if (settingContactEmail) settingContactEmail.value = data.settings.contactEmail || "olamilawson@gmail.com";
+    if (settingAdminPasscode) settingAdminPasscode.value = data.settings.adminPasscode || "Enlive0801@#";
   }
 
   // 1. Homepage Form Submission
@@ -589,7 +595,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       saveLocalSiteData(data);
       await saveSiteSettingsToSupabase(data.settings);
-      showToast("Global site settings updated.");
+      showToast("Global site settings & admin passcode updated.");
     });
   }
 
