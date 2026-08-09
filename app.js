@@ -150,6 +150,11 @@ async function hydratePage() {
         aboutSub.textContent = data.settings.aboutHeroSubtitle;
       }
 
+      const aboutImg = document.getElementById("aboutProfileImg");
+      if (aboutImg && data.settings.aboutProfileImage) {
+        aboutImg.src = data.settings.aboutProfileImage;
+      }
+
       const aboutProse = document.querySelector(".article-body");
       if (aboutProse && data.settings.aboutBodyProse) {
         const paragraphs = data.settings.aboutBodyProse.split("\n\n");

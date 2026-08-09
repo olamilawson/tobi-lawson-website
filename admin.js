@@ -35,6 +35,7 @@ export const INITIAL_DATA = {
     aboutHeroTitle: "About Tobi Lawson",
     aboutHeroSubtitle: "Investor and builder based in Lagos. Background in investment analysis and development research, now running companies across fintech, SME services, and education technology.",
     aboutBodyProse: "I'm an investor and builder based in Lagos. My background is in investment analysis and development research, work that shaped how I think about capital, institutions, and the slow processes that move a country's fortunes.\n\nToday I run and invest in companies across fintech, SME services technology, product development, and education technology. Alongside that, I co-founded 1914 Reader with Feyi Fawehinmi, where we read Nigeria and Africa's biggest stories through the lens of global economic and political change.\n\nI also work on Lagos Urban Project, a platform reimagining Lagos as a more inclusive and livable city, and Long Africa, a new institution focused on the long-run foundations of African prosperity.\n\nMy interests run wide: markets, cities, governance, technology, and the books that help make sense of them. This site is where I write about all of it, and keep a running account of what I'm building.",
+    aboutProfileImage: "./assets/tobi-lawson.jpg",
     contactEmail: "olamilawson@gmail.com",
     adminPasscode: "Enlive0801@#"
   },
@@ -127,9 +128,13 @@ export function getLocalSiteData() {
       return INITIAL_DATA;
     }
     const parsed = JSON.parse(raw);
-    // Ensure passcode is updated to new hardcoded default if old default was present
-    if (parsed && parsed.settings && (parsed.settings.adminPasscode === "tobi2026" || !parsed.settings.adminPasscode)) {
-      parsed.settings.adminPasscode = "Enlive0801@#";
+    if (parsed && parsed.settings) {
+      if (!parsed.settings.aboutProfileImage) {
+        parsed.settings.aboutProfileImage = "./assets/tobi-lawson.jpg";
+      }
+      if (parsed.settings.adminPasscode === "tobi2026" || !parsed.settings.adminPasscode) {
+        parsed.settings.adminPasscode = "Enlive0801@#";
+      }
       localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
     }
     return parsed;
@@ -294,10 +299,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     const aboutHeroTitle = document.getElementById("aboutHeroTitle");
     const aboutHeroSubtitle = document.getElementById("aboutHeroSubtitle");
     const aboutBodyProse = document.getElementById("aboutBodyProse");
+    const aboutProfileImage = document.getElementById("aboutProfileImage");
+    const aboutImgPreview = document.getElementById("aboutImgPreview");
 
     if (aboutHeroTitle) aboutHeroTitle.value = data.settings.aboutHeroTitle || "About Tobi Lawson";
     if (aboutHeroSubtitle) aboutHeroSubtitle.value = data.settings.aboutHeroSubtitle || "";
     if (aboutBodyProse) aboutBodyProse.value = data.settings.aboutBodyProse || "";
+    if (aboutProfileImage) aboutProfileImage.value = data.settings.aboutProfileImage || "./assets/tobi-lawson.jpg";
+    if (aboutImgPreview) aboutImgPreview.src = data.settings.aboutProfileImage || "./assets/tobi-lawson.jpg";
 
     // 6. Render Projects List
     renderProjectsList(data.projects);
@@ -399,7 +408,25 @@ document.addEventListener("DOMContentLoaded", async () => {
     `).join("");
   }
 
-  // 5. About Form Submission
+  // 5. About Form & Image File Upload Listeners
+  const aboutImgFileInput = document.getElementById("aboutImgFileInput");
+  if (aboutImgFileInput) {
+    aboutImgFileInput.addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        const dataUrl = evt.target.result;
+        const aboutProfileImage = document.getElementById("aboutProfileImage");
+        const aboutImgPreview = document.getElementById("aboutImgPreview");
+        if (aboutProfileImage) aboutProfileImage.value = dataUrl;
+        if (aboutImgPreview) aboutImgPreview.src = dataUrl;
+        showToast("New image uploaded and previewed!");
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
   const aboutForm = document.getElementById("aboutForm");
   if (aboutForm) {
     aboutForm.addEventListener("submit", async (e) => {
@@ -408,10 +435,11 @@ document.addEventListener("DOMContentLoaded", async () => {
       data.settings.aboutHeroTitle = document.getElementById("aboutHeroTitle").value.trim();
       data.settings.aboutHeroSubtitle = document.getElementById("aboutHeroSubtitle").value.trim();
       data.settings.aboutBodyProse = document.getElementById("aboutBodyProse").value.trim();
+      data.settings.aboutProfileImage = document.getElementById("aboutProfileImage").value.trim();
 
       saveLocalSiteData(data);
       await saveSiteSettingsToSupabase(data.settings);
-      showToast("About page content updated 1-to-1!");
+      showToast("About page content & photo updated 1-to-1!");
     });
   }
 

@@ -405,6 +405,21 @@
             </div>
 
             <div class="admin-form-group">
+              <label for="aboutProfileImage" class="meta">Profile Photo URL or Path</label>
+              <div style="display: flex; gap: 1rem; align-items: center;">
+                <input type="text" id="aboutProfileImage" class="admin-input" placeholder="./assets/tobi-lawson.jpg" required />
+                <label class="admin-btn admin-btn-secondary" style="cursor: pointer; white-space: nowrap;">
+                  📷 Upload New Image
+                  <input type="file" id="aboutImgFileInput" accept="image/*" style="display: none;" />
+                </label>
+              </div>
+              <div style="margin-top: 1rem; display: flex; align-items: center; gap: 1rem;">
+                <span class="meta" style="color: var(--text-muted);">Current Photo Preview:</span>
+                <img id="aboutImgPreview" src="./assets/tobi-lawson.jpg" alt="Preview" style="width: 80px; height: 100px; object-fit: cover; border: 1px solid var(--line);" />
+              </div>
+            </div>
+
+            <div class="admin-form-group">
               <label for="aboutBodyProse" class="meta">Full Bio Body Prose (Markdown or HTML paragraphs)</label>
               <textarea id="aboutBodyProse" class="admin-textarea" style="min-height: 180px;" required></textarea>
             </div>

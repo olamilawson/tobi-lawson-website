@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS public.site_settings (
   about_hero_subtitle TEXT DEFAULT 'Investor and builder based in Lagos. Background in investment analysis and development research, now running companies across fintech, SME services, and education technology.',
   about_body_prose TEXT DEFAULT 'I''m an investor and builder based in Lagos. My background is in investment analysis and development research, work that shaped how I think about capital, institutions, and the slow processes that move a country''s fortunes.\n\nToday I run and invest in companies across fintech, SME services technology, product development, and education technology. Alongside that, I co-founded 1914 Reader with Feyi Fawehinmi, where we read Nigeria and Africa''s biggest stories through the lens of global economic and political change.\n\nI also work on Lagos Urban Project, a platform reimagining Lagos as a more inclusive and livable city, and Long Africa, a new institution focused on the long-run foundations of African prosperity.',
   contact_email TEXT DEFAULT 'olamilawson@gmail.com',
+  about_profile_image TEXT DEFAULT './assets/tobi-lawson.jpg',
   admin_passcode TEXT DEFAULT 'Enlive0801@#',
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );

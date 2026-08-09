@@ -806,3 +806,33 @@ footer .footer-links {
   }
 }
 
+/* About Page Portrait Showcase */
+.about-portrait-wrapper {
+  margin-bottom: 4rem;
+  max-width: 760px;
+}
+
+.about-portrait-frame {
+  position: relative;
+  border: 1px solid var(--line);
+  background-color: var(--bg);
+  overflow: hidden;
+  max-height: 540px;
+}
+
+.about-portrait-frame img {
+  width: 100%;
+  height: auto;
+  max-height: 540px;
+  object-fit: cover;
+  object-position: center 20%;
+  display: block;
+  filter: grayscale(15%);
+  transition: filter 0.5s ease;
+}
+
+.about-portrait-frame:hover img {
+  filter: grayscale(0%);
+}
+
+

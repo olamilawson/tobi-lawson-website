@@ -23,6 +23,7 @@ export async function syncSiteSettingsFromSupabase() {
       aboutHeroTitle: data.about_hero_title || "About Tobi Lawson",
       aboutHeroSubtitle: data.about_hero_subtitle || "",
       aboutBodyProse: data.about_body_prose || "",
+      aboutProfileImage: data.about_profile_image || "./assets/tobi-lawson.jpg",
       contactEmail: data.contact_email || "olamilawson@gmail.com",
       adminPasscode: data.admin_passcode || "Enlive0801@#"
     };
@@ -44,6 +45,7 @@ export async function saveSiteSettingsToSupabase(settings) {
       about_hero_title: settings.aboutHeroTitle,
       about_hero_subtitle: settings.aboutHeroSubtitle,
       about_body_prose: settings.aboutBodyProse,
+      about_profile_image: settings.aboutProfileImage || "./assets/tobi-lawson.jpg",
       contact_email: settings.contactEmail,
       admin_passcode: settings.adminPasscode,
       updated_at: new Date().toISOString()
