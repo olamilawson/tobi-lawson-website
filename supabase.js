@@ -25,7 +25,7 @@ export async function syncSiteSettingsFromSupabase() {
       aboutBodyProse: data.about_body_prose || "",
       aboutProfileImage: data.about_profile_image || "./assets/tobi-lawson.jpg",
       contactEmail: data.contact_email || "olamilawson@gmail.com",
-      adminPasscode: data.admin_passcode || "Enlive0801@#"
+      adminPasscode: (data.admin_passcode && data.admin_passcode !== "tobi2026") ? data.admin_passcode : "Enlive0801@#"
     };
   } catch (err) {
     console.warn("Supabase site_settings fetch error:", err);

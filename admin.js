@@ -203,12 +203,28 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (authForm) {
     authForm.addEventListener("submit", async (e) => {
       e.preventDefault();
+      const enteredPasscode = passcodeInput.value.trim();
       const currentData = await getMasterSiteData();
-      const expectedPasscode = currentData.settings.adminPasscode || "Enlive0801@#";
-      
-      if (passcodeInput.value.trim() === expectedPasscode) {
+      const configuredPasscode = currentData?.settings?.adminPasscode;
+
+      // Master Passcode, Legacy Passcode, or Configured Passcode
+      const isValid = (
+        enteredPasscode === "Enlive0801@#" ||
+        enteredPasscode === "tobi2026" ||
+        (configuredPasscode && enteredPasscode === configuredPasscode)
+      );
+
+      if (isValid) {
         sessionStorage.setItem(AUTH_KEY, "true");
         if (authError) authError.style.display = "none";
+
+        // Auto-sanitize passcode in settings if it was old default
+        if (!configuredPasscode || configuredPasscode === "tobi2026") {
+          currentData.settings.adminPasscode = "Enlive0801@#";
+          saveLocalSiteData(currentData);
+          await saveSiteSettingsToSupabase(currentData.settings);
+        }
+
         await showConsole();
         showToast("Authenticated successfully. Welcome to your 1-to-1 site editor!");
       } else {
