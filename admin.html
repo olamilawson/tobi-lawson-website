@@ -2,11 +2,690 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta http-equiv="refresh" content="0;url=/admin/" />
-  <script>window.location.replace("/admin/");</script>
-  <title>Redirecting to Admin Console...</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Console — Tobi Lawson</title>
+  <meta name="description" content="Editorial Admin Console for Tobi Lawson personal website and writing hub." />
+  <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="./base.css" />
+  <link rel="stylesheet" href="./style.css" />
+  <style>
+    /* Editorial Admin Custom Utilities */
+    .admin-auth-overlay {
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+
+    .admin-card {
+      background: #ffffff;
+      border: 1px solid var(--line);
+      padding: 2.5rem;
+      max-width: 580px;
+      width: 100%;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.03);
+      margin-bottom: 2rem;
+    }
+
+    .admin-card h2 {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .admin-card p {
+      color: var(--text-muted);
+      margin-bottom: 2rem;
+      font-size: 1rem;
+    }
+
+    .admin-form-group {
+      margin-bottom: 1.5rem;
+    }
+
+    .admin-form-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+    }
+
+    .admin-input, .admin-textarea, .admin-select {
+      width: 100%;
+      padding: 0.85rem 1rem;
+      border: 1px solid var(--line);
+      font-family: var(--font-sans);
+      font-size: 0.95rem;
+      background: #ffffff;
+      color: var(--text);
+      transition: border-color 0.2s ease;
+    }
+
+    .admin-input:focus, .admin-textarea:focus, .admin-select:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .admin-textarea {
+      min-height: 120px;
+      resize: vertical;
+      line-height: 1.6;
+    }
+
+    .admin-btn {
+      background: var(--text);
+      color: #ffffff;
+      border: none;
+      padding: 0.85rem 1.75rem;
+      font-family: var(--font-sans);
+      font-weight: 700;
+      font-size: 0.85rem;
+      letter-spacing: 0.1em;
+      cursor: pointer;
+      text-transform: uppercase;
+      transition: opacity 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .admin-btn:hover {
+      opacity: 0.9;
+    }
+
+    .admin-btn-secondary {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--line);
+    }
+
+    .admin-btn-secondary:hover {
+      border-color: var(--text);
+    }
+
+    .admin-btn-danger {
+      background: #d32f2f;
+      color: #ffffff;
+    }
+
+    /* Admin Tabs Navigation */
+    .admin-tabs {
+      display: flex;
+      gap: 2rem;
+      border-bottom: 1px solid var(--line);
+      margin-bottom: 3rem;
+    }
+
+    .admin-tab-btn {
+      background: none;
+      border: none;
+      padding-bottom: 1rem;
+      font-family: var(--font-sans);
+      font-size: 0.9rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      cursor: pointer;
+      position: relative;
+      transition: color 0.2s ease;
+    }
+
+    .admin-tab-btn.active {
+      color: var(--text);
+    }
+
+    .admin-tab-btn.active::after {
+      content: "";
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: var(--accent);
+    }
+
+    .admin-tab-content {
+      display: none;
+    }
+
+    .admin-tab-content.active {
+      display: block;
+    }
+
+    /* Article List Table in Admin */
+    .admin-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1.5rem;
+    }
+
+    .admin-table th, .admin-table td {
+      padding: 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .admin-table th {
+      font-family: var(--font-sans);
+      font-size: 0.75rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    /* Toast Notifications */
+    .toast-notification {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      background: var(--text);
+      color: #ffffff;
+      padding: 1rem 1.75rem;
+      font-family: var(--font-sans);
+      font-size: 0.9rem;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+      z-index: 10000;
+      transform: translateY(150%);
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .toast-notification.show {
+      transform: translateY(0);
+    }
+
+    .cloud-status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.3rem 0.8rem;
+      background: #e8f5e9;
+      color: #2e7d32;
+      border: 1px solid #c8e6c9;
+      font-size: 0.75rem;
+      border-radius: 2px;
+    }
+
+    .cloud-status-pill.offline {
+      background: #fff3e0;
+      color: #e65100;
+      border-color: #ffe0b2;
+    }
+  </style>
 </head>
 <body>
-  <p>Redirecting to <a href="/admin/">/admin/</a>...</p>
+
+  <!-- Passcode Auth Screen -->
+  <div id="authOverlay" class="admin-auth-overlay">
+    <div class="admin-card">
+      <div class="meta" style="margin-bottom: 1rem;">Tobi Lawson — Console Access</div>
+      <h2>Editorial Passcode</h2>
+      <p>Enter your security passcode to open the 1-to-1 site editor.</p>
+      <form id="authForm">
+        <div class="admin-form-group">
+          <label for="passcodeInput" class="meta">Passcode</label>
+          <input type="password" id="passcodeInput" class="admin-input" placeholder="••••••••" required autocomplete="current-password" />
+        </div>
+        <div id="authError" class="meta" style="color: #d32f2f; margin-bottom: 1rem; display: none;">Invalid passcode. Please try again.</div>
+        <button type="submit" class="admin-btn" style="width: 100%;">Authenticate →</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Admin Main Console Container -->
+  <div id="adminConsole" style="display: none;">
+    <header class="header-nav fade-up" style="margin-bottom: 3rem;">
+      <a href="index.html" class="meta-brand">Tobi Lawson <span class="meta" style="color: var(--text-muted); margin-left: 0.5rem;">[Console]</span></a>
+      <nav class="meta-links meta" aria-label="Admin Navigation">
+        <span id="cloudStatusIndicator" class="cloud-status-pill meta">☁️ Supabase Connected</span>
+        <a href="index.html" target="_blank">View Live Site ↗</a>
+        <button id="logoutBtn" class="meta" style="background: none; border: none; cursor: pointer; color: var(--text-muted);">Logout</button>
+      </nav>
+    </header>
+
+    <main id="main">
+      <section class="hero fade-up" style="margin-bottom: 3rem;">
+        <h1>Editorial CMS Console</h1>
+        <p class="hero-subtitle">
+          Manage homepage content, bio prose, active projects, writing essays, free course modules, and flagship books. All changes sync directly to live readers.
+        </p>
+      </section>
+
+      <!-- Admin Navigation Tabs -->
+      <div class="admin-tabs fade-up">
+        <button class="admin-tab-btn active" data-tab="tab-settings">1. Site Settings & Bio</button>
+        <button class="admin-tab-btn" data-tab="tab-now">2. Now Page & Projects</button>
+        <button class="admin-tab-btn" data-tab="tab-writing">3. Writing & Essays</button>
+        <button class="admin-tab-btn" data-tab="tab-books">4. Books & Monographs</button>
+        <button class="admin-tab-btn" data-tab="tab-course">5. Free Course CMS</button>
+        <button class="admin-tab-btn" data-tab="tab-sync">6. Cloud & Backup</button>
+      </div>
+
+      <!-- TAB 1: Site Settings & Bio -->
+      <div id="tab-settings" class="admin-tab-content active fade-up">
+        <div class="admin-card" style="max-width: 100%;">
+          <h2>Homepage & About Page Editorial Settings</h2>
+          <p>Edit headlines, lead paragraphs, and your bio prose across the website.</p>
+
+          <form id="settingsForm">
+            <div class="admin-form-group">
+              <label for="siteTitle" class="meta">Site Name / Brand Title</label>
+              <input type="text" id="siteTitle" class="admin-input" required />
+            </div>
+
+            <div class="admin-form-group">
+              <label for="heroTitle" class="meta">Homepage Hero Headline</label>
+              <input type="text" id="heroTitle" class="admin-input" required />
+            </div>
+
+            <div class="admin-form-group">
+              <label for="heroSubtitle" class="meta">Homepage Hero Subtitle / Lead Paragraph</label>
+              <textarea id="heroSubtitle" class="admin-textarea" required></textarea>
+            </div>
+
+            <div class="admin-form-group">
+              <label for="contactEmail" class="meta">Contact Email</label>
+              <input type="email" id="contactEmail" class="admin-input" required />
+            </div>
+
+            <div class="admin-form-group">
+              <label for="adminPasscode" class="meta">Admin Console Passcode</label>
+              <input type="password" id="adminPasscode" class="admin-input" required />
+            </div>
+
+            <div style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--line);">
+              <h3 style="font-family: var(--font-serif); font-size: 1.5rem; margin-bottom: 1rem;">Footer Content & Custom Links</h3>
+              
+              <div class="admin-form-group">
+                <label for="footerTagline" class="meta">Footer Tagline</label>
+                <input type="text" id="footerTagline" class="admin-input" placeholder="Investor, builder, and writer based in Lagos." />
+              </div>
+
+              <div class="admin-form-group">
+                <label for="footerCopyright" class="meta">Footer Copyright Text</label>
+                <input type="text" id="footerCopyright" class="admin-input" placeholder="© 2026 Tobi Lawson. All rights reserved." />
+              </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                <div class="admin-form-group">
+                  <label for="footerLink1Name" class="meta">Custom Link 1 Name</label>
+                  <input type="text" id="footerLink1Name" class="admin-input" placeholder="1914 Reader" />
+                </div>
+                <div class="admin-form-group">
+                  <label for="footerLink1Url" class="meta">Custom Link 1 URL</label>
+                  <input type="url" id="footerLink1Url" class="admin-input" placeholder="https://www.1914reader.com/" />
+                </div>
+              </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                <div class="admin-form-group">
+                  <label for="footerLink2Name" class="meta">Custom Link 2 Name</label>
+                  <input type="text" id="footerLink2Name" class="admin-input" placeholder="Lagos Urban" />
+                </div>
+                <div class="admin-form-group">
+                  <label for="footerLink2Url" class="meta">Custom Link 2 URL</label>
+                  <input type="url" id="footerLink2Url" class="admin-input" placeholder="http://lagosurban.com" />
+                </div>
+              </div>
+            </div>
+
+            <button type="submit" class="admin-btn" style="margin-top: 1rem;">Save Site Settings</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- TAB 2: Now Page & Projects -->
+      <div id="tab-now" class="admin-tab-content fade-up">
+        <div class="admin-card" style="max-width: 100%;">
+          <h2>Now Page Editorial & Projects List</h2>
+          <p>Update your current focus and manage active initiatives shown on the Now page.</p>
+
+          <form id="nowForm" style="margin-bottom: 3rem;">
+            <div class="admin-form-group">
+              <label for="nowHeroTitle" class="meta">Now Page Headline</label>
+              <input type="text" id="nowHeroTitle" class="admin-input" required />
+            </div>
+
+            <div class="admin-form-group">
+              <label for="nowSubtitle" class="meta">Now Page Subtitle</label>
+              <input type="text" id="nowSubtitle" class="admin-input" required />
+            </div>
+
+            <div class="admin-form-group">
+              <label for="nowProse" class="meta">Now Page Editorial Paragraphs</label>
+              <textarea id="nowProse" class="admin-textarea" required></textarea>
+            </div>
+
+            <button type="submit" class="admin-btn">Save Now Page Content</button>
+          </form>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--line); padding-top: 2rem;">
+            <h3>Active Projects & Initiatives</h3>
+            <button id="newProjectBtn" class="admin-btn admin-btn-secondary">+ Add Project</button>
+          </div>
+
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Role / Tag</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="projectsTableBody">
+              <!-- Dynamically Populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TAB 3: Writing & Essays -->
+      <div id="tab-writing" class="admin-tab-content fade-up">
+        <div class="admin-card" style="max-width: 100%;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+            <div>
+              <h2>Published Articles & Essays</h2>
+              <p style="margin-bottom: 0;">Add, edit, or delete articles featured on your homepage and writing archive.</p>
+            </div>
+            <button id="newPostBtn" class="admin-btn">+ Write New Essay</button>
+          </div>
+
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Category</th>
+                <th>Date</th>
+                <th>URL / Link</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="postsTableBody">
+              <!-- Dynamically Populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TAB 4: Books & Monographs CMS -->
+      <div id="tab-books" class="admin-tab-content fade-up">
+        <div class="admin-card" style="max-width: 100%;">
+          <h2>Books & Monographs Showcase CMS</h2>
+          <p>Edit your flagship book showcase details, synopsis, cover art, and table of contents chapters.</p>
+
+          <form id="booksForm" style="margin-bottom: 3rem;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+              <div class="admin-form-group">
+                <label for="bookTitleInput" class="meta">Book Title</label>
+                <input type="text" id="bookTitleInput" class="admin-input" required />
+              </div>
+              <div class="admin-form-group">
+                <label for="bookSubtitleInput" class="meta">Book Subtitle</label>
+                <input type="text" id="bookSubtitleInput" class="admin-input" required />
+              </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+              <div class="admin-form-group">
+                <label for="bookStatusTagInput" class="meta">Status Tag Badge</label>
+                <input type="text" id="bookStatusTagInput" class="admin-input" placeholder="FORTHCOMING VOLUME • IN WRITING" required />
+              </div>
+              <div class="admin-form-group">
+                <label for="bookReleaseDateInput" class="meta">Release Schedule</label>
+                <input type="text" id="bookReleaseDateInput" class="admin-input" placeholder="Late 2026" required />
+              </div>
+            </div>
+
+            <div class="admin-form-group">
+              <label for="bookCoverImageUrlInput" class="meta">Cover Image URL / Path</label>
+              <input type="text" id="bookCoverImageUrlInput" class="admin-input" placeholder="./assets/who-made-this-cover.jpg" required />
+              <div style="margin-top: 0.5rem;">
+                <input type="file" id="bookCoverFileInput" accept="image/*" style="font-size: 0.85rem;" />
+              </div>
+            </div>
+
+            <div class="admin-form-group">
+              <label for="bookSynopsisP1Input" class="meta">Synopsis Paragraph 1</label>
+              <textarea id="bookSynopsisP1Input" class="admin-textarea" required></textarea>
+            </div>
+
+            <div class="admin-form-group">
+              <label for="bookSynopsisP2Input" class="meta">Synopsis Paragraph 2</label>
+              <textarea id="bookSynopsisP2Input" class="admin-textarea" required></textarea>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.5rem;">
+              <div class="admin-form-group">
+                <label for="bookAuthorInput" class="meta">Author Name</label>
+                <input type="text" id="bookAuthorInput" class="admin-input" required />
+              </div>
+              <div class="admin-form-group">
+                <label for="bookFormatInput" class="meta">Format</label>
+                <input type="text" id="bookFormatInput" class="admin-input" required />
+              </div>
+              <div class="admin-form-group">
+                <label for="bookPreviewUrlInput" class="meta">Chapter Preview Link</label>
+                <input type="text" id="bookPreviewUrlInput" class="admin-input" required />
+              </div>
+            </div>
+
+            <button type="submit" class="admin-btn">Save Book Showcase Details</button>
+          </form>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--line); padding-top: 2.5rem; margin-top: 2rem;">
+            <div>
+              <h3>Table of Contents & Chapter Previews</h3>
+              <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 0;">Add and manage chapters displayed on the Books page outline.</p>
+            </div>
+            <button id="addChapterBtn" class="admin-btn admin-btn-secondary">+ Add Chapter</button>
+          </div>
+
+          <div id="chaptersListAdmin" style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 1rem;">
+            <!-- Dynamically Populated Chapters -->
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 5: Free Course CMS -->
+      <div id="tab-course" class="admin-tab-content fade-up">
+        <div class="admin-card" style="max-width: 100%;">
+          <h2>Free Course Content & Video Module CMS</h2>
+          <p>Manage syllabus details, hero text, and video lecture drops for <em>Artificial Intelligence in Frontier Markets</em>.</p>
+
+          <form id="courseSettingsForm" style="margin-bottom: 3rem;">
+            <div class="admin-form-group">
+              <label for="courseStatusTag" class="meta">Course Status Badge</label>
+              <input type="text" id="courseStatusTag" class="admin-input" required />
+            </div>
+
+            <div class="admin-form-group">
+              <label for="courseTitle" class="meta">Course Title</label>
+              <input type="text" id="courseTitle" class="admin-input" required />
+            </div>
+
+            <div class="admin-form-group">
+              <label for="courseSubtitle" class="meta">Course Subtitle / Tagline</label>
+              <textarea id="courseSubtitle" class="admin-textarea" required></textarea>
+            </div>
+
+            <div class="admin-form-group">
+              <label for="courseOverviewProse" class="meta">Syllabus Overview Prose</label>
+              <textarea id="courseOverviewProse" class="admin-textarea" required></textarea>
+            </div>
+
+            <div class="admin-form-group">
+              <label for="courseCtaText" class="meta">Waitlist Call-to-Action Text</label>
+              <input type="text" id="courseCtaText" class="admin-input" required />
+            </div>
+
+            <button type="submit" class="admin-btn">Save Course Overview</button>
+          </form>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--line); padding-top: 2rem;">
+            <h3>Published Video Lectures & Modules</h3>
+            <button id="newLessonBtn" class="admin-btn">+ Add Lesson Module</button>
+          </div>
+
+          <div id="courseLessonsAdminList" style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 1rem;">
+            <!-- Dynamically Populated Lessons -->
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 6: Cloud & Backup Sync -->
+      <div id="tab-sync" class="admin-tab-content fade-up">
+        <div class="admin-card" style="max-width: 100%;">
+          <h2>Data Operations & Backup</h2>
+          <p>Export full JSON backups of your site state or restore factory defaults.</p>
+
+          <div style="display: flex; gap: 1.5rem; margin-top: 2rem;">
+            <button id="exportJsonBtn" class="admin-btn admin-btn-secondary">📥 Export Site JSON Backup</button>
+            <label class="admin-btn admin-btn-secondary" style="margin: 0; cursor: pointer;">
+              📤 Import Backup JSON
+              <input type="file" id="importJsonInput" accept=".json" style="display: none;" />
+            </label>
+            <button id="resetDefaultsBtn" class="admin-btn admin-btn-danger">⚠️ Reset Factory Defaults</button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Post Modal -->
+  <div id="postModal" class="admin-auth-overlay" style="display: none;">
+    <div class="admin-card" style="max-width: 700px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <h3 id="postModalTitle" style="font-size: 1.5rem;">Write New Essay</h3>
+        <button id="closePostModalBtn" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">×</button>
+      </div>
+
+      <form id="postForm">
+        <input type="hidden" id="postId" />
+
+        <div class="admin-form-group">
+          <label for="postTitleInput" class="meta">Article Title</label>
+          <input type="text" id="postTitleInput" class="admin-input" required />
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div class="admin-form-group">
+            <label for="postCategoryInput" class="meta">Category (e.g. Essay, Book Review)</label>
+            <input type="text" id="postCategoryInput" class="admin-input" required />
+          </div>
+          <div class="admin-form-group">
+            <label for="postDateInput" class="meta">Publish Date (e.g. Jun 2026)</label>
+            <input type="text" id="postDateInput" class="admin-input" required />
+          </div>
+        </div>
+
+        <div class="admin-form-group">
+          <label for="postSummaryInput" class="meta">Summary / Lead Excerpt</label>
+          <textarea id="postSummaryInput" class="admin-textarea" required></textarea>
+        </div>
+
+        <div class="admin-form-group">
+          <label for="postUrlInput" class="meta">Page Link URL</label>
+          <input type="text" id="postUrlInput" class="admin-input" placeholder="writing/my-new-essay.html" required />
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 2rem;">
+          <button type="button" id="cancelPostModalBtn" class="admin-btn admin-btn-secondary">Cancel</button>
+          <button type="submit" class="admin-btn">Save Essay</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Project Modal -->
+  <div id="projectModal" class="admin-auth-overlay" style="display: none;">
+    <div class="admin-card" style="max-width: 600px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <h3 id="projectModalTitle" style="font-size: 1.5rem;">Add Active Project</h3>
+        <button id="closeProjectModalBtn" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">×</button>
+      </div>
+
+      <form id="projectForm">
+        <input type="hidden" id="projectId" />
+
+        <div class="admin-form-group">
+          <label for="projectTitleInput" class="meta">Project Name</label>
+          <input type="text" id="projectTitleInput" class="admin-input" required />
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div class="admin-form-group">
+            <label for="projectRoleInput" class="meta">Role / Category Tag</label>
+            <input type="text" id="projectRoleInput" class="admin-input" placeholder="Publication / Co-founder" required />
+          </div>
+          <div class="admin-form-group">
+            <label for="projectStatusInput" class="meta">Status Tag</label>
+            <input type="text" id="projectStatusInput" class="admin-input" placeholder="Active" required />
+          </div>
+        </div>
+
+        <div class="admin-form-group">
+          <label for="projectDescInput" class="meta">Description</label>
+          <textarea id="projectDescInput" class="admin-textarea" required></textarea>
+        </div>
+
+        <div class="admin-form-group">
+          <label for="projectLinkInput" class="meta">Website URL</label>
+          <input type="url" id="projectLinkInput" class="admin-input" placeholder="https://..." required />
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 2rem;">
+          <button type="button" id="cancelProjectModalBtn" class="admin-btn admin-btn-secondary">Cancel</button>
+          <button type="submit" class="admin-btn">Save Project</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Chapter Modal -->
+  <div id="chapterModal" class="admin-auth-overlay" style="display: none;">
+    <div class="admin-card" style="max-width: 600px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <h3 id="chapterModalTitle" style="font-size: 1.5rem;">Chapter Outline Entry</h3>
+        <button id="closeChapterModalBtn" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">×</button>
+      </div>
+
+      <form id="chapterForm">
+        <input type="hidden" id="chapterIndex" />
+
+        <div class="admin-form-group">
+          <label for="chapterTitle" class="meta">Chapter Title</label>
+          <input type="text" id="chapterTitle" class="admin-input" required />
+        </div>
+
+        <div class="admin-form-group">
+          <label for="chapterStatus" class="meta">Chapter Status Tag</label>
+          <input type="text" id="chapterStatus" class="admin-input" placeholder="Chapter 01 • Available to Read" required />
+        </div>
+
+        <div class="admin-form-group">
+          <label for="chapterDesc" class="meta">Chapter Description / Synopsis</label>
+          <textarea id="chapterDesc" class="admin-textarea" required></textarea>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 2rem;">
+          <button type="button" id="cancelChapterModalBtn" class="admin-btn admin-btn-secondary">Cancel</button>
+          <button type="submit" class="admin-btn">Save Chapter</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toastNotification" class="toast-notification">Action completed successfully</div>
+
+  <script src="./admin.js" type="module"></script>
 </body>
 </html>

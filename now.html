@@ -2,11 +2,126 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta http-equiv="refresh" content="0;url=/now/" />
-  <script>window.location.replace("/now/");</script>
-  <title>Redirecting to What I'm Doing Now...</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>What I'm Doing Now — Tobi Lawson</title>
+  <meta name="description" content="A running account of what Tobi Lawson is building, investing in, and spending time on right now in Lagos." />
+  <meta name="author" content="Tobi Lawson" />
+  <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg" />
+
+  <!-- Open Graph Meta Tags -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://tobilawson.com/now" />
+  <meta property="og:title" content="What I'm Doing Now — Tobi Lawson" />
+  <meta property="og:description" content="A running account of what Tobi Lawson is building, investing in, and spending time on right now." />
+  <meta property="og:image" content="https://tobilawson.com/assets/tobi-lawson.jpg" />
+  <meta property="og:site_name" content="Tobi Lawson" />
+
+  <!-- Twitter Meta Tags -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="What I'm Doing Now — Tobi Lawson" />
+  <meta name="twitter:description" content="A running account of what Tobi Lawson is building, investing in, and spending time on right now." />
+  <meta name="twitter:image" content="https://tobilawson.com/assets/tobi-lawson.jpg" />
+
+  <!-- Schema.org JSON-LD -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "AboutPage",
+    "name": "What I'm Doing Now",
+    "description": "A running account of the projects Tobi Lawson is building and investing in.",
+    "author": { "@type": "Person", "name": "Tobi Lawson" }
+  }
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="./base.css" />
+  <link rel="stylesheet" href="./style.css" />
 </head>
 <body>
-  <p>Redirecting to <a href="/now/">/now/</a>...</p>
+
+  <header class="header-nav fade-up">
+    <a href="index.html" class="meta-brand">Tobi Lawson</a>
+    <nav class="meta-links meta" aria-label="Primary Navigation">
+      <a href="index.html">Home</a>
+      <a href="books">Books</a>
+      <a href="writing/">Writing</a>
+      <a href="now" aria-current="page">Now</a>
+      <a href="course">Course</a>
+      <a href="about">About</a>
+    </nav>
+  </header>
+
+  <main id="main">
+    <section class="hero fade-up delay-1">
+      <h1>What I'm spending time on</h1>
+      <p class="hero-subtitle">
+        A running account of the projects I'm building, updated as things move. Last updated July 2026.
+      </p>
+    </section>
+
+    <!-- Ongoing Projects Section -->
+    <section id="now-grid" class="fade-up delay-2">
+      <div class="section-header">
+        <h2>Active Initiatives & Portfolio</h2>
+        <span class="meta">01 / CURRENT FOCUS</span>
+      </div>
+
+      <div class="grid-3" style="margin-bottom: 4rem;">
+        <article class="grid-item">
+          <div class="grid-item-header">
+            <h3>1914 Reader</h3>
+            <div class="meta">Active · Publication</div>
+          </div>
+          <p class="grid-item-desc">A publication co-founded with Feyi Fawehinmi reading African stories through the lens of global economic change.</p>
+          <a class="grid-item-link" href="https://www.1914reader.com/" target="_blank" rel="noopener noreferrer">Visit 1914reader.com ↗</a>
+        </article>
+
+        <article class="grid-item">
+          <div class="grid-item-header">
+            <h3>Lagos Urban Project</h3>
+            <div class="meta">Active · Platform</div>
+          </div>
+          <p class="grid-item-desc">Reimagining Lagos as a more inclusive, livable, and productive city, built from how people live in it.</p>
+          <a class="grid-item-link" href="http://lagosurban.com" target="_blank" rel="noopener noreferrer">Visit lagosurban.com ↗</a>
+        </article>
+
+        <article class="grid-item">
+          <div class="grid-item-header">
+            <h3>Long Africa</h3>
+            <div class="meta">Launching Soon · Institution</div>
+          </div>
+          <p class="grid-item-desc">An institution dedicated to the civilisational foundations of African prosperity across multi-decade horizons.</p>
+          <a class="grid-item-link" href="http://longafrica.org" target="_blank" rel="noopener noreferrer">Visit longafrica.org ↗</a>
+        </article>
+      </div>
+
+      <div class="prose-container" style="margin-top: 2rem; margin-bottom: 6rem;">
+        <div class="article-body">
+          <p>I run and invest in companies across fintech, SME services technology, product development, and education technology. Some are early-stage, some are further along.</p>
+          <p>I share specifics and case studies here as each venture is ready to talk about publicly.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="fade-up">
+    <div>
+      <div class="meta-brand" style="margin-bottom: 0.5rem;">Tobi Lawson</div>
+      <p class="footer-tagline" style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 0.5rem;">Investor, builder, and writer based in Lagos.</p>
+      <div class="meta footer-copyright" style="color: var(--text-muted); font-size: 0.8rem;">
+        © 2026 Tobi Lawson. All rights reserved.
+      </div>
+    </div>
+    <div class="meta-links meta footer-links">
+      <a href="mailto:olamilawson@gmail.com" class="footer-email-link">Email</a>
+      <a href="https://www.1914reader.com/" target="_blank" rel="noopener noreferrer" class="footer-custom-link-1">1914 Reader</a>
+      <a href="http://lagosurban.com" target="_blank" rel="noopener noreferrer" class="footer-custom-link-2">Lagos Urban</a>
+    </div>
+  </footer>
+
+  <script type="module" src="./app.js"></script>
 </body>
 </html>
