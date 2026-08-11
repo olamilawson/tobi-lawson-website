@@ -25,7 +25,8 @@ export async function syncSiteSettingsFromSupabase() {
       aboutBodyProse: data.about_body_prose || "",
       aboutProfileImage: data.about_profile_image || "./assets/tobi-lawson.jpg",
       contactEmail: data.contact_email || "olamilawson@gmail.com",
-      adminPasscode: (data.admin_passcode && data.admin_passcode !== "tobi2026") ? data.admin_passcode : "Enlive0801@#"
+      adminPasscode: (data.admin_passcode && data.admin_passcode !== "tobi2026") ? data.admin_passcode : "Enlive0801@#",
+      updatedAt: data.updated_at || null
     };
   } catch (err) {
     console.warn("Supabase site_settings fetch error:", err);
@@ -34,7 +35,7 @@ export async function syncSiteSettingsFromSupabase() {
 }
 
 export async function saveSiteSettingsToSupabase(settings) {
-  if (!supabase) return;
+  if (!supabase) return { success: false, error: "Supabase client not initialized" };
   try {
     const payload = {
       id: "global",
@@ -48,12 +49,17 @@ export async function saveSiteSettingsToSupabase(settings) {
       about_profile_image: settings.aboutProfileImage || "./assets/tobi-lawson.jpg",
       contact_email: settings.contactEmail,
       admin_passcode: settings.adminPasscode,
-      updated_at: new Date().toISOString()
+      updated_at: settings.updatedAt || new Date().toISOString()
     };
-    const { error } = await supabase.from("site_settings").upsert(payload);
-    if (error) console.error("Error saving site settings to Supabase:", error);
+    const { data, error } = await supabase.from("site_settings").upsert(payload);
+    if (error) {
+      console.error("Error saving site settings to Supabase:", error);
+      return { success: false, error };
+    }
+    return { success: true, data };
   } catch (err) {
     console.error("Supabase site_settings upsert error:", err);
+    return { success: false, error: err };
   }
 }
 
@@ -79,7 +85,7 @@ export async function syncPostsFromSupabase() {
 }
 
 export async function savePostToSupabase(post) {
-  if (!supabase) return;
+  if (!supabase) return { success: false, error: "Supabase client not initialized" };
   try {
     const payload = {
       id: post.id,
@@ -90,20 +96,30 @@ export async function savePostToSupabase(post) {
       url: post.url,
       content_html: post.contentHtml || ""
     };
-    const { error } = await supabase.from("posts").upsert(payload);
-    if (error) console.error("Error saving post to Supabase:", error);
+    const { data, error } = await supabase.from("posts").upsert(payload);
+    if (error) {
+      console.error("Error saving post to Supabase:", error);
+      return { success: false, error };
+    }
+    return { success: true, data };
   } catch (err) {
     console.error("Supabase post upsert error:", err);
+    return { success: false, error: err };
   }
 }
 
 export async function deletePostFromSupabase(postId) {
-  if (!supabase) return;
+  if (!supabase) return { success: false, error: "Supabase client not initialized" };
   try {
-    const { error } = await supabase.from("posts").delete().eq("id", postId);
-    if (error) console.error("Error deleting post from Supabase:", error);
+    const { data, error } = await supabase.from("posts").delete().eq("id", postId);
+    if (error) {
+      console.error("Error deleting post from Supabase:", error);
+      return { success: false, error };
+    }
+    return { success: true, data };
   } catch (err) {
     console.error("Supabase post delete error:", err);
+    return { success: false, error: err };
   }
 }
 
@@ -128,7 +144,7 @@ export async function syncProjectsFromSupabase() {
 }
 
 export async function saveProjectToSupabase(project) {
-  if (!supabase) return;
+  if (!supabase) return { success: false, error: "Supabase client not initialized" };
   try {
     const payload = {
       id: project.id,
@@ -138,20 +154,30 @@ export async function saveProjectToSupabase(project) {
       link: project.link,
       status: project.status || "Active"
     };
-    const { error } = await supabase.from("projects").upsert(payload);
-    if (error) console.error("Error saving project to Supabase:", error);
+    const { data, error } = await supabase.from("projects").upsert(payload);
+    if (error) {
+      console.error("Error saving project to Supabase:", error);
+      return { success: false, error };
+    }
+    return { success: true, data };
   } catch (err) {
     console.error("Supabase project upsert error:", err);
+    return { success: false, error: err };
   }
 }
 
 export async function deleteProjectFromSupabase(projectId) {
-  if (!supabase) return;
+  if (!supabase) return { success: false, error: "Supabase client not initialized" };
   try {
-    const { error } = await supabase.from("projects").delete().eq("id", projectId);
-    if (error) console.error("Error deleting project from Supabase:", error);
+    const { data, error } = await supabase.from("projects").delete().eq("id", projectId);
+    if (error) {
+      console.error("Error deleting project from Supabase:", error);
+      return { success: false, error };
+    }
+    return { success: true, data };
   } catch (err) {
     console.error("Supabase project delete error:", err);
+    return { success: false, error: err };
   }
 }
 
@@ -165,7 +191,8 @@ export async function syncNowPageFromSupabase() {
       lastUpdated: data.last_updated || "July 2026",
       heroTitle: data.hero_title || "What I'm spending time on",
       introSubtitle: data.intro_subtitle || "",
-      ongoingProse: data.ongoing_prose || ""
+      ongoingProse: data.ongoing_prose || "",
+      updatedAt: data.updated_at || null
     };
   } catch (err) {
     console.warn("Supabase now_page fetch error:", err);
@@ -174,7 +201,7 @@ export async function syncNowPageFromSupabase() {
 }
 
 export async function saveNowPageToSupabase(nowData) {
-  if (!supabase) return;
+  if (!supabase) return { success: false, error: "Supabase client not initialized" };
   try {
     const payload = {
       id: "global",
@@ -182,12 +209,17 @@ export async function saveNowPageToSupabase(nowData) {
       hero_title: nowData.heroTitle || "What I'm spending time on",
       intro_subtitle: nowData.introSubtitle,
       ongoing_prose: nowData.ongoingProse,
-      updated_at: new Date().toISOString()
+      updated_at: nowData.updatedAt || new Date().toISOString()
     };
-    const { error } = await supabase.from("now_page").upsert(payload);
-    if (error) console.error("Error saving now_page to Supabase:", error);
+    const { data, error } = await supabase.from("now_page").upsert(payload);
+    if (error) {
+      console.error("Error saving now_page to Supabase:", error);
+      return { success: false, error };
+    }
+    return { success: true, data };
   } catch (err) {
     console.error("Supabase now_page upsert error:", err);
+    return { success: false, error: err };
   }
 }
 
@@ -218,7 +250,7 @@ export async function syncBooksFromSupabase() {
 }
 
 export async function saveBookToSupabase(book) {
-  if (!supabase) return;
+  if (!supabase) return { success: false, error: "Supabase client not initialized" };
   try {
     const payload = {
       id: book.id,
@@ -234,20 +266,30 @@ export async function saveBookToSupabase(book) {
       preview_url: book.previewUrl || "books/who-made-this-preview.html",
       chapters: book.chapters || []
     };
-    const { error } = await supabase.from("books").upsert(payload);
-    if (error) console.error("Error saving book to Supabase:", error);
+    const { data, error } = await supabase.from("books").upsert(payload);
+    if (error) {
+      console.error("Error saving book to Supabase:", error);
+      return { success: false, error };
+    }
+    return { success: true, data };
   } catch (err) {
     console.error("Supabase book upsert error:", err);
+    return { success: false, error: err };
   }
 }
 
 export async function deleteBookFromSupabase(bookId) {
-  if (!supabase) return;
+  if (!supabase) return { success: false, error: "Supabase client not initialized" };
   try {
-    const { error } = await supabase.from("books").delete().eq("id", bookId);
-    if (error) console.error("Error deleting book from Supabase:", error);
+    const { data, error } = await supabase.from("books").delete().eq("id", bookId);
+    if (error) {
+      console.error("Error deleting book from Supabase:", error);
+      return { success: false, error };
+    }
+    return { success: true, data };
   } catch (err) {
     console.error("Supabase book delete error:", err);
+    return { success: false, error: err };
   }
 }
 
@@ -265,9 +307,10 @@ export function subscribeToSupabaseRealtime(callback) {
 
 // INITIAL SEEDING HELPER
 export async function seedInitialDataToSupabase(data) {
-  if (!supabase) return;
+  if (!supabase) return { success: false, error: "Supabase client not initialized" };
   try {
-    if (data.settings) await saveSiteSettingsToSupabase(data.settings);
+    let res = { success: true };
+    if (data.settings) res = await saveSiteSettingsToSupabase(data.settings);
     if (data.nowPage) await saveNowPageToSupabase(data.nowPage);
     if (data.posts) {
       for (const p of data.posts) await savePostToSupabase(p);
@@ -278,7 +321,9 @@ export async function seedInitialDataToSupabase(data) {
     if (data.books) {
       for (const b of data.books) await saveBookToSupabase(b);
     }
+    return res;
   } catch (err) {
     console.warn("Auto-seed to Supabase skipped or failed:", err);
+    return { success: false, error: err };
   }
 }

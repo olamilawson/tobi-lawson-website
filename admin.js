@@ -37,13 +37,15 @@ export const INITIAL_DATA = {
     aboutBodyProse: "I'm an investor and builder based in Lagos. My background is in investment analysis and development research, work that shaped how I think about capital, institutions, and the slow processes that move a country's fortunes.\n\nToday I run and invest in companies across fintech, SME services technology, product development, and education technology. Alongside that, I co-founded 1914 Reader with Feyi Fawehinmi, where we read Nigeria and Africa's biggest stories through the lens of global economic and political change.\n\nI also work on Lagos Urban Project, a platform reimagining Lagos as a more inclusive and livable city, and Long Africa, a new institution focused on the long-run foundations of African prosperity.\n\nMy interests run wide: markets, cities, governance, technology, and the books that help make sense of them. This site is where I write about all of it, and keep a running account of what I'm building.",
     aboutProfileImage: "./assets/tobi-lawson.jpg",
     contactEmail: "olamilawson@gmail.com",
-    adminPasscode: "Enlive0801@#"
+    adminPasscode: "Enlive0801@#",
+    updatedAt: new Date().toISOString()
   },
   nowPage: {
     lastUpdated: "July 2026",
     heroTitle: "What I'm spending time on",
     introSubtitle: "A running account of the projects I'm building, updated as things move. Last updated July 2026.",
-    ongoingProse: "I run and invest in companies across fintech, SME services technology, product development, and education technology. Some are early-stage, some are further along. I share specifics and case studies here as each venture is ready to talk about publicly."
+    ongoingProse: "I run and invest in companies across fintech, SME services technology, product development, and education technology. Some are early-stage, some are further along. I share specifics and case studies here as each venture is ready to talk about publicly.",
+    updatedAt: new Date().toISOString()
   },
   projects: [
     {
@@ -153,7 +155,7 @@ export function saveLocalSiteData(data) {
   }
 }
 
-// Master Fetch with Supabase Hydration
+// Master Fetch with Supabase Hydration (Timestamps & Local Priority)
 export async function getMasterSiteData() {
   const local = getLocalSiteData();
   if (!isSupabaseConfigured) return local;
@@ -167,8 +169,17 @@ export async function getMasterSiteData() {
       syncBooksFromSupabase()
     ]);
 
+    const localSettingsTs = local?.settings?.updatedAt ? new Date(local.settings.updatedAt).getTime() : 0;
+    const cloudSettingsTs = cloudSettings?.updatedAt ? new Date(cloudSettings.updatedAt).getTime() : 0;
+
+    let mergedSettings = cloudSettings || (local ? local.settings : null);
+    if (localSettingsTs > cloudSettingsTs && local?.settings) {
+      mergedSettings = local.settings;
+      saveSiteSettingsToSupabase(local.settings);
+    }
+
     const merged = {
-      settings: cloudSettings || local.settings,
+      settings: mergedSettings,
       nowPage: cloudNow || local.nowPage,
       posts: (cloudPosts && cloudPosts.length > 0) ? cloudPosts : local.posts,
       projects: (cloudProjects && cloudProjects.length > 0) ? cloudProjects : local.projects,
@@ -207,7 +218,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       const currentData = await getMasterSiteData();
       const configuredPasscode = currentData?.settings?.adminPasscode;
 
-      // Master Passcode, Legacy Passcode, or Configured Passcode
       const isValid = (
         enteredPasscode === "Enlive0801@#" ||
         enteredPasscode === "tobi2026" ||
@@ -218,9 +228,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         sessionStorage.setItem(AUTH_KEY, "true");
         if (authError) authError.style.display = "none";
 
-        // Auto-sanitize passcode in settings if it was old default
         if (!configuredPasscode || configuredPasscode === "tobi2026") {
           currentData.settings.adminPasscode = "Enlive0801@#";
+          currentData.settings.updatedAt = new Date().toISOString();
           saveLocalSiteData(currentData);
           await saveSiteSettingsToSupabase(currentData.settings);
         }
@@ -337,6 +347,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (settingAdminPasscode) settingAdminPasscode.value = data.settings.adminPasscode || "Enlive0801@#";
   }
 
+  // Helper: Format Toast for Cloud Save Result
+  function notifySaveResult(res, successMsg) {
+    if (res && res.success === false) {
+      showToast("Saved locally! Supabase Cloud notice: " + (res.error?.message || "Table check needed (Tab 8)"));
+    } else {
+      showToast(successMsg);
+    }
+  }
+
   // 1. Homepage Form Submission
   const homepageForm = document.getElementById("homepageForm");
   if (homepageForm) {
@@ -346,10 +365,11 @@ document.addEventListener("DOMContentLoaded", async () => {
       data.settings.heroTitle = document.getElementById("homeHeroTitle").value.trim();
       data.settings.heroScribbleWord = document.getElementById("homeHeroScribble").value.trim();
       data.settings.heroSubtitle = document.getElementById("homeHeroSubtitle").value.trim();
+      data.settings.updatedAt = new Date().toISOString();
 
       saveLocalSiteData(data);
-      await saveSiteSettingsToSupabase(data.settings);
-      showToast("Homepage hero updated 1-to-1!");
+      const res = await saveSiteSettingsToSupabase(data.settings);
+      notifySaveResult(res, "Homepage hero updated 1-to-1!");
     });
   }
 
@@ -399,10 +419,11 @@ document.addEventListener("DOMContentLoaded", async () => {
       data.nowPage.lastUpdated = document.getElementById("nowLastUpdated").value.trim();
       data.nowPage.introSubtitle = document.getElementById("nowIntroSubtitle").value.trim();
       data.nowPage.ongoingProse = document.getElementById("nowOngoingProse").value.trim();
+      data.nowPage.updatedAt = new Date().toISOString();
 
       saveLocalSiteData(data);
-      await saveNowPageToSupabase(data.nowPage);
-      showToast('"Now" page updated 1-to-1!');
+      const res = await saveNowPageToSupabase(data.nowPage);
+      notifySaveResult(res, '"Now" page updated 1-to-1!');
     });
   }
 
@@ -452,10 +473,11 @@ document.addEventListener("DOMContentLoaded", async () => {
       data.settings.aboutHeroSubtitle = document.getElementById("aboutHeroSubtitle").value.trim();
       data.settings.aboutBodyProse = document.getElementById("aboutBodyProse").value.trim();
       data.settings.aboutProfileImage = document.getElementById("aboutProfileImage").value.trim();
+      data.settings.updatedAt = new Date().toISOString();
 
       saveLocalSiteData(data);
-      await saveSiteSettingsToSupabase(data.settings);
-      showToast("About page content & photo updated 1-to-1!");
+      const res = await saveSiteSettingsToSupabase(data.settings);
+      notifySaveResult(res, "About page content & photo updated 1-to-1!");
     });
   }
 
@@ -555,11 +577,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         data.posts.unshift(newPost);
       }
 
+      data.settings.updatedAt = new Date().toISOString();
       saveLocalSiteData(data);
-      await savePostToSupabase(newPost);
+      const res = await savePostToSupabase(newPost);
       closePostModal();
       await renderConsoleData();
-      showToast(idInput ? "Article updated successfully." : "New article published successfully.");
+      notifySaveResult(res, idInput ? "Article updated successfully." : "New article published successfully.");
     });
   }
 
@@ -567,10 +590,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (!confirm("Are you sure you want to delete this article?")) return;
     const data = await getMasterSiteData();
     data.posts = data.posts.filter((p) => p.id !== postId);
+    data.settings.updatedAt = new Date().toISOString();
     saveLocalSiteData(data);
-    await deletePostFromSupabase(postId);
+    const res = await deletePostFromSupabase(postId);
     await renderConsoleData();
-    showToast("Article deleted.");
+    notifySaveResult(res, "Article deleted.");
   }
 
   // Modal Handlers for Projects
@@ -608,12 +632,13 @@ document.addEventListener("DOMContentLoaded", async () => {
       };
 
       data.projects.push(newProj);
+      data.settings.updatedAt = new Date().toISOString();
       saveLocalSiteData(data);
-      await saveProjectToSupabase(newProj);
+      const res = await saveProjectToSupabase(newProj);
 
       if (projectModal) projectModal.style.display = "none";
       await renderConsoleData();
-      showToast("New project added!");
+      notifySaveResult(res, "New project added!");
     });
   }
 
@@ -621,10 +646,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (!confirm("Delete this project?")) return;
     const data = await getMasterSiteData();
     data.projects = data.projects.filter((p) => p.id !== projId);
+    data.settings.updatedAt = new Date().toISOString();
     saveLocalSiteData(data);
-    await deleteProjectFromSupabase(projId);
+    const res = await deleteProjectFromSupabase(projId);
     await renderConsoleData();
-    showToast("Project removed.");
+    notifySaveResult(res, "Project removed.");
   }
 
   // 7. Global Settings Submission
@@ -636,10 +662,11 @@ document.addEventListener("DOMContentLoaded", async () => {
       data.settings.siteTitle = document.getElementById("settingSiteTitle").value.trim();
       data.settings.contactEmail = document.getElementById("settingContactEmail").value.trim();
       data.settings.adminPasscode = document.getElementById("settingAdminPasscode").value.trim();
+      data.settings.updatedAt = new Date().toISOString();
 
       saveLocalSiteData(data);
-      await saveSiteSettingsToSupabase(data.settings);
-      showToast("Global site settings & admin passcode updated.");
+      const res = await saveSiteSettingsToSupabase(data.settings);
+      notifySaveResult(res, "Global site settings & admin passcode updated.");
     });
   }
 
@@ -653,8 +680,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     seedSupabaseBtn.addEventListener("click", async () => {
       const data = getLocalSiteData();
       showToast("Pushing local data snapshot to Supabase Cloud...");
-      await seedInitialDataToSupabase(data);
-      showToast("Supabase Cloud database seeded successfully!");
+      const res = await seedInitialDataToSupabase(data);
+      if (res && res.success === false) {
+        showToast("Supabase Notice: " + (res.error?.message || "Failed to seed tables. Run SQL schema in Supabase."));
+      } else {
+        showToast("Supabase Cloud database seeded successfully!");
+      }
     });
   }
 
