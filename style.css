@@ -354,16 +354,49 @@ h3 {
 /* Footer */
 footer {
   border-top: 1px solid var(--line);
-  padding-top: 2.5rem;
-  padding-bottom: 4rem;
+  padding-top: 4rem;
+  padding-bottom: 5rem;
+  margin-top: 8rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 2rem;
 }
 
-footer .footer-links {
+footer .meta-links {
   display: flex;
-  gap: 2rem;
+  gap: 2.25rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+footer .meta-links a {
+  text-decoration: none;
+  color: var(--text-muted);
+  position: relative;
+  transition: color 0.3s ease;
+}
+
+footer .meta-links a:hover {
+  color: var(--text);
+}
+
+footer .meta-links a::after {
+  content: '';
+  position: absolute;
+  bottom: -3px;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background-color: var(--text);
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 0.3s ease;
+}
+
+footer .meta-links a:hover::after {
+  transform: scaleX(1);
+  transform-origin: left;
 }
 
 /* Entrance Animations */
