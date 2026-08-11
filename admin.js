@@ -236,7 +236,7 @@ export async function getMasterSiteData() {
 }
 
 // UI State Controller
-document.addEventListener("DOMContentLoaded", async () => {
+async function initAdminApp() {
   const authOverlay = document.getElementById("authOverlay");
   const authForm = document.getElementById("authForm");
   const passcodeInput = document.getElementById("passcodeInput");
@@ -1212,11 +1212,14 @@ document.addEventListener("DOMContentLoaded", async () => {
         saveLocalSiteData(INITIAL_DATA);
         await seedInitialDataToSupabase(INITIAL_DATA);
         await renderConsoleData();
-        showToast("Site data reset to factory defaults.");
-      }
-    });
   }
-});
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initAdminApp);
+} else {
+  initAdminApp();
+}
 
 // Toast Helper
 function showToast(message) {

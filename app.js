@@ -390,8 +390,8 @@ async function hydratePage() {
   }
 }
 
-// Smooth Anchor Scroll
-document.addEventListener("DOMContentLoaded", () => {
+// Smooth Anchor Scroll & Hydration Init
+function initApp() {
   document.querySelectorAll('a[href^="#"]').forEach(function (anchor) {
     anchor.addEventListener('click', function (e) {
       var targetId = this.getAttribute('href');
@@ -408,4 +408,10 @@ document.addEventListener("DOMContentLoaded", () => {
   hydratePage();
   window.addEventListener("tobi_site_data_updated", hydratePage);
   subscribeToSupabaseRealtime(hydratePage);
-});
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initApp);
+} else {
+  initApp();
+}
