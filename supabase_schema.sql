@@ -19,6 +19,8 @@ CREATE TABLE IF NOT EXISTS public.site_settings (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+ALTER TABLE public.site_settings ADD COLUMN IF NOT EXISTS about_profile_image TEXT DEFAULT './assets/tobi-lawson.jpg';
+
 ALTER TABLE public.site_settings ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Allow public access to site_settings" ON public.site_settings;
 CREATE POLICY "Allow public access to site_settings" ON public.site_settings FOR ALL USING (true) WITH CHECK (true);

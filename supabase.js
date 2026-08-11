@@ -53,6 +53,11 @@ export async function saveSiteSettingsToSupabase(settings) {
     };
     const { data, error } = await supabase.from("site_settings").upsert(payload);
     if (error) {
+      if (error.message && error.message.includes("about_profile_image")) {
+        delete payload.about_profile_image;
+        const retry = await supabase.from("site_settings").upsert(payload);
+        if (!retry.error) return { success: true, data: retry.data };
+      }
       console.error("Error saving site settings to Supabase:", error);
       return { success: false, error };
     }
