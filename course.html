@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Artificial Intelligence in Frontier Markets — Free Course by Tobi Lawson</title>
+  <meta name="description" content="A free seminar and masterclass series on artificial intelligence infrastructure, deployment, and economic opportunity in frontier markets. Taught by Tobi Lawson." />
+  <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="./base.css" />
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+
+  <header class="header-nav fade-up">
+    <a href="index.html" class="meta-brand">Tobi Lawson</a>
+    <nav class="meta-links meta" aria-label="Primary Navigation">
+      <a href="index.html">Home</a>
+      <a href="books.html">Books</a>
+      <a href="writing/index.html">Writing</a>
+      <a href="now.html">Now</a>
+      <a href="course.html" aria-current="page">Course</a>
+      <a href="about.html">About</a>
+    </nav>
+  </header>
+
+  <main id="main">
+    <!-- Hero Section -->
+    <section class="hero fade-up delay-1">
+      <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1.5rem;">
+        <span id="courseStatusTag" class="book-status-tag" style="background: rgba(255,61,0,0.08); border: 1px solid var(--accent); color: var(--accent); padding: 0.35rem 0.85rem;">
+          <span class="meta" style="letter-spacing: 0.12em;">FREE COURSE • COMING SOON</span>
+        </span>
+      </div>
+
+      <h1 id="courseTitle" style="font-size: clamp(2.5rem, 5.5vw, 4.5rem); line-height: 1.1; font-family: var(--font-serif); margin-bottom: 1.5rem;">
+        Artificial Intelligence in Frontier Markets
+      </h1>
+
+      <p id="courseSubtitle" class="hero-subtitle" style="max-width: 760px; font-size: clamp(1.1rem, 2vw, 1.35rem); color: var(--text-muted); line-height: 1.6;">
+        A free masterclass series exploring how compute, data pipelines, and foundation models are reshaped by the physical realities of emerging economies.
+      </p>
+    </section>
+
+    <!-- Overview & Syllabus Section -->
+    <section class="fade-up delay-2" style="border-top: 1px solid var(--line); padding-top: 4rem; margin-top: 2rem;">
+      <div class="grid-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 4rem;">
+        <div>
+          <span class="meta" style="color: var(--accent); margin-bottom: 1rem; display: block;">01 / COURSE OVERVIEW</span>
+          <div id="courseOverviewProse" class="article-body" style="font-size: 1.1rem; line-height: 1.8;">
+            <p>Artificial Intelligence is often analyzed through the lens of Silicon Valley capital and hyperscaler data centers. But the real friction—and the highest-leverage opportunities—happen at the edges of global networks: in Lagos, Nairobi, Jakarta, and São Paulo.</p>
+            <p>This free course examines compute constraints, local dataset curation, offline-first inference architectures, and real-world deployment across fintech, SME logistics, and public institutions in frontier markets.</p>
+          </div>
+        </div>
+
+        <div>
+          <span class="meta" style="color: var(--accent); margin-bottom: 1rem; display: block;">02 / EARLY ACCESS & NOTIFICATIONS</span>
+          <div style="background: #ffffff; border: 1px solid var(--line); padding: 2.5rem;">
+            <h3 style="font-family: var(--font-serif); font-size: 1.5rem; margin-bottom: 0.75rem;">Join the Waitlist</h3>
+            <p id="courseCtaText" style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.6; margin-bottom: 1.5rem;">
+              Enrollment is completely free. Leave your email to receive early lesson drops, video modules, and lecture notes as modules go live.
+            </p>
+
+            <form id="courseWaitlistForm" onsubmit="event.preventDefault(); alert('Thank you! You have been added to the priority waitlist.'); this.reset();">
+              <div style="display: flex; flex-direction: column; gap: 1rem;">
+                <input type="email" placeholder="Enter your email address" required style="width: 100%; padding: 0.85rem 1rem; border: 1px solid var(--line); font-family: var(--font-sans); font-size: 0.9rem; background: var(--bg);" />
+                <button type="submit" style="background: var(--text); color: #ffffff; border: none; padding: 1rem 1.5rem; font-family: var(--font-sans); font-weight: 700; font-size: 0.85rem; letter-spacing: 0.08em; cursor: pointer; text-transform: uppercase;">
+                  Get Early Access →
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Published Lessons & Video Modules Showcase -->
+    <section id="courseLessonsSection" class="fade-up delay-3" style="border-top: 1px solid var(--line); padding-top: 4rem; margin-top: 4rem; margin-bottom: 6rem;">
+      <div style="margin-bottom: 3rem;">
+        <span class="meta" style="color: var(--accent); display: block; margin-bottom: 0.5rem;">03 / LESSONS & VIDEO MODULES</span>
+        <h2 style="font-family: var(--font-serif); font-size: 2.2rem;">Course Syllabus & Lectures</h2>
+      </div>
+
+      <div id="courseLessonsList" class="grid-3">
+        <!-- Dynamic Lessons rendered by app.js -->
+        <article class="grid-item">
+          <div class="grid-item-header">
+            <span class="meta" style="color: var(--accent);">MODULE 01 • COMING SOON</span>
+            <h3>Compute Constraints & Edge Deployment</h3>
+          </div>
+          <p class="grid-item-desc">Designing low-latency model inference under intermittent power, bandwidth limits, and local infrastructure reality.</p>
+        </article>
+
+        <article class="grid-item">
+          <div class="grid-item-header">
+            <span class="meta" style="color: var(--text-muted);">MODULE 02 • COMING SOON</span>
+            <h3>Data Pipeline Curation for Local Context</h3>
+          </div>
+          <p class="grid-item-desc">Overcoming training data scarcity across African languages, informal commerce receipts, and unstructured local records.</p>
+        </article>
+
+        <article class="grid-item">
+          <div class="grid-item-header">
+            <span class="meta" style="color: var(--text-muted);">MODULE 03 • COMING SOON</span>
+            <h3>Fintech & SME Automation Case Studies</h3>
+          </div>
+          <p class="grid-item-desc">Practical tear-downs of production AI agents operating in payment reconciliation, credit scoring, and merchant supply chains.</p>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <footer class="fade-up">
+    <div>
+      <div class="meta-brand" style="margin-bottom: 0.5rem;">Tobi Lawson</div>
+      <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;">Investor, builder, and writer based in Lagos.</p>
+      <div class="meta" style="color: var(--text-muted); font-size: 0.8rem;">
+        © 2026 Tobi Lawson. All rights reserved.
+      </div>
+    </div>
+    <div class="meta-links meta">
+      <a href="index.html">Home</a>
+      <a href="books.html">Books</a>
+      <a href="writing/index.html">Writing</a>
+      <a href="now.html">Now</a>
+      <a href="course.html">Course</a>
+      <a href="about.html">About</a>
+      <a href="admin.html" style="color: var(--text-muted);">Admin</a>
+    </div>
+  </footer>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

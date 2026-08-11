@@ -99,7 +99,41 @@ ALTER TABLE public.books ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Allow public access to books" ON public.books;
 CREATE POLICY "Allow public access to books" ON public.books FOR ALL USING (true) WITH CHECK (true);
 
--- 6. REALTIME SUBSCRIPTIONS
+-- 6. COURSE CMS TABLES (Artificial Intelligence in Frontier Markets)
+CREATE TABLE IF NOT EXISTS public.course_settings (
+  id TEXT PRIMARY KEY DEFAULT 'global',
+  status_tag TEXT DEFAULT 'FREE COURSE • COMING SOON',
+  title TEXT DEFAULT 'Artificial Intelligence in Frontier Markets',
+  subtitle TEXT DEFAULT 'A free masterclass series exploring how compute, data pipelines, and foundation models are reshaped by the physical realities of emerging economies.',
+  overview_prose TEXT DEFAULT 'Artificial Intelligence is often analyzed through the lens of Silicon Valley capital and hyperscaler data centers. But the real friction—and the highest-leverage opportunities—happen at the edges of global networks: in Lagos, Nairobi, Jakarta, and São Paulo.\n\nThis free course examines compute constraints, local dataset curation, offline-first inference architectures, and real-world deployment across fintech, SME logistics, and public institutions in frontier markets.',
+  cta_text TEXT DEFAULT 'Enrollment is completely free. Leave your email to receive early lesson drops, video modules, and lecture notes as modules go live.',
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE public.course_settings ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow public access to course_settings" ON public.course_settings;
+CREATE POLICY "Allow public access to course_settings" ON public.course_settings FOR ALL USING (true) WITH CHECK (true);
+
+INSERT INTO public.course_settings (id) VALUES ('global') ON CONFLICT (id) DO NOTHING;
+
+CREATE TABLE IF NOT EXISTS public.course_lessons (
+  id TEXT PRIMARY KEY,
+  module_number TEXT DEFAULT 'MODULE 01',
+  title TEXT NOT NULL,
+  status TEXT DEFAULT 'Published',
+  summary TEXT NOT NULL,
+  text_content TEXT DEFAULT '',
+  video_type TEXT DEFAULT 'youtube',
+  video_url TEXT DEFAULT '',
+  sort_order INT DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE public.course_lessons ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow public access to course_lessons" ON public.course_lessons;
+CREATE POLICY "Allow public access to course_lessons" ON public.course_lessons FOR ALL USING (true) WITH CHECK (true);
+
+-- 7. REALTIME SUBSCRIPTIONS
 DO $$
 BEGIN
   IF NOT EXISTS (
@@ -113,5 +147,7 @@ BEGIN
     ALTER PUBLICATION supabase_realtime ADD TABLE public.projects;
     ALTER PUBLICATION supabase_realtime ADD TABLE public.now_page;
     ALTER PUBLICATION supabase_realtime ADD TABLE public.books;
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.course_settings;
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.course_lessons;
   END IF;
 END $$;

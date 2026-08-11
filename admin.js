@@ -18,6 +18,11 @@ import {
   syncBooksFromSupabase,
   saveBookToSupabase,
   deleteBookFromSupabase,
+  syncCourseSettingsFromSupabase,
+  saveCourseSettingsToSupabase,
+  syncCourseLessonsFromSupabase,
+  saveCourseLessonToSupabase,
+  deleteCourseLessonFromSupabase,
   seedInitialDataToSupabase,
   subscribeToSupabaseRealtime
 } from "./supabase.js";
@@ -47,6 +52,26 @@ export const INITIAL_DATA = {
     ongoingProse: "I run and invest in companies across fintech, SME services technology, product development, and education technology. Some are early-stage, some are further along. I share specifics and case studies here as each venture is ready to talk about publicly.",
     updatedAt: new Date().toISOString()
   },
+  courseSettings: {
+    statusTag: "FREE COURSE • COMING SOON",
+    title: "Artificial Intelligence in Frontier Markets",
+    subtitle: "A free masterclass series exploring how compute, data pipelines, and foundation models are reshaped by the physical realities of emerging economies.",
+    overviewProse: "Artificial Intelligence is often analyzed through the lens of Silicon Valley capital and hyperscaler data centers. But the real friction—and the highest-leverage opportunities—happen at the edges of global networks: in Lagos, Nairobi, Jakarta, and São Paulo.\n\nThis free course examines compute constraints, local dataset curation, offline-first inference architectures, and real-world deployment across fintech, SME logistics, and public institutions in frontier markets.",
+    ctaText: "Enrollment is completely free. Leave your email to receive early lesson drops, video modules, and lecture notes as modules go live.",
+    updatedAt: new Date().toISOString()
+  },
+  courseLessons: [
+    {
+      id: "module-01-compute-constraints",
+      moduleNumber: "MODULE 01",
+      title: "Compute Constraints & Edge Deployment",
+      status: "Published",
+      summary: "Designing low-latency model inference under intermittent power, bandwidth limits, and local infrastructure reality.",
+      textContent: "In this lecture, we examine compute constraints across frontier market server environments. We analyze model quantization (4-bit / 8-bit), edge caching strategies, and local fallback routines.",
+      videoType: "none",
+      videoUrl: ""
+    }
+  ],
   projects: [
     {
       id: "1914-reader",
@@ -137,6 +162,12 @@ export function getLocalSiteData() {
       if (parsed.settings.adminPasscode === "tobi2026" || !parsed.settings.adminPasscode) {
         parsed.settings.adminPasscode = "Enlive0801@#";
       }
+      if (!parsed.courseSettings) {
+        parsed.courseSettings = INITIAL_DATA.courseSettings;
+      }
+      if (!parsed.courseLessons) {
+        parsed.courseLessons = INITIAL_DATA.courseLessons;
+      }
       localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
     }
     return parsed;
@@ -161,12 +192,14 @@ export async function getMasterSiteData() {
   if (!isSupabaseConfigured) return local;
 
   try {
-    const [cloudSettings, cloudNow, cloudPosts, cloudProjects, cloudBooks] = await Promise.all([
+    const [cloudSettings, cloudNow, cloudPosts, cloudProjects, cloudBooks, cloudCourseSettings, cloudCourseLessons] = await Promise.all([
       syncSiteSettingsFromSupabase(),
       syncNowPageFromSupabase(),
       syncPostsFromSupabase(),
       syncProjectsFromSupabase(),
-      syncBooksFromSupabase()
+      syncBooksFromSupabase(),
+      syncCourseSettingsFromSupabase(),
+      syncCourseLessonsFromSupabase()
     ]);
 
     const localSettingsTs = local?.settings?.updatedAt ? new Date(local.settings.updatedAt).getTime() : 0;
@@ -181,6 +214,8 @@ export async function getMasterSiteData() {
     const merged = {
       settings: mergedSettings,
       nowPage: cloudNow || local.nowPage,
+      courseSettings: cloudCourseSettings || local.courseSettings,
+      courseLessons: (cloudCourseLessons && cloudCourseLessons.length > 0) ? cloudCourseLessons : local.courseLessons,
       posts: (cloudPosts && cloudPosts.length > 0) ? cloudPosts : local.posts,
       projects: (cloudProjects && cloudProjects.length > 0) ? cloudProjects : local.projects,
       books: (cloudBooks && cloudBooks.length > 0) ? cloudBooks : local.books
@@ -345,6 +380,23 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (settingSiteTitle) settingSiteTitle.value = data.settings.siteTitle || "";
     if (settingContactEmail) settingContactEmail.value = data.settings.contactEmail || "olamilawson@gmail.com";
     if (settingAdminPasscode) settingAdminPasscode.value = data.settings.adminPasscode || "Enlive0801@#";
+
+    // 8. Populate Course Settings & Render Lessons
+    if (data.courseSettings) {
+      const courseStatusTagInput = document.getElementById("courseStatusTagInput");
+      const courseTitleInput = document.getElementById("courseTitleInput");
+      const courseSubtitleInput = document.getElementById("courseSubtitleInput");
+      const courseOverviewProseInput = document.getElementById("courseOverviewProseInput");
+      const courseCtaTextInput = document.getElementById("courseCtaTextInput");
+
+      if (courseStatusTagInput) courseStatusTagInput.value = data.courseSettings.statusTag || "FREE COURSE • COMING SOON";
+      if (courseTitleInput) courseTitleInput.value = data.courseSettings.title || "Artificial Intelligence in Frontier Markets";
+      if (courseSubtitleInput) courseSubtitleInput.value = data.courseSettings.subtitle || "";
+      if (courseOverviewProseInput) courseOverviewProseInput.value = data.courseSettings.overviewProse || "";
+      if (courseCtaTextInput) courseCtaTextInput.value = data.courseSettings.ctaText || "";
+    }
+
+    renderCourseLessonsAdminList(data.courseLessons);
   }
 
   // Helper: Format Toast for Cloud Save Result
@@ -670,7 +722,216 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
-  // 8. Supabase Seeding & Backup Handlers
+  // 8. Course CMS Settings Submission & Lesson Modal Handlers
+  const courseSettingsForm = document.getElementById("courseSettingsForm");
+  if (courseSettingsForm) {
+    courseSettingsForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const data = await getMasterSiteData();
+      if (!data.courseSettings) data.courseSettings = {};
+
+      data.courseSettings.statusTag = document.getElementById("courseStatusTagInput").value.trim();
+      data.courseSettings.title = document.getElementById("courseTitleInput").value.trim();
+      data.courseSettings.subtitle = document.getElementById("courseSubtitleInput").value.trim();
+      data.courseSettings.overviewProse = document.getElementById("courseOverviewProseInput").value.trim();
+      data.courseSettings.ctaText = document.getElementById("courseCtaTextInput").value.trim();
+      data.courseSettings.updatedAt = new Date().toISOString();
+
+      saveLocalSiteData(data);
+      const res = await saveCourseSettingsToSupabase(data.courseSettings);
+      notifySaveResult(res, "Course showcase settings updated 1-to-1!");
+    });
+  }
+
+  function renderCourseLessonsAdminList(lessons) {
+    const listEl = document.getElementById("courseLessonsAdminList");
+    if (!listEl) return;
+
+    if (!lessons || lessons.length === 0) {
+      listEl.innerHTML = `<div class="meta" style="padding: 2rem 0; color: var(--text-muted);">No lessons or video modules created yet. Click "+ Add Lesson / Video Module" above to add one.</div>`;
+      return;
+    }
+
+    listEl.innerHTML = lessons.map((l) => `
+      <div class="admin-grid-item">
+        <div class="admin-grid-item-content">
+          <div>
+            <span class="admin-badge meta">${l.moduleNumber || 'MODULE 01'}</span>
+            <span class="meta" style="color: var(--text-muted);">${l.status || 'Published'}</span>
+            <span class="meta" style="color: var(--accent); margin-left: 0.5rem;">${l.videoType === 'youtube' ? '▶ YouTube Video' : l.videoType === 'upload' ? '📹 Direct Video' : '📄 Text Lecture'}</span>
+          </div>
+          <h4>${l.title}</h4>
+          <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.25rem;">${l.summary}</p>
+        </div>
+        <div style="display: flex; gap: 0.5rem; flex-shrink: 0; align-items: center;">
+          <button class="admin-btn admin-btn-secondary edit-lesson-btn" data-id="${l.id}">Edit</button>
+          <button class="admin-btn admin-btn-danger delete-lesson-btn" data-id="${l.id}">Delete</button>
+        </div>
+      </div>
+    `).join("");
+
+    listEl.querySelectorAll(".edit-lesson-btn").forEach((btn) => {
+      btn.addEventListener("click", () => openLessonModal(btn.getAttribute("data-id")));
+    });
+
+    listEl.querySelectorAll(".delete-lesson-btn").forEach((btn) => {
+      btn.addEventListener("click", () => deleteLesson(btn.getAttribute("data-id")));
+    });
+  }
+
+  // Lesson Modal Handlers
+  const lessonModal = document.getElementById("lessonModal");
+  const newLessonBtn = document.getElementById("newLessonBtn");
+  const closeLessonModalBtn = document.getElementById("closeLessonModalBtn");
+  const cancelLessonModalBtn = document.getElementById("cancelLessonModalBtn");
+  const lessonForm = document.getElementById("lessonForm");
+  const lessonVideoType = document.getElementById("lessonVideoType");
+  const youtubeGroup = document.getElementById("youtubeGroup");
+  const uploadGroup = document.getElementById("uploadGroup");
+  const lessonVideoFileInput = document.getElementById("lessonVideoFileInput");
+  const lessonVideoFileName = document.getElementById("lessonVideoFileName");
+  const lessonVideoPreview = document.getElementById("lessonVideoPreview");
+
+  if (newLessonBtn) newLessonBtn.addEventListener("click", () => openLessonModal());
+  if (closeLessonModalBtn) closeLessonModalBtn.addEventListener("click", closeLessonModal);
+  if (cancelLessonModalBtn) cancelLessonModalBtn.addEventListener("click", closeLessonModal);
+
+  if (lessonVideoType) {
+    lessonVideoType.addEventListener("change", () => {
+      const type = lessonVideoType.value;
+      if (type === "youtube") {
+        if (youtubeGroup) youtubeGroup.style.display = "block";
+        if (uploadGroup) uploadGroup.style.display = "none";
+      } else if (type === "upload") {
+        if (youtubeGroup) youtubeGroup.style.display = "none";
+        if (uploadGroup) uploadGroup.style.display = "block";
+      } else {
+        if (youtubeGroup) youtubeGroup.style.display = "none";
+        if (uploadGroup) uploadGroup.style.display = "none";
+      }
+    });
+  }
+
+  if (lessonVideoFileInput) {
+    lessonVideoFileInput.addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      if (lessonVideoFileName) lessonVideoFileName.textContent = file.name;
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        const videoDataUrl = evt.target.result;
+        const lessonVideoUrl = document.getElementById("lessonVideoUrl");
+        if (lessonVideoUrl) lessonVideoUrl.value = videoDataUrl;
+        if (lessonVideoPreview) {
+          lessonVideoPreview.src = videoDataUrl;
+          lessonVideoPreview.style.display = "block";
+        }
+        showToast("Video file attached and preview ready!");
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function openLessonModal(lessonId = null) {
+    const data = await getMasterSiteData();
+    const modalTitle = document.getElementById("lessonModalTitle");
+    const idInput = document.getElementById("lessonId");
+    const moduleInput = document.getElementById("lessonModuleNumber");
+    const statusInput = document.getElementById("lessonStatus");
+    const titleInput = document.getElementById("lessonTitle");
+    const summaryInput = document.getElementById("lessonSummary");
+    const textInput = document.getElementById("lessonTextContent");
+    const videoTypeSelect = document.getElementById("lessonVideoType");
+    const videoUrlInput = document.getElementById("lessonVideoUrl");
+
+    if (lessonId && data.courseLessons) {
+      const existing = data.courseLessons.find((l) => l.id === lessonId);
+      if (existing) {
+        if (modalTitle) modalTitle.textContent = "Edit Lesson / Module";
+        if (idInput) idInput.value = existing.id;
+        if (moduleInput) moduleInput.value = existing.moduleNumber || "MODULE 01";
+        if (statusInput) statusInput.value = existing.status || "Published";
+        if (titleInput) titleInput.value = existing.title;
+        if (summaryInput) summaryInput.value = existing.summary;
+        if (textInput) textInput.value = existing.textContent || "";
+        if (videoTypeSelect) videoTypeSelect.value = existing.videoType || "none";
+        if (videoUrlInput) videoUrlInput.value = existing.videoUrl || "";
+
+        if (existing.videoType === "upload" && existing.videoUrl && lessonVideoPreview) {
+          lessonVideoPreview.src = existing.videoUrl;
+          lessonVideoPreview.style.display = "block";
+        } else if (lessonVideoPreview) {
+          lessonVideoPreview.style.display = "none";
+        }
+      }
+    } else {
+      if (modalTitle) modalTitle.textContent = "Create Lesson / Module";
+      if (lessonForm) lessonForm.reset();
+      if (idInput) idInput.value = "";
+      if (lessonVideoPreview) lessonVideoPreview.style.display = "none";
+      if (lessonVideoFileName) lessonVideoFileName.textContent = "No file selected";
+    }
+
+    if (lessonVideoType) lessonVideoType.dispatchEvent(new Event("change"));
+    if (lessonModal) lessonModal.style.display = "flex";
+  }
+
+  function closeLessonModal() {
+    if (lessonModal) lessonModal.style.display = "none";
+  }
+
+  if (lessonForm) {
+    lessonForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const data = await getMasterSiteData();
+      const idInput = document.getElementById("lessonId").value;
+      const moduleNumber = document.getElementById("lessonModuleNumber").value.trim();
+      const status = document.getElementById("lessonStatus").value;
+      const title = document.getElementById("lessonTitle").value.trim();
+      const summary = document.getElementById("lessonSummary").value.trim();
+      const textContent = document.getElementById("lessonTextContent").value.trim();
+      const videoType = document.getElementById("lessonVideoType").value;
+      const videoUrl = document.getElementById("lessonVideoUrl").value.trim();
+
+      const lessonData = {
+        id: idInput || title.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+        moduleNumber,
+        status,
+        title,
+        summary,
+        textContent,
+        videoType,
+        videoUrl
+      };
+
+      if (!data.courseLessons) data.courseLessons = [];
+
+      if (idInput) {
+        const idx = data.courseLessons.findIndex((l) => l.id === idInput);
+        if (idx !== -1) data.courseLessons[idx] = lessonData;
+      } else {
+        data.courseLessons.push(lessonData);
+      }
+
+      saveLocalSiteData(data);
+      const res = await saveCourseLessonToSupabase(lessonData);
+      closeLessonModal();
+      await renderConsoleData();
+      notifySaveResult(res, idInput ? "Lesson updated successfully." : "New lesson module added!");
+    });
+  }
+
+  async function deleteLesson(lessonId) {
+    if (!confirm("Are you sure you want to delete this lesson module?")) return;
+    const data = await getMasterSiteData();
+    data.courseLessons = (data.courseLessons || []).filter((l) => l.id !== lessonId);
+    saveLocalSiteData(data);
+    const res = await deleteCourseLessonFromSupabase(lessonId);
+    await renderConsoleData();
+    notifySaveResult(res, "Lesson deleted.");
+  }
+
+  // 9. Supabase Seeding & Backup Handlers
   const seedSupabaseBtn = document.getElementById("seedSupabaseBtn");
   const exportJsonBtn = document.getElementById("exportJsonBtn");
   const importJsonInput = document.getElementById("importJsonInput");

@@ -298,6 +298,111 @@ export async function deleteBookFromSupabase(bookId) {
   }
 }
 
+// COURSE CMS SYNC
+export async function syncCourseSettingsFromSupabase() {
+  if (!supabase) return null;
+  try {
+    const { data, error } = await supabase.from("course_settings").select("*").eq("id", "global").maybeSingle();
+    if (error || !data) return null;
+    return {
+      statusTag: data.status_tag || "FREE COURSE • COMING SOON",
+      title: data.title || "Artificial Intelligence in Frontier Markets",
+      subtitle: data.subtitle || "",
+      overviewProse: data.overview_prose || "",
+      ctaText: data.cta_text || "",
+      updatedAt: data.updated_at || null
+    };
+  } catch (err) {
+    console.warn("Supabase course_settings fetch error:", err);
+    return null;
+  }
+}
+
+export async function saveCourseSettingsToSupabase(courseSettings) {
+  if (!supabase) return { success: false, error: "Supabase client not initialized" };
+  try {
+    const payload = {
+      id: "global",
+      status_tag: courseSettings.statusTag,
+      title: courseSettings.title,
+      subtitle: courseSettings.subtitle,
+      overview_prose: courseSettings.overviewProse,
+      cta_text: courseSettings.ctaText,
+      updated_at: courseSettings.updatedAt || new Date().toISOString()
+    };
+    const { data, error } = await supabase.from("course_settings").upsert(payload);
+    if (error) {
+      console.error("Error saving course_settings to Supabase:", error);
+      return { success: false, error };
+    }
+    return { success: true, data };
+  } catch (err) {
+    console.error("Supabase course_settings upsert error:", err);
+    return { success: false, error: err };
+  }
+}
+
+export async function syncCourseLessonsFromSupabase() {
+  if (!supabase) return null;
+  try {
+    const { data, error } = await supabase.from("course_lessons").select("*").order("created_at", { ascending: true });
+    if (error || !data || data.length === 0) return null;
+    return data.map((l) => ({
+      id: l.id,
+      moduleNumber: l.module_number || "MODULE 01",
+      title: l.title,
+      status: l.status || "Published",
+      summary: l.summary,
+      textContent: l.text_content || "",
+      videoType: l.video_type || "none",
+      videoUrl: l.video_url || ""
+    }));
+  } catch (err) {
+    console.warn("Supabase course_lessons fetch error:", err);
+    return null;
+  }
+}
+
+export async function saveCourseLessonToSupabase(lesson) {
+  if (!supabase) return { success: false, error: "Supabase client not initialized" };
+  try {
+    const payload = {
+      id: lesson.id,
+      module_number: lesson.moduleNumber,
+      title: lesson.title,
+      status: lesson.status || "Published",
+      summary: lesson.summary,
+      text_content: lesson.textContent || "",
+      video_type: lesson.videoType || "none",
+      video_url: lesson.videoUrl || ""
+    };
+    const { data, error } = await supabase.from("course_lessons").upsert(payload);
+    if (error) {
+      console.error("Error saving course_lesson to Supabase:", error);
+      return { success: false, error };
+    }
+    return { success: true, data };
+  } catch (err) {
+    console.error("Supabase course_lesson upsert error:", err);
+    return { success: false, error: err };
+  }
+}
+
+export async function deleteCourseLessonFromSupabase(lessonId) {
+  if (!supabase) return { success: false, error: "Supabase client not initialized" };
+  try {
+    const { data, error } = await supabase.from("course_lessons").delete().eq("id", lessonId);
+    if (error) {
+      console.error("Error deleting course_lesson from Supabase:", error);
+      return { success: false, error };
+    }
+    return { success: true, data };
+  } catch (err) {
+    console.error("Supabase course_lesson delete error:", err);
+    return { success: false, error: err };
+  }
+}
+
 // REALTIME SUBSCRIPTION
 export function subscribeToSupabaseRealtime(callback) {
   if (!supabase) return null;
@@ -317,6 +422,7 @@ export async function seedInitialDataToSupabase(data) {
     let res = { success: true };
     if (data.settings) res = await saveSiteSettingsToSupabase(data.settings);
     if (data.nowPage) await saveNowPageToSupabase(data.nowPage);
+    if (data.courseSettings) await saveCourseSettingsToSupabase(data.courseSettings);
     if (data.posts) {
       for (const p of data.posts) await savePostToSupabase(p);
     }
@@ -325,6 +431,9 @@ export async function seedInitialDataToSupabase(data) {
     }
     if (data.books) {
       for (const b of data.books) await saveBookToSupabase(b);
+    }
+    if (data.courseLessons) {
+      for (const l of data.courseLessons) await saveCourseLessonToSupabase(l);
     }
     return res;
   } catch (err) {

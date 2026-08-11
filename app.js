@@ -5,6 +5,8 @@ import {
   syncProjectsFromSupabase,
   syncNowPageFromSupabase,
   syncBooksFromSupabase,
+  syncCourseSettingsFromSupabase,
+  syncCourseLessonsFromSupabase,
   subscribeToSupabaseRealtime
 } from "./supabase.js";
 
@@ -27,18 +29,19 @@ async function fetchMasterData() {
   if (!isSupabaseConfigured) return local;
 
   try {
-    const [cloudSettings, cloudNow, cloudPosts, cloudProjects, cloudBooks] = await Promise.all([
+    const [cloudSettings, cloudNow, cloudPosts, cloudProjects, cloudBooks, cloudCourseSettings, cloudCourseLessons] = await Promise.all([
       syncSiteSettingsFromSupabase(),
       syncNowPageFromSupabase(),
       syncPostsFromSupabase(),
       syncProjectsFromSupabase(),
-      syncBooksFromSupabase()
+      syncBooksFromSupabase(),
+      syncCourseSettingsFromSupabase(),
+      syncCourseLessonsFromSupabase()
     ]);
 
     const localSettingsTs = local?.settings?.updatedAt ? new Date(local.settings.updatedAt).getTime() : 0;
     const cloudSettingsTs = cloudSettings?.updatedAt ? new Date(cloudSettings.updatedAt).getTime() : 0;
 
-    // Prefer local settings if user just edited in admin on this device
     let mergedSettings = cloudSettings || (local ? local.settings : null);
     if (local?.settings && localSettingsTs >= cloudSettingsTs) {
       mergedSettings = local.settings;
@@ -47,6 +50,8 @@ async function fetchMasterData() {
     const merged = {
       settings: mergedSettings,
       nowPage: cloudNow || local?.nowPage,
+      courseSettings: cloudCourseSettings || local?.courseSettings,
+      courseLessons: (cloudCourseLessons && cloudCourseLessons.length > 0) ? cloudCourseLessons : local?.courseLessons,
       posts: (cloudPosts && cloudPosts.length > 0) ? cloudPosts : local?.posts,
       projects: (cloudProjects && cloudProjects.length > 0) ? cloudProjects : local?.projects,
       books: (cloudBooks && cloudBooks.length > 0) ? cloudBooks : local?.books
@@ -266,6 +271,75 @@ async function hydratePage() {
             `).join("");
           }
         }
+      }
+    }
+  }
+
+  // 7. Hydrate Course Page (Presence of #courseTitle or course route)
+  const isCoursePage = document.getElementById("courseTitle") || currentPath.includes("course");
+  if (isCoursePage) {
+    if (data.courseSettings) {
+      const statusTag = document.getElementById("courseStatusTag");
+      const title = document.getElementById("courseTitle");
+      const subtitle = document.getElementById("courseSubtitle");
+      const overviewProse = document.getElementById("courseOverviewProse");
+      const ctaText = document.getElementById("courseCtaText");
+
+      if (statusTag && data.courseSettings.statusTag) {
+        statusTag.innerHTML = `<span class="meta" style="letter-spacing: 0.12em;">${data.courseSettings.statusTag}</span>`;
+      }
+      if (title && data.courseSettings.title) title.textContent = data.courseSettings.title;
+      if (subtitle && data.courseSettings.subtitle) subtitle.textContent = data.courseSettings.subtitle;
+      if (ctaText && data.courseSettings.ctaText) ctaText.textContent = data.courseSettings.ctaText;
+
+      if (overviewProse && data.courseSettings.overviewProse) {
+        const paragraphs = data.courseSettings.overviewProse.split("\n\n");
+        overviewProse.innerHTML = paragraphs.map(p => `<p>${p}</p>`).join("");
+      }
+    }
+
+    if (data.courseLessons && data.courseLessons.length > 0) {
+      const lessonsGrid = document.getElementById("courseLessonsList");
+      if (lessonsGrid) {
+        lessonsGrid.innerHTML = data.courseLessons.map((l) => {
+          let mediaHtml = "";
+
+          if (l.videoType === "youtube" && l.videoUrl) {
+            let embedUrl = l.videoUrl;
+            if (l.videoUrl.includes("watch?v=")) {
+              const videoId = l.videoUrl.split("watch?v=")[1].split("&")[0];
+              embedUrl = `https://www.youtube.com/embed/${videoId}`;
+            } else if (l.videoUrl.includes("youtu.be/")) {
+              const videoId = l.videoUrl.split("youtu.be/")[1].split("?")[0];
+              embedUrl = `https://www.youtube.com/embed/${videoId}`;
+            }
+            mediaHtml = `
+              <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; margin: 1rem 0; border: 1px solid var(--line);">
+                <iframe src="${embedUrl}" style="position: absolute; top:0; left:0; width:100%; height:100%; border:0;" allowfullscreen></iframe>
+              </div>
+            `;
+          } else if (l.videoType === "upload" && l.videoUrl) {
+            mediaHtml = `
+              <div style="margin: 1rem 0; border: 1px solid var(--line);">
+                <video controls src="${l.videoUrl}" style="width: 100%; max-height: 400px; display: block;"></video>
+              </div>
+            `;
+          }
+
+          let textHtml = l.textContent ? `<div style="margin-top: 1rem; color: var(--text); font-size: 0.95rem; line-height: 1.6;">${l.textContent.replace(/\n\n/g, '<br><br>')}</div>` : "";
+
+          return `
+            <article class="grid-item">
+              <div class="grid-item-header">
+                <span class="meta" style="color: var(--accent);">${l.moduleNumber || 'MODULE 01'} • ${l.status || 'Published'}</span>
+                <h3>${l.title}</h3>
+              </div>
+              <p class="grid-item-desc">${l.summary}</p>
+              ${mediaHtml}
+              ${textHtml}
+            </article>
+          `;
+        }).join("");
       }
     }
   }

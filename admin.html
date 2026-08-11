@@ -300,6 +300,7 @@
           <button class="admin-tab" data-tab="projects">6. Projects</button>
           <button class="admin-tab" data-tab="settings">7. Global Settings</button>
           <button class="admin-tab" data-tab="sync">8. Supabase & Sync</button>
+          <button class="admin-tab" data-tab="course">9. Course CMS</button>
         </nav>
 
         <!-- Tab 1: Homepage -->
@@ -492,6 +493,58 @@
             </div>
           </div>
         </div>
+
+        <!-- Tab 9: Course CMS -->
+        <div id="tab-course" class="admin-panel">
+          <div style="margin-bottom: 2rem;">
+            <h3 style="font-size: 1.5rem;">Course CMS: Artificial Intelligence in Frontier Markets</h3>
+            <p style="color: var(--text-muted); font-size: 0.95rem;">Manage course showcase settings, waitlist text, text lectures, and video modules (YouTube embeds & direct video uploads).</p>
+          </div>
+
+          <form id="courseSettingsForm" class="admin-card" style="max-width: 100%; margin-bottom: 3rem;">
+            <h4 style="margin-bottom: 1.5rem; font-size: 1.2rem;">Course Page Settings</h4>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+              <div class="admin-form-group">
+                <label for="courseStatusTag" class="meta">Status Tag / Badge</label>
+                <input type="text" id="courseStatusTagInput" class="admin-input" placeholder="FREE COURSE • COMING SOON" required />
+              </div>
+              <div class="admin-form-group">
+                <label for="courseTitleInput" class="meta">Course Title</label>
+                <input type="text" id="courseTitleInput" class="admin-input" placeholder="Artificial Intelligence in Frontier Markets" required />
+              </div>
+            </div>
+
+            <div class="admin-form-group">
+              <label for="courseSubtitleInput" class="meta">Tagline / Subtitle</label>
+              <textarea id="courseSubtitleInput" class="admin-textarea" required></textarea>
+            </div>
+
+            <div class="admin-form-group">
+              <label for="courseOverviewProseInput" class="meta">Full Course Overview (Markdown / HTML Paragraphs)</label>
+              <textarea id="courseOverviewProseInput" class="admin-textarea" style="min-height: 140px;" required></textarea>
+            </div>
+
+            <div class="admin-form-group">
+              <label for="courseCtaTextInput" class="meta">Waitlist / Enrollment Call-to-Action Text</label>
+              <input type="text" id="courseCtaTextInput" class="admin-input" required />
+            </div>
+
+            <button type="submit" class="admin-btn">Save Course Page Settings</button>
+          </form>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <div>
+              <h4 style="font-size: 1.3rem;">Syllabus & Video Modules</h4>
+              <p style="color: var(--text-muted); font-size: 0.9rem;">Add lectures, text guides, YouTube embeds, or direct video uploads for course.html.</p>
+            </div>
+            <button id="newLessonBtn" class="admin-btn">+ Add Lesson / Video Module</button>
+          </div>
+
+          <div id="courseLessonsAdminList">
+            <!-- Dynamic Lessons List in Admin -->
+          </div>
+        </div>
       </section>
     </main>
   </div>
@@ -584,6 +637,84 @@
         <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem;">
           <button type="button" id="cancelProjectModalBtn" class="admin-btn admin-btn-secondary">Cancel</button>
           <button type="submit" class="admin-btn">Save Project →</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Create/Edit Lesson Modal -->
+  <div id="lessonModal" class="modal-overlay" style="display: none;">
+    <div class="modal-card" style="max-width: 800px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <h3 id="lessonModalTitle" style="font-size: 1.75rem;">Create Lesson / Video Module</h3>
+        <button id="closeLessonModalBtn" class="meta" style="background: none; border: none; font-size: 1rem; cursor: pointer;">✕</button>
+      </div>
+
+      <form id="lessonForm">
+        <input type="hidden" id="lessonId" />
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div class="admin-form-group">
+            <label for="lessonModuleNumber" class="meta">Module Tag (e.g. MODULE 01)</label>
+            <input type="text" id="lessonModuleNumber" class="admin-input" placeholder="MODULE 01" required />
+          </div>
+          <div class="admin-form-group">
+            <label for="lessonStatus" class="meta">Lesson Status</label>
+            <select id="lessonStatus" class="admin-select" required>
+              <option value="Published">Published / Live</option>
+              <option value="Draft">Draft / Coming Soon</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="admin-form-group">
+          <label for="lessonTitle" class="meta">Lesson / Video Title</label>
+          <input type="text" id="lessonTitle" class="admin-input" placeholder="e.g. Compute Constraints & Offline Inference" required />
+        </div>
+
+        <div class="admin-form-group">
+          <label for="lessonSummary" class="meta">Short Excerpt / Summary</label>
+          <textarea id="lessonSummary" class="admin-textarea" style="min-height: 80px;" required></textarea>
+        </div>
+
+        <div class="admin-form-group">
+          <label for="lessonTextContent" class="meta">Full Lecture Notes / Article Body (Prose / Markdown / HTML)</label>
+          <textarea id="lessonTextContent" class="admin-textarea" style="min-height: 140px;"></textarea>
+        </div>
+
+        <div class="admin-form-group" style="border-top: 1px solid var(--line); padding-top: 1.5rem; margin-top: 1.5rem;">
+          <label for="lessonVideoType" class="meta" style="color: var(--accent);">Video Content Source</label>
+          <select id="lessonVideoType" class="admin-select">
+            <option value="youtube">YouTube Embed (URL or Video ID)</option>
+            <option value="upload">Direct Video Upload (MP4 / WebM)</option>
+            <option value="none">No Video (Text Lecture Only)</option>
+          </select>
+        </div>
+
+        <!-- YouTube Option -->
+        <div id="youtubeGroup" class="admin-form-group">
+          <label for="lessonVideoUrl" class="meta">YouTube Video Link or Embed ID</label>
+          <input type="text" id="lessonVideoUrl" class="admin-input" placeholder="https://www.youtube.com/watch?v=dQw4w9WgXcQ" />
+        </div>
+
+        <!-- Direct Upload Option -->
+        <div id="uploadGroup" class="admin-form-group" style="display: none;">
+          <label class="meta">Direct Video File Upload</label>
+          <div style="display: flex; gap: 1rem; align-items: center; margin-top: 0.5rem;">
+            <label class="admin-btn admin-btn-secondary" style="cursor: pointer;">
+              📹 Select Video File
+              <input type="file" id="lessonVideoFileInput" accept="video/*" style="display: none;" />
+            </label>
+            <span id="lessonVideoFileName" class="meta" style="color: var(--text-muted);">No file selected</span>
+          </div>
+          <div style="margin-top: 1rem;">
+            <video id="lessonVideoPreview" controls style="max-width: 100%; max-height: 200px; display: none; border: 1px solid var(--line);"></video>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem;">
+          <button type="button" id="cancelLessonModalBtn" class="admin-btn admin-btn-secondary">Cancel</button>
+          <button type="submit" class="admin-btn">Save Lesson Module →</button>
         </div>
       </form>
     </div>
