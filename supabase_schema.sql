@@ -16,10 +16,22 @@ CREATE TABLE IF NOT EXISTS public.site_settings (
   contact_email TEXT DEFAULT 'olamilawson@gmail.com',
   about_profile_image TEXT DEFAULT './assets/tobi-lawson.jpg',
   admin_passcode TEXT DEFAULT 'Enlive0801@#',
+  footer_tagline TEXT DEFAULT 'Investor, builder, and writer based in Lagos.',
+  footer_copyright TEXT DEFAULT '© 2026 Tobi Lawson. All rights reserved.',
+  footer_link1_name TEXT DEFAULT '1914 Reader',
+  footer_link1_url TEXT DEFAULT 'https://www.1914reader.com/',
+  footer_link2_name TEXT DEFAULT 'Lagos Urban',
+  footer_link2_url TEXT DEFAULT 'http://lagosurban.com',
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 ALTER TABLE public.site_settings ADD COLUMN IF NOT EXISTS about_profile_image TEXT DEFAULT './assets/tobi-lawson.jpg';
+ALTER TABLE public.site_settings ADD COLUMN IF NOT EXISTS footer_tagline TEXT DEFAULT 'Investor, builder, and writer based in Lagos.';
+ALTER TABLE public.site_settings ADD COLUMN IF NOT EXISTS footer_copyright TEXT DEFAULT '© 2026 Tobi Lawson. All rights reserved.';
+ALTER TABLE public.site_settings ADD COLUMN IF NOT EXISTS footer_link1_name TEXT DEFAULT '1914 Reader';
+ALTER TABLE public.site_settings ADD COLUMN IF NOT EXISTS footer_link1_url TEXT DEFAULT 'https://www.1914reader.com/';
+ALTER TABLE public.site_settings ADD COLUMN IF NOT EXISTS footer_link2_name TEXT DEFAULT 'Lagos Urban';
+ALTER TABLE public.site_settings ADD COLUMN IF NOT EXISTS footer_link2_url TEXT DEFAULT 'http://lagosurban.com';
 
 ALTER TABLE public.site_settings ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Allow public access to site_settings" ON public.site_settings;

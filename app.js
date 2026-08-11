@@ -51,10 +51,10 @@ async function fetchMasterData() {
       settings: mergedSettings,
       nowPage: cloudNow || local?.nowPage,
       courseSettings: cloudCourseSettings || local?.courseSettings,
-      courseLessons: (cloudCourseLessons && cloudCourseLessons.length > 0) ? cloudCourseLessons : local?.courseLessons,
-      posts: (cloudPosts && cloudPosts.length > 0) ? cloudPosts : local?.posts,
-      projects: (cloudProjects && cloudProjects.length > 0) ? cloudProjects : local?.projects,
-      books: (cloudBooks && cloudBooks.length > 0) ? cloudBooks : local?.books
+      courseLessons: Array.isArray(cloudCourseLessons) ? cloudCourseLessons : (local?.courseLessons || []),
+      posts: Array.isArray(cloudPosts) ? cloudPosts : (local?.posts || []),
+      projects: Array.isArray(cloudProjects) ? cloudProjects : (local?.projects || []),
+      books: Array.isArray(cloudBooks) ? cloudBooks : (local?.books || [])
     };
 
     return merged;
@@ -71,13 +71,11 @@ async function hydratePage() {
 
   const currentPath = window.location.pathname;
 
-  // 1. Hydrate Navigation & Brand across all pages
+  // 1. Hydrate Navigation, Brand, and Footer across all pages
   if (data.settings) {
     if (data.settings.siteTitle) {
       document.querySelectorAll(".meta-brand").forEach(el => {
-        if (!el.textContent.includes("[1-to-1")) {
-          el.textContent = data.settings.siteTitle;
-        }
+        el.textContent = data.settings.siteTitle;
       });
     }
 
@@ -85,6 +83,29 @@ async function hydratePage() {
       document.querySelectorAll('a[href^="mailto:"]').forEach(link => {
         link.href = `mailto:${data.settings.contactEmail}`;
       });
+    }
+
+    // Dynamic Footer Hydration
+    const footerTagline = document.querySelector("footer p");
+    if (footerTagline && data.settings.footerTagline) {
+      footerTagline.textContent = data.settings.footerTagline;
+    }
+
+    const footerCopyright = document.querySelector("footer .meta");
+    if (footerCopyright && data.settings.footerCopyright) {
+      footerCopyright.textContent = data.settings.footerCopyright;
+    }
+
+    const footerLinks = document.querySelectorAll("footer .footer-links a");
+    if (footerLinks && footerLinks.length >= 2) {
+      if (data.settings.footerLink1Name && data.settings.footerLink1Url && footerLinks[1]) {
+        footerLinks[1].textContent = data.settings.footerLink1Name;
+        footerLinks[1].href = data.settings.footerLink1Url;
+      }
+      if (data.settings.footerLink2Name && data.settings.footerLink2Url && footerLinks[2]) {
+        footerLinks[2].textContent = data.settings.footerLink2Name;
+        footerLinks[2].href = data.settings.footerLink2Url;
+      }
     }
   }
 
@@ -112,9 +133,9 @@ async function hydratePage() {
     }
 
     // Projects Section
-    if (data.projects && data.projects.length > 0) {
-      const projectsGrid = document.querySelector("#projects .grid-3");
-      if (projectsGrid) {
+    const projectsGrid = document.querySelector("#projects .grid-3");
+    if (projectsGrid) {
+      if (Array.isArray(data.projects) && data.projects.length > 0) {
         projectsGrid.innerHTML = data.projects.map((proj, idx) => `
           <article class="grid-item fade-up delay-${(idx % 3) + 1}">
             <a href="${proj.link}" target="_blank" rel="noopener noreferrer">
@@ -130,13 +151,15 @@ async function hydratePage() {
             <a class="grid-item-link" href="${proj.link}" target="_blank" rel="noopener noreferrer">Visit ${proj.link.replace(/^https?:\/\//, '').replace(/\/$/, '')} ↗</a>
           </article>
         `).join("");
+      } else if (Array.isArray(data.projects) && data.projects.length === 0) {
+        projectsGrid.innerHTML = `<div class="meta" style="color: var(--text-muted); padding: 2rem 0;">No active projects configured.</div>`;
       }
     }
 
     // Recent Writing Section
-    if (data.posts && data.posts.length > 0) {
-      const writingGrid = document.querySelector("#writing .grid-3");
-      if (writingGrid) {
+    const writingGrid = document.querySelector("#writing .grid-3");
+    if (writingGrid) {
+      if (Array.isArray(data.posts) && data.posts.length > 0) {
         writingGrid.innerHTML = data.posts.slice(0, 3).map((post, idx) => `
           <article class="grid-item fade-up delay-${(idx % 3) + 1}">
             <a href="${post.url}">
@@ -149,6 +172,8 @@ async function hydratePage() {
             </a>
           </article>
         `).join("");
+      } else if (Array.isArray(data.posts) && data.posts.length === 0) {
+        writingGrid.innerHTML = `<div class="meta" style="color: var(--text-muted); padding: 2rem 0;">No articles published yet.</div>`;
       }
     }
   }
@@ -183,9 +208,9 @@ async function hydratePage() {
   // 4. Hydrate Writing Catalog (Presence of #writing-catalog or writing route)
   const isWritingPage = document.getElementById("writing-catalog") || currentPath.includes("writing");
   if (isWritingPage && !isHomepage) {
-    if (data.posts && data.posts.length > 0) {
-      const catalogGrid = document.querySelector("#writing-catalog .grid-3");
-      if (catalogGrid) {
+    const catalogGrid = document.querySelector("#writing-catalog .grid-3");
+    if (catalogGrid) {
+      if (Array.isArray(data.posts) && data.posts.length > 0) {
         catalogGrid.innerHTML = data.posts.map((post, idx) => `
           <article class="grid-item fade-up delay-${(idx % 3) + 1}">
             <a href="${post.url.replace(/^writing\//, '')}">
@@ -198,6 +223,8 @@ async function hydratePage() {
             </a>
           </article>
         `).join("");
+      } else if (Array.isArray(data.posts) && data.posts.length === 0) {
+        catalogGrid.innerHTML = `<div class="meta" style="color: var(--text-muted); padding: 2rem 0;">No articles published yet.</div>`;
       }
     }
   }
@@ -217,9 +244,9 @@ async function hydratePage() {
       }
     }
 
-    if (data.projects && data.projects.length > 0) {
-      const nowProjectsGrid = document.querySelector("#now-grid .grid-3");
-      if (nowProjectsGrid) {
+    const nowProjectsGrid = document.querySelector("#now-grid .grid-3");
+    if (nowProjectsGrid) {
+      if (Array.isArray(data.projects) && data.projects.length > 0) {
         nowProjectsGrid.innerHTML = data.projects.map((proj) => `
           <article class="grid-item">
             <div class="grid-item-header">
@@ -230,6 +257,8 @@ async function hydratePage() {
             <a class="grid-item-link" href="${proj.link}" target="_blank" rel="noopener noreferrer">Visit ${proj.link.replace(/^https?:\/\//, '').replace(/\/$/, '')} ↗</a>
           </article>
         `).join("");
+      } else if (Array.isArray(data.projects) && data.projects.length === 0) {
+        nowProjectsGrid.innerHTML = `<div class="meta" style="color: var(--text-muted); padding: 2rem 0;">No active projects configured.</div>`;
       }
     }
   }
@@ -237,7 +266,7 @@ async function hydratePage() {
   // 6. Hydrate Books Page (Presence of #table-of-contents or books route)
   const isBooksPage = document.getElementById("table-of-contents") || currentPath.includes("books");
   if (isBooksPage) {
-    if (data.books && data.books.length > 0) {
+    if (Array.isArray(data.books) && data.books.length > 0) {
       const flagshipBook = data.books[0];
       if (flagshipBook) {
         const titleEl = document.querySelector(".book-title");
@@ -259,7 +288,7 @@ async function hydratePage() {
         if (flagshipBook.chapters && flagshipBook.chapters.length > 0) {
           const tocGrid = document.querySelector("#table-of-contents .grid-3");
           if (tocGrid) {
-            tocGrid.innerHTML = flagshipBook.chapters.map((chap, idx) => `
+            tocGrid.innerHTML = flagshipBook.chapters.map((chap) => `
               <article class="grid-item">
                 <div class="grid-item-header">
                   <span class="meta" style="color: var(--accent);">${chap.status}</span>
@@ -298,9 +327,9 @@ async function hydratePage() {
       }
     }
 
-    if (data.courseLessons && data.courseLessons.length > 0) {
-      const lessonsGrid = document.getElementById("courseLessonsList");
-      if (lessonsGrid) {
+    const lessonsGrid = document.getElementById("courseLessonsList");
+    if (lessonsGrid) {
+      if (Array.isArray(data.courseLessons) && data.courseLessons.length > 0) {
         lessonsGrid.innerHTML = data.courseLessons.map((l) => {
           let mediaHtml = "";
 
@@ -314,32 +343,34 @@ async function hydratePage() {
               embedUrl = `https://www.youtube.com/embed/${videoId}`;
             }
             mediaHtml = `
-              <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; margin: 1rem 0; border: 1px solid var(--line);">
+              <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; margin: 1.5rem 0; border: 1px solid var(--line);">
                 <iframe src="${embedUrl}" style="position: absolute; top:0; left:0; width:100%; height:100%; border:0;" allowfullscreen></iframe>
               </div>
             `;
           } else if (l.videoType === "upload" && l.videoUrl) {
             mediaHtml = `
-              <div style="margin: 1rem 0; border: 1px solid var(--line);">
+              <div style="margin: 1.5rem 0; border: 1px solid var(--line);">
                 <video controls src="${l.videoUrl}" style="width: 100%; max-height: 400px; display: block;"></video>
               </div>
             `;
           }
 
-          let textHtml = l.textContent ? `<div style="margin-top: 1rem; color: var(--text); font-size: 0.95rem; line-height: 1.6;">${l.textContent.replace(/\n\n/g, '<br><br>')}</div>` : "";
+          let textHtml = l.textContent ? `<div style="margin-top: 1rem; color: var(--text); font-size: 1rem; line-height: 1.65;">${l.textContent.replace(/\n\n/g, '<br><br>')}</div>` : "";
 
           return `
-            <article class="grid-item">
-              <div class="grid-item-header">
+            <article class="grid-item" style="border-top: 1px solid var(--line); padding-top: 1.5rem;">
+              <div class="grid-item-header" style="border-top: none; padding-top: 0; margin-bottom: 1rem;">
                 <span class="meta" style="color: var(--accent);">${l.moduleNumber || 'MODULE 01'} • ${l.status || 'Published'}</span>
-                <h3>${l.title}</h3>
+                <h3 style="margin-top: 0.5rem; font-size: 1.35rem;">${l.title}</h3>
               </div>
-              <p class="grid-item-desc">${l.summary}</p>
+              <p class="grid-item-desc" style="font-size: 1.05rem; line-height: 1.6;">${l.summary}</p>
               ${mediaHtml}
               ${textHtml}
             </article>
           `;
         }).join("");
+      } else if (Array.isArray(data.courseLessons) && data.courseLessons.length === 0) {
+        lessonsGrid.innerHTML = `<div class="meta" style="color: var(--text-muted); padding: 2rem 0;">No lesson modules published yet.</div>`;
       }
     }
   }

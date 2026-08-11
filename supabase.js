@@ -26,6 +26,12 @@ export async function syncSiteSettingsFromSupabase() {
       aboutProfileImage: data.about_profile_image || "./assets/tobi-lawson.jpg",
       contactEmail: data.contact_email || "olamilawson@gmail.com",
       adminPasscode: (data.admin_passcode && data.admin_passcode !== "tobi2026") ? data.admin_passcode : "Enlive0801@#",
+      footerTagline: data.footer_tagline || "Investor, builder, and writer based in Lagos.",
+      footerCopyright: data.footer_copyright || "© 2026 Tobi Lawson. All rights reserved.",
+      footerLink1Name: data.footer_link1_name || "1914 Reader",
+      footerLink1Url: data.footer_link1_url || "https://www.1914reader.com/",
+      footerLink2Name: data.footer_link2_name || "Lagos Urban",
+      footerLink2Url: data.footer_link2_url || "http://lagosurban.com",
       updatedAt: data.updated_at || null
     };
   } catch (err) {
@@ -49,15 +55,16 @@ export async function saveSiteSettingsToSupabase(settings) {
       about_profile_image: settings.aboutProfileImage || "./assets/tobi-lawson.jpg",
       contact_email: settings.contactEmail,
       admin_passcode: settings.adminPasscode,
+      footer_tagline: settings.footerTagline || "Investor, builder, and writer based in Lagos.",
+      footer_copyright: settings.footerCopyright || "© 2026 Tobi Lawson. All rights reserved.",
+      footer_link1_name: settings.footerLink1Name || "1914 Reader",
+      footer_link1_url: settings.footerLink1Url || "https://www.1914reader.com/",
+      footer_link2_name: settings.footerLink2Name || "Lagos Urban",
+      footer_link2_url: settings.footerLink2Url || "http://lagosurban.com",
       updated_at: settings.updatedAt || new Date().toISOString()
     };
     const { data, error } = await supabase.from("site_settings").upsert(payload);
     if (error) {
-      if (error.message && error.message.includes("about_profile_image")) {
-        delete payload.about_profile_image;
-        const retry = await supabase.from("site_settings").upsert(payload);
-        if (!retry.error) return { success: true, data: retry.data };
-      }
       console.error("Error saving site settings to Supabase:", error);
       return { success: false, error };
     }
@@ -73,7 +80,7 @@ export async function syncPostsFromSupabase() {
   if (!supabase) return null;
   try {
     const { data, error } = await supabase.from("posts").select("*").order("created_at", { ascending: false });
-    if (error || !data || data.length === 0) return null;
+    if (error || !data) return null;
     return data.map((p) => ({
       id: p.id,
       title: p.title,
@@ -133,7 +140,7 @@ export async function syncProjectsFromSupabase() {
   if (!supabase) return null;
   try {
     const { data, error } = await supabase.from("projects").select("*").order("created_at", { ascending: true });
-    if (error || !data || data.length === 0) return null;
+    if (error || !data) return null;
     return data.map((pr) => ({
       id: pr.id,
       title: pr.title,
@@ -233,7 +240,7 @@ export async function syncBooksFromSupabase() {
   if (!supabase) return null;
   try {
     const { data, error } = await supabase.from("books").select("*").order("created_at", { ascending: true });
-    if (error || !data || data.length === 0) return null;
+    if (error || !data) return null;
     return data.map((b) => ({
       id: b.id,
       title: b.title,
@@ -346,7 +353,7 @@ export async function syncCourseLessonsFromSupabase() {
   if (!supabase) return null;
   try {
     const { data, error } = await supabase.from("course_lessons").select("*").order("created_at", { ascending: true });
-    if (error || !data || data.length === 0) return null;
+    if (error || !data) return null;
     return data.map((l) => ({
       id: l.id,
       moduleNumber: l.module_number || "MODULE 01",

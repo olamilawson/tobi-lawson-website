@@ -1,6 +1,6 @@
 /**
  * Tobi Lawson — Personal Website & Editorial Admin Console
- * Full 1-to-1 Site Management & Supabase Sync Engine
+ * Full Site Management & Supabase Sync Engine
  */
 
 import {
@@ -43,6 +43,12 @@ export const INITIAL_DATA = {
     aboutProfileImage: "./assets/tobi-lawson.jpg",
     contactEmail: "olamilawson@gmail.com",
     adminPasscode: "Enlive0801@#",
+    footerTagline: "Investor, builder, and writer based in Lagos.",
+    footerCopyright: "© 2026 Tobi Lawson. All rights reserved.",
+    footerLink1Name: "1914 Reader",
+    footerLink1Url: "https://www.1914reader.com/",
+    footerLink2Name: "Lagos Urban",
+    footerLink2Url: "http://lagosurban.com",
     updatedAt: new Date().toISOString()
   },
   nowPage: {
@@ -213,12 +219,12 @@ export async function getMasterSiteData() {
 
     const merged = {
       settings: mergedSettings,
-      nowPage: cloudNow || local.nowPage,
-      courseSettings: cloudCourseSettings || local.courseSettings,
-      courseLessons: (cloudCourseLessons && cloudCourseLessons.length > 0) ? cloudCourseLessons : local.courseLessons,
-      posts: (cloudPosts && cloudPosts.length > 0) ? cloudPosts : local.posts,
-      projects: (cloudProjects && cloudProjects.length > 0) ? cloudProjects : local.projects,
-      books: (cloudBooks && cloudBooks.length > 0) ? cloudBooks : local.books
+      nowPage: cloudNow || local?.nowPage,
+      courseSettings: cloudCourseSettings || local?.courseSettings,
+      courseLessons: Array.isArray(cloudCourseLessons) ? cloudCourseLessons : (local?.courseLessons || []),
+      posts: Array.isArray(cloudPosts) ? cloudPosts : (local?.posts || []),
+      projects: Array.isArray(cloudProjects) ? cloudProjects : (local?.projects || []),
+      books: Array.isArray(cloudBooks) ? cloudBooks : (local?.books || [])
     };
 
     saveLocalSiteData(merged);
@@ -271,7 +277,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
         await showConsole();
-        showToast("Authenticated successfully. Welcome to your 1-to-1 site editor!");
+        showToast("Authenticated successfully. Welcome to your site editor!");
       } else {
         if (authError) authError.style.display = "block";
         passcodeInput.value = "";
@@ -372,31 +378,42 @@ document.addEventListener("DOMContentLoaded", async () => {
     // 6. Render Projects List
     renderProjectsList(data.projects);
 
-    // 7. Populate Settings Form
+    // 7. Populate Settings & Footer Form
     const settingSiteTitle = document.getElementById("settingSiteTitle");
     const settingContactEmail = document.getElementById("settingContactEmail");
     const settingAdminPasscode = document.getElementById("settingAdminPasscode");
+    const settingFooterTagline = document.getElementById("settingFooterTagline");
+    const settingFooterCopyright = document.getElementById("settingFooterCopyright");
+    const settingFooterLink1Name = document.getElementById("settingFooterLink1Name");
+    const settingFooterLink1Url = document.getElementById("settingFooterLink1Url");
+    const settingFooterLink2Name = document.getElementById("settingFooterLink2Name");
+    const settingFooterLink2Url = document.getElementById("settingFooterLink2Url");
 
     if (settingSiteTitle) settingSiteTitle.value = data.settings.siteTitle || "";
     if (settingContactEmail) settingContactEmail.value = data.settings.contactEmail || "olamilawson@gmail.com";
     if (settingAdminPasscode) settingAdminPasscode.value = data.settings.adminPasscode || "Enlive0801@#";
+    if (settingFooterTagline) settingFooterTagline.value = data.settings.footerTagline || "Investor, builder, and writer based in Lagos.";
+    if (settingFooterCopyright) settingFooterCopyright.value = data.settings.footerCopyright || "© 2026 Tobi Lawson. All rights reserved.";
+    if (settingFooterLink1Name) settingFooterLink1Name.value = data.settings.footerLink1Name || "1914 Reader";
+    if (settingFooterLink1Url) settingFooterLink1Url.value = data.settings.footerLink1Url || "https://www.1914reader.com/";
+    if (settingFooterLink2Name) settingFooterLink2Name.value = data.settings.footerLink2Name || "Lagos Urban";
+    if (settingFooterLink2Url) settingFooterLink2Url.value = data.settings.footerLink2Url || "http://lagosurban.com";
 
     // 8. Populate Course Settings & Render Lessons
-    if (data.courseSettings) {
-      const courseStatusTagInput = document.getElementById("courseStatusTagInput");
-      const courseTitleInput = document.getElementById("courseTitleInput");
-      const courseSubtitleInput = document.getElementById("courseSubtitleInput");
-      const courseOverviewProseInput = document.getElementById("courseOverviewProseInput");
-      const courseCtaTextInput = document.getElementById("courseCtaTextInput");
+    const cs = data.courseSettings || INITIAL_DATA.courseSettings;
+    const courseStatusTagInput = document.getElementById("courseStatusTagInput");
+    const courseTitleInput = document.getElementById("courseTitleInput");
+    const courseSubtitleInput = document.getElementById("courseSubtitleInput");
+    const courseOverviewProseInput = document.getElementById("courseOverviewProseInput");
+    const courseCtaTextInput = document.getElementById("courseCtaTextInput");
 
-      if (courseStatusTagInput) courseStatusTagInput.value = data.courseSettings.statusTag || "FREE COURSE • COMING SOON";
-      if (courseTitleInput) courseTitleInput.value = data.courseSettings.title || "Artificial Intelligence in Frontier Markets";
-      if (courseSubtitleInput) courseSubtitleInput.value = data.courseSettings.subtitle || "";
-      if (courseOverviewProseInput) courseOverviewProseInput.value = data.courseSettings.overviewProse || "";
-      if (courseCtaTextInput) courseCtaTextInput.value = data.courseSettings.ctaText || "";
-    }
+    if (courseStatusTagInput) courseStatusTagInput.value = cs.statusTag || "FREE COURSE • COMING SOON";
+    if (courseTitleInput) courseTitleInput.value = cs.title || "Artificial Intelligence in Frontier Markets";
+    if (courseSubtitleInput) courseSubtitleInput.value = cs.subtitle || "";
+    if (courseOverviewProseInput) courseOverviewProseInput.value = cs.overviewProse || "";
+    if (courseCtaTextInput) courseCtaTextInput.value = cs.ctaText || "";
 
-    renderCourseLessonsAdminList(data.courseLessons);
+    renderCourseLessonsAdminList(data.courseLessons || INITIAL_DATA.courseLessons);
   }
 
   // Helper: Format Toast for Cloud Save Result
@@ -421,7 +438,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       saveLocalSiteData(data);
       const res = await saveSiteSettingsToSupabase(data.settings);
-      notifySaveResult(res, "Homepage hero updated 1-to-1!");
+      notifySaveResult(res, "Homepage hero updated!");
     });
   }
 
@@ -475,7 +492,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       saveLocalSiteData(data);
       const res = await saveNowPageToSupabase(data.nowPage);
-      notifySaveResult(res, '"Now" page updated 1-to-1!');
+      notifySaveResult(res, '"Now" page updated!');
     });
   }
 
@@ -529,7 +546,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       saveLocalSiteData(data);
       const res = await saveSiteSettingsToSupabase(data.settings);
-      notifySaveResult(res, "About page content & photo updated 1-to-1!");
+      notifySaveResult(res, "About page content & photo updated!");
     });
   }
 
@@ -622,6 +639,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         url
       };
 
+      if (!data.posts) data.posts = [];
+
       if (idInput) {
         const idx = data.posts.findIndex((p) => p.id === idInput);
         if (idx !== -1) data.posts[idx] = newPost;
@@ -641,7 +660,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   async function deletePost(postId) {
     if (!confirm("Are you sure you want to delete this article?")) return;
     const data = await getMasterSiteData();
-    data.posts = data.posts.filter((p) => p.id !== postId);
+    data.posts = (data.posts || []).filter((p) => p.id !== postId);
     data.settings.updatedAt = new Date().toISOString();
     saveLocalSiteData(data);
     const res = await deletePostFromSupabase(postId);
@@ -683,6 +702,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         link
       };
 
+      if (!data.projects) data.projects = [];
       data.projects.push(newProj);
       data.settings.updatedAt = new Date().toISOString();
       saveLocalSiteData(data);
@@ -697,7 +717,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   async function deleteProject(projId) {
     if (!confirm("Delete this project?")) return;
     const data = await getMasterSiteData();
-    data.projects = data.projects.filter((p) => p.id !== projId);
+    data.projects = (data.projects || []).filter((p) => p.id !== projId);
     data.settings.updatedAt = new Date().toISOString();
     saveLocalSiteData(data);
     const res = await deleteProjectFromSupabase(projId);
@@ -705,7 +725,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     notifySaveResult(res, "Project removed.");
   }
 
-  // 7. Global Settings Submission
+  // 7. Global Settings & Footer Submission
   const settingsForm = document.getElementById("settingsForm");
   if (settingsForm) {
     settingsForm.addEventListener("submit", async (e) => {
@@ -714,11 +734,17 @@ document.addEventListener("DOMContentLoaded", async () => {
       data.settings.siteTitle = document.getElementById("settingSiteTitle").value.trim();
       data.settings.contactEmail = document.getElementById("settingContactEmail").value.trim();
       data.settings.adminPasscode = document.getElementById("settingAdminPasscode").value.trim();
+      data.settings.footerTagline = document.getElementById("settingFooterTagline").value.trim();
+      data.settings.footerCopyright = document.getElementById("settingFooterCopyright").value.trim();
+      data.settings.footerLink1Name = document.getElementById("settingFooterLink1Name").value.trim();
+      data.settings.footerLink1Url = document.getElementById("settingFooterLink1Url").value.trim();
+      data.settings.footerLink2Name = document.getElementById("settingFooterLink2Name").value.trim();
+      data.settings.footerLink2Url = document.getElementById("settingFooterLink2Url").value.trim();
       data.settings.updatedAt = new Date().toISOString();
 
       saveLocalSiteData(data);
       const res = await saveSiteSettingsToSupabase(data.settings);
-      notifySaveResult(res, "Global site settings & admin passcode updated.");
+      notifySaveResult(res, "Global site settings & footer updated!");
     });
   }
 
@@ -739,7 +765,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       saveLocalSiteData(data);
       const res = await saveCourseSettingsToSupabase(data.courseSettings);
-      notifySaveResult(res, "Course showcase settings updated 1-to-1!");
+      notifySaveResult(res, "Course settings updated!");
     });
   }
 
@@ -913,6 +939,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         data.courseLessons.push(lessonData);
       }
 
+      data.settings.updatedAt = new Date().toISOString();
       saveLocalSiteData(data);
       const res = await saveCourseLessonToSupabase(lessonData);
       closeLessonModal();
@@ -925,6 +952,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (!confirm("Are you sure you want to delete this lesson module?")) return;
     const data = await getMasterSiteData();
     data.courseLessons = (data.courseLessons || []).filter((l) => l.id !== lessonId);
+    data.settings.updatedAt = new Date().toISOString();
     saveLocalSiteData(data);
     const res = await deleteCourseLessonFromSupabase(lessonId);
     await renderConsoleData();

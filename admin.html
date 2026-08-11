@@ -276,7 +276,7 @@
   <!-- Admin Main Console Container -->
   <div id="adminConsole" style="display: none;">
     <header class="header-nav fade-up" style="margin-bottom: 3rem;">
-      <a href="index.html" class="meta-brand">Tobi Lawson <span class="meta" style="color: var(--accent); margin-left: 0.5rem;">[1-to-1 Site Console]</span></a>
+      <a href="index.html" class="meta-brand">Tobi Lawson <span class="meta" style="color: var(--text-muted); margin-left: 0.5rem;">[Console]</span></a>
       <nav class="meta-links meta" aria-label="Admin Navigation">
         <span id="cloudStatusIndicator" class="cloud-status-pill meta">☁️ Supabase Connected</span>
         <a href="index.html" target="_blank">View Live Site ↗</a>
@@ -288,7 +288,7 @@
       <section class="fade-up">
         <div class="section-header" style="margin-bottom: 2rem;">
           <h2>Editorial & Content Studio</h2>
-          <span class="meta">Full 1-to-1 Site Management</span>
+          <span class="meta">Site Content CMS</span>
         </div>
 
         <nav class="admin-tabs" aria-label="Console Tabs">
@@ -472,7 +472,37 @@
               </div>
             </div>
 
-            <button type="submit" class="admin-btn">Save Global Settings</button>
+            <h4 style="margin-top: 2rem; margin-bottom: 1rem; font-size: 1.1rem; border-top: 1px solid var(--line); padding-top: 1.5rem;">Footer Content & Custom Links</h4>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+              <div class="admin-form-group">
+                <label for="settingFooterTagline" class="meta">Footer Bio Tagline</label>
+                <input type="text" id="settingFooterTagline" class="admin-input" placeholder="Investor, builder, and writer based in Lagos." required />
+              </div>
+              <div class="admin-form-group">
+                <label for="settingFooterCopyright" class="meta">Footer Copyright Text</label>
+                <input type="text" id="settingFooterCopyright" class="admin-input" placeholder="© 2026 Tobi Lawson. All rights reserved." required />
+              </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+              <div class="admin-form-group">
+                <label for="settingFooterLink1Name" class="meta">Footer Link 1 Label & URL</label>
+                <div style="display: flex; gap: 0.5rem;">
+                  <input type="text" id="settingFooterLink1Name" class="admin-input" placeholder="1914 Reader" style="width: 40%;" required />
+                  <input type="text" id="settingFooterLink1Url" class="admin-input" placeholder="https://www.1914reader.com/" style="width: 60%;" required />
+                </div>
+              </div>
+
+              <div class="admin-form-group">
+                <label for="settingFooterLink2Name" class="meta">Footer Link 2 Label & URL</label>
+                <div style="display: flex; gap: 0.5rem;">
+                  <input type="text" id="settingFooterLink2Name" class="admin-input" placeholder="Lagos Urban" style="width: 40%;" required />
+                  <input type="text" id="settingFooterLink2Url" class="admin-input" placeholder="http://lagosurban.com" style="width: 60%;" required />
+                </div>
+              </div>
+            </div>
+
+            <button type="submit" class="admin-btn">Save Global Settings & Footer</button>
           </form>
         </div>
 
