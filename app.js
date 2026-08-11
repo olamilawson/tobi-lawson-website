@@ -86,26 +86,26 @@ async function hydratePage() {
     }
 
     // Dynamic Footer Hydration
-    const footerTagline = document.querySelector("footer p");
+    const footerTagline = document.querySelector(".footer-tagline");
     if (footerTagline && data.settings.footerTagline) {
       footerTagline.textContent = data.settings.footerTagline;
     }
 
-    const footerCopyright = document.querySelector("footer .meta");
+    const footerCopyright = document.querySelector(".footer-copyright");
     if (footerCopyright && data.settings.footerCopyright) {
       footerCopyright.textContent = data.settings.footerCopyright;
     }
 
-    const footerLinks = document.querySelectorAll("footer .footer-links a");
-    if (footerLinks && footerLinks.length >= 2) {
-      if (data.settings.footerLink1Name && data.settings.footerLink1Url && footerLinks[1]) {
-        footerLinks[1].textContent = data.settings.footerLink1Name;
-        footerLinks[1].href = data.settings.footerLink1Url;
-      }
-      if (data.settings.footerLink2Name && data.settings.footerLink2Url && footerLinks[2]) {
-        footerLinks[2].textContent = data.settings.footerLink2Name;
-        footerLinks[2].href = data.settings.footerLink2Url;
-      }
+    const footerLink1 = document.querySelector(".footer-custom-link-1");
+    if (footerLink1 && data.settings.footerLink1Name && data.settings.footerLink1Url) {
+      footerLink1.textContent = data.settings.footerLink1Name;
+      footerLink1.href = data.settings.footerLink1Url;
+    }
+
+    const footerLink2 = document.querySelector(".footer-custom-link-2");
+    if (footerLink2 && data.settings.footerLink2Name && data.settings.footerLink2Url) {
+      footerLink2.textContent = data.settings.footerLink2Name;
+      footerLink2.href = data.settings.footerLink2Url;
     }
   }
 

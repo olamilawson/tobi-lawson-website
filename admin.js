@@ -342,10 +342,22 @@ document.addEventListener("DOMContentLoaded", async () => {
     const homeHeroTitle = document.getElementById("homeHeroTitle");
     const homeHeroScribble = document.getElementById("homeHeroScribble");
     const homeHeroSubtitle = document.getElementById("homeHeroSubtitle");
+    const homeFooterTagline = document.getElementById("homeFooterTagline");
+    const homeFooterCopyright = document.getElementById("homeFooterCopyright");
+    const homeFooterLink1Name = document.getElementById("homeFooterLink1Name");
+    const homeFooterLink1Url = document.getElementById("homeFooterLink1Url");
+    const homeFooterLink2Name = document.getElementById("homeFooterLink2Name");
+    const homeFooterLink2Url = document.getElementById("homeFooterLink2Url");
 
     if (homeHeroTitle) homeHeroTitle.value = data.settings.heroTitle || "";
     if (homeHeroScribble) homeHeroScribble.value = data.settings.heroScribbleWord || "purpose.";
     if (homeHeroSubtitle) homeHeroSubtitle.value = data.settings.heroSubtitle || "";
+    if (homeFooterTagline) homeFooterTagline.value = data.settings.footerTagline || "Investor, builder, and writer based in Lagos.";
+    if (homeFooterCopyright) homeFooterCopyright.value = data.settings.footerCopyright || "© 2026 Tobi Lawson. All rights reserved.";
+    if (homeFooterLink1Name) homeFooterLink1Name.value = data.settings.footerLink1Name || "1914 Reader";
+    if (homeFooterLink1Url) homeFooterLink1Url.value = data.settings.footerLink1Url || "https://www.1914reader.com/";
+    if (homeFooterLink2Name) homeFooterLink2Name.value = data.settings.footerLink2Name || "Lagos Urban";
+    if (homeFooterLink2Url) homeFooterLink2Url.value = data.settings.footerLink2Url || "http://lagosurban.com";
 
     // 2. Render Posts List
     renderPostsList(data.posts);
@@ -434,11 +446,26 @@ document.addEventListener("DOMContentLoaded", async () => {
       data.settings.heroTitle = document.getElementById("homeHeroTitle").value.trim();
       data.settings.heroScribbleWord = document.getElementById("homeHeroScribble").value.trim();
       data.settings.heroSubtitle = document.getElementById("homeHeroSubtitle").value.trim();
+
+      const ft = document.getElementById("homeFooterTagline");
+      const fc = document.getElementById("homeFooterCopyright");
+      const fl1n = document.getElementById("homeFooterLink1Name");
+      const fl1u = document.getElementById("homeFooterLink1Url");
+      const fl2n = document.getElementById("homeFooterLink2Name");
+      const fl2u = document.getElementById("homeFooterLink2Url");
+
+      if (ft) data.settings.footerTagline = ft.value.trim();
+      if (fc) data.settings.footerCopyright = fc.value.trim();
+      if (fl1n) data.settings.footerLink1Name = fl1n.value.trim();
+      if (fl1u) data.settings.footerLink1Url = fl1u.value.trim();
+      if (fl2n) data.settings.footerLink2Name = fl2n.value.trim();
+      if (fl2u) data.settings.footerLink2Url = fl2u.value.trim();
+
       data.settings.updatedAt = new Date().toISOString();
 
       saveLocalSiteData(data);
       const res = await saveSiteSettingsToSupabase(data.settings);
-      notifySaveResult(res, "Homepage hero updated!");
+      notifySaveResult(res, "Homepage hero & footer content updated!");
     });
   }
 

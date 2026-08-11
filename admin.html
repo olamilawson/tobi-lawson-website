@@ -306,8 +306,8 @@
         <!-- Tab 1: Homepage -->
         <div id="tab-homepage" class="admin-panel active">
           <div style="margin-bottom: 2rem;">
-            <h3 style="font-size: 1.5rem;">Homepage Content (1-to-1)</h3>
-            <p style="color: var(--text-muted); font-size: 0.95rem;">Edit hero headlines, animated scribble emphasis words, and intro bio text for index.html.</p>
+            <h3 style="font-size: 1.5rem;">Homepage Content & Footer</h3>
+            <p style="color: var(--text-muted); font-size: 0.95rem;">Edit hero headlines, animated scribble emphasis words, bio text, and homepage footer links for index.html.</p>
           </div>
 
           <form id="homepageForm" class="admin-card" style="max-width: 100%;">
@@ -326,6 +326,36 @@
               <textarea id="homeHeroSubtitle" class="admin-textarea" required></textarea>
             </div>
 
+            <h4 style="margin-top: 2rem; margin-bottom: 1rem; font-size: 1.1rem; border-top: 1px solid var(--line); padding-top: 1.5rem;">Homepage Footer & Links</h4>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+              <div class="admin-form-group">
+                <label for="homeFooterTagline" class="meta">Footer Bio Tagline</label>
+                <input type="text" id="homeFooterTagline" class="admin-input" placeholder="Investor, builder, and writer based in Lagos." required />
+              </div>
+              <div class="admin-form-group">
+                <label for="homeFooterCopyright" class="meta">Footer Copyright Text</label>
+                <input type="text" id="homeFooterCopyright" class="admin-input" placeholder="© 2026 Tobi Lawson. All rights reserved." required />
+              </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+              <div class="admin-form-group">
+                <label for="homeFooterLink1Name" class="meta">Footer Link 1 Label & URL</label>
+                <div style="display: flex; gap: 0.5rem;">
+                  <input type="text" id="homeFooterLink1Name" class="admin-input" placeholder="1914 Reader" style="width: 40%;" required />
+                  <input type="text" id="homeFooterLink1Url" class="admin-input" placeholder="https://www.1914reader.com/" style="width: 60%;" required />
+                </div>
+              </div>
+
+              <div class="admin-form-group">
+                <label for="homeFooterLink2Name" class="meta">Footer Link 2 Label & URL</label>
+                <div style="display: flex; gap: 0.5rem;">
+                  <input type="text" id="homeFooterLink2Name" class="admin-input" placeholder="Lagos Urban" style="width: 40%;" required />
+                  <input type="text" id="homeFooterLink2Url" class="admin-input" placeholder="http://lagosurban.com" style="width: 60%;" required />
+                </div>
+              </div>
+            </div>
+
             <button type="submit" class="admin-btn">Save Homepage Updates</button>
           </form>
         </div>
@@ -334,7 +364,7 @@
         <div id="tab-writing" class="admin-panel">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
             <div>
-              <h3 style="font-size: 1.5rem;">Writing Archive (1-to-1)</h3>
+              <h3 style="font-size: 1.5rem;">Writing Archive</h3>
               <p style="color: var(--text-muted); font-size: 0.95rem;">Create, edit, and publish essays and book reviews across index.html and writing/index.html.</p>
             </div>
             <button id="newPostBtn" class="admin-btn">+ Create New Article</button>
@@ -348,7 +378,7 @@
         <!-- Tab 3: Now Page -->
         <div id="tab-now" class="admin-panel">
           <div style="margin-bottom: 2rem;">
-            <h3 style="font-size: 1.5rem;">"Now" Page Content (1-to-1)</h3>
+            <h3 style="font-size: 1.5rem;">"Now" Page Content</h3>
             <p style="color: var(--text-muted); font-size: 0.95rem;">Manage active initiatives, status index tags, and ongoing portfolio notes for now.html.</p>
           </div>
 
@@ -376,7 +406,7 @@
         <div id="tab-books" class="admin-panel">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
             <div>
-              <h3 style="font-size: 1.5rem;">Books & Monographs Showcase (1-to-1)</h3>
+              <h3 style="font-size: 1.5rem;">Books & Monographs Showcase</h3>
               <p style="color: var(--text-muted); font-size: 0.95rem;">Manage flagship book showcase details, status tags, cover images, and future monograph concept entries for books.html.</p>
             </div>
             <button id="newBookBtn" class="admin-btn">+ Add Volume / Monograph</button>
@@ -390,7 +420,7 @@
         <!-- Tab 5: About Page -->
         <div id="tab-about" class="admin-panel">
           <div style="margin-bottom: 2rem;">
-            <h3 style="font-size: 1.5rem;">About Page Content (1-to-1)</h3>
+            <h3 style="font-size: 1.5rem;">About Page Content</h3>
             <p style="color: var(--text-muted); font-size: 0.95rem;">Edit hero headline, sub-headline, and bio prose paragraphs for about.html.</p>
           </div>
 
@@ -433,7 +463,7 @@
         <div id="tab-projects" class="admin-panel">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
             <div>
-              <h3 style="font-size: 1.5rem;">Core Projects Showcase (1-to-1)</h3>
+              <h3 style="font-size: 1.5rem;">Core Projects Showcase</h3>
               <p style="color: var(--text-muted); font-size: 0.95rem;">Manage active initiatives featured on index.html and now.html (1914 Reader, Lagos Urban Project, Long Africa).</p>
             </div>
             <button id="newProjectBtn" class="admin-btn">+ Create New Project</button>
