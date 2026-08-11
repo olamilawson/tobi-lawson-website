@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS public.site_settings (
 
 ALTER TABLE public.site_settings ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Allow public access to site_settings" ON public.site_settings;
-CREATE POLICY "Allow public access to site_settings" ON public.site_settings FOR ALL USING (true);
+CREATE POLICY "Allow public access to site_settings" ON public.site_settings FOR ALL USING (true) WITH CHECK (true);
 
 -- Insert Default Global Site Settings
 INSERT INTO public.site_settings (id) VALUES ('global') ON CONFLICT (id) DO NOTHING;
@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS public.posts (
 
 ALTER TABLE public.posts ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Allow public access to posts" ON public.posts;
-CREATE POLICY "Allow public access to posts" ON public.posts FOR ALL USING (true);
+CREATE POLICY "Allow public access to posts" ON public.posts FOR ALL USING (true) WITH CHECK (true);
 
 -- 3. PROJECTS & INITIATIVES TABLE
 CREATE TABLE IF NOT EXISTS public.projects (
@@ -58,7 +58,7 @@ CREATE TABLE IF NOT EXISTS public.projects (
 
 ALTER TABLE public.projects ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Allow public access to projects" ON public.projects;
-CREATE POLICY "Allow public access to projects" ON public.projects FOR ALL USING (true);
+CREATE POLICY "Allow public access to projects" ON public.projects FOR ALL USING (true) WITH CHECK (true);
 
 -- 4. NOW PAGE CMS TABLE
 CREATE TABLE IF NOT EXISTS public.now_page (
@@ -72,7 +72,7 @@ CREATE TABLE IF NOT EXISTS public.now_page (
 
 ALTER TABLE public.now_page ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Allow public access to now_page" ON public.now_page;
-CREATE POLICY "Allow public access to now_page" ON public.now_page FOR ALL USING (true);
+CREATE POLICY "Allow public access to now_page" ON public.now_page FOR ALL USING (true) WITH CHECK (true);
 
 INSERT INTO public.now_page (id) VALUES ('global') ON CONFLICT (id) DO NOTHING;
 
@@ -95,7 +95,7 @@ CREATE TABLE IF NOT EXISTS public.books (
 
 ALTER TABLE public.books ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Allow public access to books" ON public.books;
-CREATE POLICY "Allow public access to books" ON public.books FOR ALL USING (true);
+CREATE POLICY "Allow public access to books" ON public.books FOR ALL USING (true) WITH CHECK (true);
 
 -- 6. REALTIME SUBSCRIPTIONS
 DO $$

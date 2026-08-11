@@ -10,7 +10,7 @@ import {
 
 const STORAGE_KEY = "tobi_site_data_v1";
 
-// Local Storage Fallback
+// Local Storage Helper
 function getLocalSiteData() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -20,9 +20,10 @@ function getLocalSiteData() {
   }
 }
 
-// Master Fetch Strategy: Supabase First -> LocalStorage Fallback
+// Master Fetch Strategy: Merges Supabase Cloud with Local Edits
 async function fetchMasterData() {
   const local = getLocalSiteData();
+
   if (!isSupabaseConfigured) return local;
 
   try {
@@ -34,12 +35,21 @@ async function fetchMasterData() {
       syncBooksFromSupabase()
     ]);
 
+    const localSettingsTs = local?.settings?.updatedAt ? new Date(local.settings.updatedAt).getTime() : 0;
+    const cloudSettingsTs = cloudSettings?.updatedAt ? new Date(cloudSettings.updatedAt).getTime() : 0;
+
+    // Prefer local settings if user just edited in admin on this device
+    let mergedSettings = cloudSettings || (local ? local.settings : null);
+    if (local?.settings && localSettingsTs >= cloudSettingsTs) {
+      mergedSettings = local.settings;
+    }
+
     const merged = {
-      settings: cloudSettings || (local ? local.settings : null),
-      nowPage: cloudNow || (local ? local.nowPage : null),
-      posts: (cloudPosts && cloudPosts.length > 0) ? cloudPosts : (local ? local.posts : null),
-      projects: (cloudProjects && cloudProjects.length > 0) ? cloudProjects : (local ? local.projects : null),
-      books: (cloudBooks && cloudBooks.length > 0) ? cloudBooks : (local ? local.books : null)
+      settings: mergedSettings,
+      nowPage: cloudNow || local?.nowPage,
+      posts: (cloudPosts && cloudPosts.length > 0) ? cloudPosts : local?.posts,
+      projects: (cloudProjects && cloudProjects.length > 0) ? cloudProjects : local?.projects,
+      books: (cloudBooks && cloudBooks.length > 0) ? cloudBooks : local?.books
     };
 
     return merged;
@@ -49,7 +59,7 @@ async function fetchMasterData() {
   }
 }
 
-// 1-to-1 Page Hydrator (DOM-Element-Driven for 100% Clean URL Compatibility)
+// 1-to-1 Page Hydrator (DOM-Element-Driven)
 async function hydratePage() {
   const data = await fetchMasterData();
   if (!data) return;
