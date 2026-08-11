@@ -25,7 +25,7 @@ export async function syncSiteSettingsFromSupabase() {
       aboutBodyProse: data.about_body_prose || "",
       aboutProfileImage: data.about_profile_image || "/assets/tobi-lawson.jpg",
       contactEmail: data.contact_email || "olamilawson@gmail.com",
-      adminPasscode: data.admin_passcode || "tobi2026",
+      adminPasscode: data.admin_passcode || "Enlive0801@#",
       footerTagline: data.footer_tagline || "Investor, builder, and writer based in Lagos.",
       footerCopyright: data.footer_copyright || "© 2026 Tobi Lawson. All rights reserved.",
       footerLink1Name: data.footer_link1_name || "1914 Reader",
