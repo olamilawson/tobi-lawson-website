@@ -1,0 +1,27 @@
+# Tobi Lawson Website — Clean Extensionless URLs & Security Headers
+
+Options -MultiViews
+RewriteEngine On
+
+# 1. Redirect .html URLs to extensionless URLs
+RewriteCond %{THE_REQUEST} \s/+(.+?)\.html[\s?] [NC]
+RewriteRule ^ /%1 [R=301,L]
+
+# 2. Map clean URL routes to .html files internally
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME}\.html -f
+RewriteRule ^(.*)$ $1.html [L]
+
+# 3. Handle /writing route
+RewriteRule ^writing/?$ writing/index.html [L]
+
+# 4. Handle /admin route
+RewriteRule ^admin/?$ admin.html [L]
+
+# 5. Security & Caching Headers
+<IfModule mod_headers.c>
+  Header set X-Content-Type-Options "nosniff"
+  Header set X-Frame-Options "SAMEORIGIN"
+  Header set X-XSS-Protection "1; mode=block"
+  Header set Referrer-Policy "no-referrer-when-downgrade"
+</IfModule>

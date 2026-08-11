@@ -65,6 +65,27 @@ export async function saveSiteSettingsToSupabase(settings) {
     };
     const { data, error } = await supabase.from("site_settings").upsert(payload);
     if (error) {
+      // If error is due to missing new columns in Supabase table schema, retry with basic payload
+      if (error.message && (error.message.includes("column") || error.code === "PGRST204")) {
+        const fallbackPayload = {
+          id: "global",
+          site_title: settings.siteTitle,
+          hero_title: settings.heroTitle,
+          hero_subtitle: settings.heroSubtitle,
+          hero_scribble_word: settings.heroScribbleWord || "purpose.",
+          about_hero_title: settings.aboutHeroTitle,
+          about_hero_subtitle: settings.aboutHeroSubtitle,
+          about_body_prose: settings.aboutBodyProse,
+          about_profile_image: settings.aboutProfileImage || "./assets/tobi-lawson.jpg",
+          contact_email: settings.contactEmail,
+          admin_passcode: settings.adminPasscode,
+          updated_at: settings.updatedAt || new Date().toISOString()
+        };
+        const fallbackRes = await supabase.from("site_settings").upsert(fallbackPayload);
+        if (!fallbackRes.error) {
+          return { success: true, data: fallbackRes.data, notice: "Saved to Supabase Cloud! Run updated SQL schema to enable remote footer columns." };
+        }
+      }
       console.error("Error saving site settings to Supabase:", error);
       return { success: false, error };
     }

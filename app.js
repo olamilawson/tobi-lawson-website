@@ -278,11 +278,19 @@ async function hydratePage() {
         const tagEl = document.querySelector(".book-status-tag .meta");
         if (tagEl && flagshipBook.statusTag) tagEl.textContent = flagshipBook.statusTag;
 
+        const coverImgEl = document.querySelector(".book-cover-container img");
+        if (coverImgEl && flagshipBook.coverImageUrl) coverImgEl.src = flagshipBook.coverImageUrl;
+
         const synEls = document.querySelectorAll(".book-synopsis");
         if (synEls.length >= 2) {
           if (flagshipBook.synopsisP1) synEls[0].textContent = flagshipBook.synopsisP1;
           if (flagshipBook.synopsisP2) synEls[1].textContent = flagshipBook.synopsisP2;
         }
+
+        const previewBtns = document.querySelectorAll(".book-hero-showcase a[href*='preview']");
+        previewBtns.forEach(btn => {
+          if (flagshipBook.previewUrl) btn.href = flagshipBook.previewUrl;
+        });
 
         // Chapters Table of Contents
         if (flagshipBook.chapters && flagshipBook.chapters.length > 0) {
@@ -295,7 +303,7 @@ async function hydratePage() {
                   <h3>${chap.title}</h3>
                 </div>
                 <p class="grid-item-desc">${chap.desc}</p>
-                <a href="${flagshipBook.previewUrl}" class="grid-item-link">Read Chapter Preview →</a>
+                <a href="${flagshipBook.previewUrl || '#'}" class="grid-item-link">Read Chapter Preview →</a>
               </article>
             `).join("");
           }

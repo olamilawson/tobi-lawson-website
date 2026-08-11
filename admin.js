@@ -523,22 +523,184 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
-  // 4. Books Render
+  // 4. Books Form & Chapters CMS Handler
   function renderBooksList(books) {
-    const booksList = document.getElementById("booksList");
-    if (!booksList) return;
+    if (!books || books.length === 0) return;
+    const b = books[0];
+    const bt = document.getElementById("bookTitleInput");
+    const bs = document.getElementById("bookSubtitleInput");
+    const bst = document.getElementById("bookStatusTagInput");
+    const brd = document.getElementById("bookReleaseDateInput");
+    const bimg = document.getElementById("bookCoverImageUrlInput");
+    const bp1 = document.getElementById("bookSynopsisP1Input");
+    const bp2 = document.getElementById("bookSynopsisP2Input");
+    const bau = document.getElementById("bookAuthorInput");
+    const bfmt = document.getElementById("bookFormatInput");
+    const bprv = document.getElementById("bookPreviewUrlInput");
 
-    booksList.innerHTML = (books || []).map((book) => `
+    if (bt) bt.value = b.title || "";
+    if (bs) bs.value = b.subtitle || "";
+    if (bst) bst.value = b.statusTag || "";
+    if (brd) brd.value = b.releaseDate || "";
+    if (bimg) bimg.value = b.coverImageUrl || "";
+    if (bp1) bp1.value = b.synopsisP1 || "";
+    if (bp2) bp2.value = b.synopsisP2 || "";
+    if (bau) bau.value = b.author || "Tobi Lawson";
+    if (bfmt) bfmt.value = b.format || "Hardcover & Digital";
+    if (bprv) bprv.value = b.previewUrl || "";
+
+    renderChaptersAdminList(b.chapters || []);
+  }
+
+  const booksForm = document.getElementById("booksForm");
+  if (booksForm) {
+    booksForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const data = await getMasterSiteData();
+      if (!data.books || data.books.length === 0) {
+        data.books = [{ id: "who-made-this", chapters: [] }];
+      }
+      const b = data.books[0];
+      b.title = document.getElementById("bookTitleInput").value.trim();
+      b.subtitle = document.getElementById("bookSubtitleInput").value.trim();
+      b.statusTag = document.getElementById("bookStatusTagInput").value.trim();
+      b.releaseDate = document.getElementById("bookReleaseDateInput").value.trim();
+      b.coverImageUrl = document.getElementById("bookCoverImageUrlInput").value.trim();
+      b.synopsisP1 = document.getElementById("bookSynopsisP1Input").value.trim();
+      b.synopsisP2 = document.getElementById("bookSynopsisP2Input").value.trim();
+      b.author = document.getElementById("bookAuthorInput").value.trim();
+      b.format = document.getElementById("bookFormatInput").value.trim();
+      b.previewUrl = document.getElementById("bookPreviewUrlInput").value.trim();
+
+      data.settings.updatedAt = new Date().toISOString();
+      saveLocalSiteData(data);
+      const res = await saveBookToSupabase(b);
+      notifySaveResult(res, "Book showcase details & cover updated!");
+    });
+  }
+
+  const bookCoverFileInput = document.getElementById("bookCoverFileInput");
+  if (bookCoverFileInput) {
+    bookCoverFileInput.addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        const urlInput = document.getElementById("bookCoverImageUrlInput");
+        if (urlInput) urlInput.value = evt.target.result;
+        showToast("Book cover image attached!");
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function renderChaptersAdminList(chapters) {
+    const listEl = document.getElementById("chaptersListAdmin");
+    if (!listEl) return;
+
+    if (!chapters || chapters.length === 0) {
+      listEl.innerHTML = `<div class="meta" style="padding: 2rem 0; color: var(--text-muted);">No chapters added yet. Click "+ Add Chapter Entry" above.</div>`;
+      return;
+    }
+
+    listEl.innerHTML = chapters.map((chap, idx) => `
       <div class="admin-grid-item">
         <div class="admin-grid-item-content">
-          <span class="admin-badge meta">${book.statusTag || 'FORTHCOMING VOLUME'}</span>
-          <h4>${book.title}</h4>
-          <p style="font-style: italic; color: var(--text-muted);">${book.subtitle || ''}</p>
-          <p style="margin-top: 0.5rem; font-size: 0.95rem;">${book.synopsisP1 || book.summary || ''}</p>
+          <span class="admin-badge meta" style="color: var(--accent);">${chap.status || 'Chapter Entry'}</span>
+          <h4>${chap.title}</h4>
+          <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.25rem;">${chap.desc}</p>
         </div>
-        <div class="meta" style="color: var(--text-muted); flex-shrink: 0;">${book.previewUrl}</div>
+        <div style="display: flex; gap: 0.5rem; flex-shrink: 0; align-items: center;">
+          <button class="admin-btn admin-btn-secondary edit-chapter-btn" data-idx="${idx}">Edit</button>
+          <button class="admin-btn admin-btn-danger delete-chapter-btn" data-idx="${idx}">Delete</button>
+        </div>
       </div>
     `).join("");
+
+    listEl.querySelectorAll(".edit-chapter-btn").forEach((btn) => {
+      btn.addEventListener("click", () => openChapterModal(parseInt(btn.getAttribute("data-idx"))));
+    });
+
+    listEl.querySelectorAll(".delete-chapter-btn").forEach((btn) => {
+      btn.addEventListener("click", () => deleteChapter(parseInt(btn.getAttribute("data-idx"))));
+    });
+  }
+
+  const chapterModal = document.getElementById("chapterModal");
+  const newChapterBtn = document.getElementById("newChapterBtn");
+  const closeChapterModalBtn = document.getElementById("closeChapterModalBtn");
+  const cancelChapterModalBtn = document.getElementById("cancelChapterModalBtn");
+  const chapterForm = document.getElementById("chapterForm");
+
+  if (newChapterBtn) newChapterBtn.addEventListener("click", () => openChapterModal());
+  if (closeChapterModalBtn) closeChapterModalBtn.addEventListener("click", () => { if (chapterModal) chapterModal.style.display = "none"; });
+  if (cancelChapterModalBtn) cancelChapterModalBtn.addEventListener("click", () => { if (chapterModal) chapterModal.style.display = "none"; });
+
+  async function openChapterModal(idx = null) {
+    const data = await getMasterSiteData();
+    const chapters = data.books && data.books[0] ? (data.books[0].chapters || []) : [];
+    const indexInput = document.getElementById("chapterIndex");
+    const titleInput = document.getElementById("chapterTitle");
+    const statusInput = document.getElementById("chapterStatus");
+    const descInput = document.getElementById("chapterDesc");
+
+    if (idx !== null && chapters[idx]) {
+      const c = chapters[idx];
+      if (indexInput) indexInput.value = idx;
+      if (titleInput) titleInput.value = c.title;
+      if (statusInput) statusInput.value = c.status;
+      if (descInput) descInput.value = c.desc;
+    } else {
+      if (chapterForm) chapterForm.reset();
+      if (indexInput) indexInput.value = "";
+    }
+
+    if (chapterModal) chapterModal.style.display = "flex";
+  }
+
+  if (chapterForm) {
+    chapterForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const data = await getMasterSiteData();
+      if (!data.books || data.books.length === 0) {
+        data.books = [{ id: "who-made-this", chapters: [] }];
+      }
+      const b = data.books[0];
+      if (!b.chapters) b.chapters = [];
+
+      const idxVal = document.getElementById("chapterIndex").value;
+      const title = document.getElementById("chapterTitle").value.trim();
+      const status = document.getElementById("chapterStatus").value.trim();
+      const desc = document.getElementById("chapterDesc").value.trim();
+
+      const chapObj = { title, status, desc };
+
+      if (idxVal !== "") {
+        b.chapters[parseInt(idxVal)] = chapObj;
+      } else {
+        b.chapters.push(chapObj);
+      }
+
+      data.settings.updatedAt = new Date().toISOString();
+      saveLocalSiteData(data);
+      const res = await saveBookToSupabase(b);
+      if (chapterModal) chapterModal.style.display = "none";
+      await renderConsoleData();
+      notifySaveResult(res, "Chapter entry saved!");
+    });
+  }
+
+  async function deleteChapter(idx) {
+    if (!confirm("Delete this chapter entry?")) return;
+    const data = await getMasterSiteData();
+    if (data.books && data.books[0] && data.books[0].chapters) {
+      data.books[0].chapters.splice(idx, 1);
+      data.settings.updatedAt = new Date().toISOString();
+      saveLocalSiteData(data);
+      const res = await saveBookToSupabase(data.books[0]);
+      await renderConsoleData();
+      notifySaveResult(res, "Chapter removed.");
+    }
   }
 
   // 5. About Form & Image File Upload Listeners

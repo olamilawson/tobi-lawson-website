@@ -3,9 +3,58 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tobi Lawson — Investor & Builder</title>
-  <meta name="description" content="Investor and builder based in Lagos. Writing about capital, cities, and the long work of building things that last." />
+  <title>Tobi Lawson — Investor, Builder & Writer | Lagos</title>
+  <meta name="description" content="Notes on capital, cities, and the slow work of building things that last. Based in Lagos, working across fintech, SME services, and education technology." />
+  <meta name="author" content="Tobi Lawson" />
   <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg" />
+
+  <!-- Open Graph / Facebook / WhatsApp Meta Tags -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://tobilawson.com/" />
+  <meta property="og:title" content="Tobi Lawson — Investor, Builder & Writer" />
+  <meta property="og:description" content="Notes on capital, cities, and the slow work of building things that last. Based in Lagos, working across fintech, SME services, and education technology." />
+  <meta property="og:image" content="https://tobilawson.com/assets/tobi-lawson.jpg" />
+  <meta property="og:site_name" content="Tobi Lawson" />
+
+  <!-- Twitter Meta Tags -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Tobi Lawson — Investor, Builder & Writer" />
+  <meta name="twitter:description" content="Notes on capital, cities, and the slow work of building things that last. Based in Lagos." />
+  <meta name="twitter:image" content="https://tobilawson.com/assets/tobi-lawson.jpg" />
+
+  <!-- Schema.org JSON-LD for Machine Readability & AI Crawlers -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Person",
+        "@id": "https://tobilawson.com/#person",
+        "name": "Tobi Lawson",
+        "url": "https://tobilawson.com",
+        "jobTitle": "Investor & Builder",
+        "address": {
+          "@type": "PostalAddress",
+          "addressLocality": "Lagos",
+          "addressCountry": "Nigeria"
+        },
+        "sameAs": [
+          "https://www.1914reader.com/",
+          "http://lagosurban.com"
+        ],
+        "knowsAbout": ["Fintech", "SME Infrastructure", "African Economic Development", "AI in Frontier Markets", "Urban Planning"]
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://tobilawson.com/#website",
+        "url": "https://tobilawson.com",
+        "name": "Tobi Lawson",
+        "description": "Notes on capital, cities, and the slow work of building things that last. Based in Lagos.",
+        "publisher": { "@id": "https://tobilawson.com/#person" }
+      }
+    ]
+  }
+  </script>
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -20,38 +69,32 @@
     <a href="index.html" class="meta-brand">Tobi Lawson</a>
     <nav class="meta-links meta" aria-label="Primary Navigation">
       <a href="index.html" aria-current="page">Home</a>
-      <a href="books.html">Books</a>
-      <a href="writing/index.html">Writing</a>
-      <a href="now.html">Now</a>
-      <a href="course.html">Course</a>
-      <a href="about.html">About</a>
+      <a href="books">Books</a>
+      <a href="writing/">Writing</a>
+      <a href="now">Now</a>
+      <a href="course">Course</a>
+      <a href="about">About</a>
     </nav>
   </header>
 
   <main id="main">
+    <!-- Hero Section -->
     <section class="hero fade-up delay-1">
       <h1>
-        Building <br>
-        and investing <br>
-        with <span class="highlight-wrapper">
-          purpose.
-          <svg class="scribble" viewBox="0 0 200 80" preserveAspectRatio="none" aria-hidden="true">
-            <path d="M 15,40 C 20,15 50,5 100,5 C 160,5 190,20 185,50 C 180,75 140,78 90,75 C 40,72 5,55 10,35 C 15,20 40,12 80,15"></path>
-          </svg>
-        </span>
+        Building <br />
+        and investing <br />
+        with <span class="highlight-wrapper">purpose. <svg class="scribble" viewBox="0 0 200 80" preserveAspectRatio="none" aria-hidden="true"><path d="M 15,40 C 20,15 50,5 100,5 C 160,5 190,20 185,50 C 180,75 140,78 90,75 C 40,72 5,55 10,35 C 15,20 40,12 80,15"></path></svg></span>
       </h1>
-      
-      <p class="hero-subtitle">Notes on capital, cities, and the slow work of building things that last. Based in Lagos, working across fintech, SME services, and education technology.</p>
-
-      <a href="writing/index.html" class="circle-cta fade-up delay-2">
-        <span class="meta">Read<br>Writing</span>
-      </a>
+      <p class="hero-subtitle">
+        Notes on capital, cities, and the slow work of building things that last. Based in Lagos, working across fintech, SME services, and education technology.
+      </p>
     </section>
 
-    <section id="projects">
-      <div class="section-header fade-up">
-        <h2>What I'm building</h2>
-        <a href="now.html" class="meta">View Details →</a>
+    <!-- Section 01: Core Projects -->
+    <section id="projects" class="fade-up delay-2">
+      <div class="section-header">
+        <h2>Selected Ventures & Projects</h2>
+        <span class="meta">01 / CORE INITIATIVES</span>
       </div>
 
       <div class="grid-3">
@@ -99,10 +142,11 @@
       </div>
     </section>
 
-    <section id="writing">
-      <div class="section-header fade-up">
-        <h2>Recent Writing</h2>
-        <a href="writing/index.html" class="meta">All Writing →</a>
+    <!-- Section 02: Recent Writing -->
+    <section id="writing" class="fade-up delay-3">
+      <div class="section-header">
+        <h2>Recent Essays & Notes</h2>
+        <span class="meta">02 / WRITING</span>
       </div>
 
       <div class="grid-3">
