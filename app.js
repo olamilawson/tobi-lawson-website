@@ -49,7 +49,7 @@ async function fetchMasterData() {
   }
 }
 
-// 1-to-1 Page Hydrator
+// 1-to-1 Page Hydrator (DOM-Element-Driven for 100% Clean URL Compatibility)
 async function hydratePage() {
   const data = await fetchMasterData();
   if (!data) return;
@@ -73,8 +73,9 @@ async function hydratePage() {
     }
   }
 
-  // 2. Hydrate Homepage (index.html)
-  if (currentPath.endsWith("index.html") || currentPath === "/" || currentPath.endsWith("/")) {
+  // 2. Hydrate Homepage (Presence of #projects or #writing on index.html)
+  const isHomepage = document.querySelector("#projects") || document.querySelector(".highlight-wrapper");
+  if (isHomepage) {
     if (data.settings) {
       const heroH1 = document.querySelector(".hero h1");
       if (heroH1 && data.settings.heroTitle) {
@@ -137,8 +138,9 @@ async function hydratePage() {
     }
   }
 
-  // 3. Hydrate About Page (about.html)
-  if (currentPath.includes("about.html")) {
+  // 3. Hydrate About Page (Presence of #aboutProfileImg or about.html route)
+  const isAboutPage = document.getElementById("aboutProfileImg") || currentPath.includes("about");
+  if (isAboutPage) {
     if (data.settings) {
       const aboutH1 = document.querySelector(".hero h1");
       if (aboutH1 && data.settings.aboutHeroTitle) {
@@ -163,8 +165,9 @@ async function hydratePage() {
     }
   }
 
-  // 4. Hydrate Writing Catalog (writing/index.html)
-  if (currentPath.includes("writing")) {
+  // 4. Hydrate Writing Catalog (Presence of #writing-catalog or writing route)
+  const isWritingPage = document.getElementById("writing-catalog") || currentPath.includes("writing");
+  if (isWritingPage && !isHomepage) {
     if (data.posts && data.posts.length > 0) {
       const catalogGrid = document.querySelector("#writing-catalog .grid-3");
       if (catalogGrid) {
@@ -184,15 +187,16 @@ async function hydratePage() {
     }
   }
 
-  // 5. Hydrate "Now" Page (now.html)
-  if (currentPath.includes("now.html")) {
+  // 5. Hydrate "Now" Page (Presence of #now-grid or now route)
+  const isNowPage = document.getElementById("now-grid") || currentPath.includes("now");
+  if (isNowPage) {
     if (data.nowPage) {
       const nowSub = document.querySelector(".hero-subtitle");
       if (nowSub && data.nowPage.introSubtitle) {
         nowSub.textContent = data.nowPage.introSubtitle;
       }
 
-      const nowProse = document.querySelector(".article-body");
+      const nowProse = document.querySelector("#now-grid .article-body");
       if (nowProse && data.nowPage.ongoingProse) {
         nowProse.innerHTML = `<p>${data.nowPage.ongoingProse}</p>`;
       }
@@ -215,8 +219,9 @@ async function hydratePage() {
     }
   }
 
-  // 6. Hydrate Books Page (books.html)
-  if (currentPath.includes("books.html")) {
+  // 6. Hydrate Books Page (Presence of #table-of-contents or books route)
+  const isBooksPage = document.getElementById("table-of-contents") || currentPath.includes("books");
+  if (isBooksPage) {
     if (data.books && data.books.length > 0) {
       const flagshipBook = data.books[0];
       if (flagshipBook) {
