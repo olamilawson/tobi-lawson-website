@@ -8,7 +8,7 @@ import {
   syncCourseSettingsFromSupabase,
   syncCourseLessonsFromSupabase,
   subscribeToSupabaseRealtime
-} from "./supabase.js";
+} from "/supabase.js";
 
 const STORAGE_KEY = "tobi_site_data_v1";
 
@@ -194,7 +194,13 @@ async function hydratePage() {
 
       const aboutImg = document.getElementById("aboutProfileImg");
       if (aboutImg && data.settings.aboutProfileImage) {
-        aboutImg.src = data.settings.aboutProfileImage;
+        let imgPath = data.settings.aboutProfileImage;
+        if (imgPath.startsWith("./assets/")) {
+          imgPath = imgPath.replace("./assets/", "/assets/");
+        } else if (imgPath.startsWith("assets/")) {
+          imgPath = "/" + imgPath;
+        }
+        aboutImg.src = imgPath;
       }
 
       const aboutProse = document.querySelector(".article-body");
