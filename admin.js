@@ -163,7 +163,14 @@ function getEl(...ids) {
 
 export function getLocalSiteData() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    let raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) {
+      const v1 = localStorage.getItem("tobi_site_data_v1") || localStorage.getItem("tobi_site_data");
+      if (v1) {
+        raw = v1;
+        localStorage.setItem(STORAGE_KEY, v1);
+      }
+    }
     if (!raw) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_DATA));
       return INITIAL_DATA;

@@ -15,7 +15,10 @@ const STORAGE_KEY = "tobi_site_data_v2";
 // Local Storage Helper
 function getLocalSiteData() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    let raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) {
+      raw = localStorage.getItem("tobi_site_data_v1") || localStorage.getItem("tobi_site_data");
+    }
     return raw ? JSON.parse(raw) : null;
   } catch (e) {
     return null;
