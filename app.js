@@ -47,14 +47,30 @@ async function fetchMasterData() {
       mergedSettings = local.settings;
     }
 
+    const mergedPosts = (Array.isArray(cloudPosts) && cloudPosts.length > 0)
+      ? cloudPosts
+      : (local?.posts || []);
+
+    const mergedProjects = (Array.isArray(cloudProjects) && cloudProjects.length > 0)
+      ? cloudProjects
+      : (local?.projects || []);
+
+    const mergedBooks = (Array.isArray(cloudBooks) && cloudBooks.length > 0)
+      ? cloudBooks
+      : (local?.books || []);
+
+    const mergedCourseLessons = (Array.isArray(cloudCourseLessons) && cloudCourseLessons.length > 0)
+      ? cloudCourseLessons
+      : (local?.courseLessons || []);
+
     const merged = {
       settings: mergedSettings,
       nowPage: cloudNow || local?.nowPage,
       courseSettings: cloudCourseSettings || local?.courseSettings,
-      courseLessons: Array.isArray(cloudCourseLessons) ? cloudCourseLessons : (local?.courseLessons || []),
-      posts: Array.isArray(cloudPosts) ? cloudPosts : (local?.posts || []),
-      projects: Array.isArray(cloudProjects) ? cloudProjects : (local?.projects || []),
-      books: Array.isArray(cloudBooks) ? cloudBooks : (local?.books || [])
+      courseLessons: mergedCourseLessons,
+      posts: mergedPosts,
+      projects: mergedProjects,
+      books: mergedBooks
     };
 
     return merged;

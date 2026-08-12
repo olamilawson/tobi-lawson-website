@@ -211,20 +211,36 @@ export async function getMasterSiteData() {
     const localSettingsTs = local?.settings?.updatedAt ? new Date(local.settings.updatedAt).getTime() : 0;
     const cloudSettingsTs = cloudSettings?.updatedAt ? new Date(cloudSettings.updatedAt).getTime() : 0;
 
-    let mergedSettings = cloudSettings || (local ? local.settings : null);
+    let mergedSettings = cloudSettings || local?.settings || INITIAL_DATA.settings;
     if (localSettingsTs > cloudSettingsTs && local?.settings) {
       mergedSettings = local.settings;
       saveSiteSettingsToSupabase(local.settings);
     }
 
+    const mergedPosts = (Array.isArray(cloudPosts) && cloudPosts.length > 0)
+      ? cloudPosts
+      : ((local && Array.isArray(local.posts) && local.posts.length > 0) ? local.posts : INITIAL_DATA.posts);
+
+    const mergedProjects = (Array.isArray(cloudProjects) && cloudProjects.length > 0)
+      ? cloudProjects
+      : ((local && Array.isArray(local.projects) && local.projects.length > 0) ? local.projects : INITIAL_DATA.projects);
+
+    const mergedBooks = (Array.isArray(cloudBooks) && cloudBooks.length > 0)
+      ? cloudBooks
+      : ((local && Array.isArray(local.books) && local.books.length > 0) ? local.books : INITIAL_DATA.books);
+
+    const mergedCourseLessons = (Array.isArray(cloudCourseLessons) && cloudCourseLessons.length > 0)
+      ? cloudCourseLessons
+      : ((local && Array.isArray(local.courseLessons) && local.courseLessons.length > 0) ? local.courseLessons : INITIAL_DATA.courseLessons);
+
     const merged = {
       settings: mergedSettings,
-      nowPage: cloudNow || local?.nowPage,
-      courseSettings: cloudCourseSettings || local?.courseSettings,
-      courseLessons: Array.isArray(cloudCourseLessons) ? cloudCourseLessons : (local?.courseLessons || []),
-      posts: Array.isArray(cloudPosts) ? cloudPosts : (local?.posts || []),
-      projects: Array.isArray(cloudProjects) ? cloudProjects : (local?.projects || []),
-      books: Array.isArray(cloudBooks) ? cloudBooks : (local?.books || [])
+      nowPage: cloudNow || local?.nowPage || INITIAL_DATA.nowPage,
+      courseSettings: cloudCourseSettings || local?.courseSettings || INITIAL_DATA.courseSettings,
+      courseLessons: mergedCourseLessons,
+      posts: mergedPosts,
+      projects: mergedProjects,
+      books: mergedBooks
     };
 
     saveLocalSiteData(merged);
