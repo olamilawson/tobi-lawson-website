@@ -131,23 +131,24 @@ async function hydratePage() {
     }
 
     // Dynamic Footer & Custom Links Hydration across all pages
-    document.querySelectorAll(".footer-tagline").forEach(el => {
-      if (data.settings.footerTagline) el.textContent = data.settings.footerTagline;
-    });
-
-    document.querySelectorAll(".footer-copyright").forEach(el => {
-      if (data.settings.footerCopyright) el.textContent = data.settings.footerCopyright;
-    });
-
-    document.querySelectorAll(".footer-custom-link-1").forEach(el => {
-      if (data.settings.footerLink1Name) el.textContent = data.settings.footerLink1Name;
-      if (data.settings.footerLink1Url) el.href = data.settings.footerLink1Url;
-    });
-
-    document.querySelectorAll(".footer-custom-link-2").forEach(el => {
-      if (data.settings.footerLink2Name) el.textContent = data.settings.footerLink2Name;
-      if (data.settings.footerLink2Url) el.href = data.settings.footerLink2Url;
-    });
+    if (data.settings.footerTagline !== undefined && data.settings.footerTagline !== null) {
+      document.querySelectorAll(".footer-tagline").forEach(el => { el.textContent = data.settings.footerTagline; });
+    }
+    if (data.settings.footerCopyright !== undefined && data.settings.footerCopyright !== null) {
+      document.querySelectorAll(".footer-copyright").forEach(el => { el.textContent = data.settings.footerCopyright; });
+    }
+    if (data.settings.footerLink1Name) {
+      document.querySelectorAll(".footer-custom-link-1").forEach(el => { el.textContent = data.settings.footerLink1Name; });
+    }
+    if (data.settings.footerLink1Url) {
+      document.querySelectorAll(".footer-custom-link-1").forEach(el => { el.href = data.settings.footerLink1Url; });
+    }
+    if (data.settings.footerLink2Name) {
+      document.querySelectorAll(".footer-custom-link-2").forEach(el => { el.textContent = data.settings.footerLink2Name; });
+    }
+    if (data.settings.footerLink2Url) {
+      document.querySelectorAll(".footer-custom-link-2").forEach(el => { el.href = data.settings.footerLink2Url; });
+    }
   }
 
   // 2. Hydrate Homepage (Presence of #projects or #writing on index.html)
