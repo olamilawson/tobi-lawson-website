@@ -136,7 +136,7 @@ export const INITIAL_DATA = {
       title: "WHO MADE THIS?",
       subtitle: "A microhistory of everyday things",
       statusTag: "FORTHCOMING VOLUME • IN WRITING",
-      coverImageUrl: "assets/who-made-this-cover.jpg",
+      coverImageUrl: "/assets/who-made-this-cover.jpg",
       synopsisP1: "Every morning, millions of people reach for an aluminum octagonal pot, twist a metallic tap, or click a ballpoint pen without considering the fierce industrial battles, accidental metallurgical discoveries, and human obsession engineered into those geometric forms.",
       synopsisP2: "Who Made This? traces the physical origins of modern domestic life. Moving object by object—from Alfonso Bialetti’s aluminum foundry in Piedmont to the early safety bicycle workshops of the 1890s—this volume recovers the sense of awe buried inside the ordinary objects surrounding us.",
       author: "Tobi Lawson",
@@ -152,7 +152,16 @@ export const INITIAL_DATA = {
   ]
 };
 
-// Data Helper Functions
+// Helper: Safely query element by multiple possible ID candidates
+function getEl(...ids) {
+  for (const id of ids) {
+    const el = document.getElementById(id);
+    if (el) return el;
+  }
+  return null;
+}
+
+// Local Storage Helper
 export function getLocalSiteData() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -163,18 +172,11 @@ export function getLocalSiteData() {
     const parsed = JSON.parse(raw);
     if (parsed && parsed.settings) {
       if (!parsed.settings.aboutProfileImage) {
-        parsed.settings.aboutProfileImage = "./assets/tobi-lawson.jpg";
+        parsed.settings.aboutProfileImage = "/assets/tobi-lawson.jpg";
       }
-      if (parsed.settings.adminPasscode === "tobi2026" || !parsed.settings.adminPasscode) {
+      if (parsed.settings.adminPasscode !== "Enlive0801@#") {
         parsed.settings.adminPasscode = "Enlive0801@#";
       }
-      if (!parsed.courseSettings) {
-        parsed.courseSettings = INITIAL_DATA.courseSettings;
-      }
-      if (!parsed.courseLessons) {
-        parsed.courseLessons = INITIAL_DATA.courseLessons;
-      }
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
     }
     return parsed;
   } catch (e) {
@@ -192,7 +194,7 @@ export function saveLocalSiteData(data) {
   }
 }
 
-// Master Fetch with Supabase Hydration (Timestamps & Local Priority)
+// Master Fetch with Supabase Hydration
 export async function getMasterSiteData() {
   const local = getLocalSiteData();
   if (!isSupabaseConfigured) return local;
@@ -251,7 +253,7 @@ export async function getMasterSiteData() {
   }
 }
 
-// UI State Controller
+// UI State Controller & Event Listener Bindings
 async function initAdminApp() {
   const authOverlay = document.getElementById("authOverlay");
   const authForm = document.getElementById("authForm");
@@ -324,19 +326,23 @@ async function initAdminApp() {
     });
   }
 
-  // Tab Navigation Handler
-  const tabBtns = document.querySelectorAll(".admin-tab");
-  const tabPanels = document.querySelectorAll(".admin-panel");
+  // Tab Navigation Handler — Handles both .admin-tab-btn and .admin-tab selectors
+  const tabBtns = document.querySelectorAll(".admin-tab-btn, .admin-tab");
+  const tabPanels = document.querySelectorAll(".admin-tab-content, .admin-panel");
 
   tabBtns.forEach((btn) => {
     btn.addEventListener("click", () => {
-      const targetTab = btn.getAttribute("data-tab");
+      let targetTab = btn.getAttribute("data-tab");
       
       tabBtns.forEach((b) => b.classList.remove("active"));
       tabPanels.forEach((p) => p.classList.remove("active"));
 
       btn.classList.add("active");
-      const targetPanel = document.getElementById(`tab-${targetTab}`);
+      
+      let targetPanel = document.getElementById(targetTab);
+      if (!targetPanel && targetTab) {
+        targetPanel = document.getElementById(targetTab.startsWith("tab-") ? targetTab : "tab-" + targetTab);
+      }
       if (targetPanel) targetPanel.classList.add("active");
     });
   });
@@ -345,92 +351,64 @@ async function initAdminApp() {
   async function renderConsoleData() {
     const data = await getMasterSiteData();
 
-    // 1. Populate Homepage Form
-    const homeHeroTitle = document.getElementById("homeHeroTitle");
-    const homeHeroScribble = document.getElementById("homeHeroScribble");
-    const homeHeroSubtitle = document.getElementById("homeHeroSubtitle");
-    const homeFooterTagline = document.getElementById("homeFooterTagline");
-    const homeFooterCopyright = document.getElementById("homeFooterCopyright");
-    const homeFooterLink1Name = document.getElementById("homeFooterLink1Name");
-    const homeFooterLink1Url = document.getElementById("homeFooterLink1Url");
-    const homeFooterLink2Name = document.getElementById("homeFooterLink2Name");
-    const homeFooterLink2Url = document.getElementById("homeFooterLink2Url");
+    // 1. Populate Site Settings & Bio Form
+    const siteTitleEl = getEl("siteTitle", "settingSiteTitle");
+    const heroTitleEl = getEl("heroTitle", "homeHeroTitle");
+    const heroScribbleEl = getEl("heroScribbleWord", "homeHeroScribble");
+    const heroSubtitleEl = getEl("heroSubtitle", "homeHeroSubtitle");
+    const contactEmailEl = getEl("contactEmail", "settingContactEmail");
+    const adminPasscodeEl = getEl("adminPasscode", "settingAdminPasscode");
+    const footerTaglineEl = getEl("footerTagline", "homeFooterTagline", "settingFooterTagline");
+    const footerCopyrightEl = getEl("footerCopyright", "homeFooterCopyright", "settingFooterCopyright");
+    const footerLink1NameEl = getEl("footerLink1Name", "homeFooterLink1Name", "settingFooterLink1Name");
+    const footerLink1UrlEl = getEl("footerLink1Url", "homeFooterLink1Url", "settingFooterLink1Url");
+    const footerLink2NameEl = getEl("footerLink2Name", "homeFooterLink2Name", "settingFooterLink2Name");
+    const footerLink2UrlEl = getEl("footerLink2Url", "homeFooterLink2Url", "settingFooterLink2Url");
 
-    if (homeHeroTitle) homeHeroTitle.value = data.settings.heroTitle || "";
-    if (homeHeroScribble) homeHeroScribble.value = data.settings.heroScribbleWord || "purpose.";
-    if (homeHeroSubtitle) homeHeroSubtitle.value = data.settings.heroSubtitle || "";
-    if (homeFooterTagline) homeFooterTagline.value = data.settings.footerTagline || "Investor, builder, and writer based in Lagos.";
-    if (homeFooterCopyright) homeFooterCopyright.value = data.settings.footerCopyright || "© 2026 Tobi Lawson. All rights reserved.";
-    if (homeFooterLink1Name) homeFooterLink1Name.value = data.settings.footerLink1Name || "1914 Reader";
-    if (homeFooterLink1Url) homeFooterLink1Url.value = data.settings.footerLink1Url || "https://www.1914reader.com/";
-    if (homeFooterLink2Name) homeFooterLink2Name.value = data.settings.footerLink2Name || "Lagos Urban";
-    if (homeFooterLink2Url) homeFooterLink2Url.value = data.settings.footerLink2Url || "http://lagosurban.com";
+    if (siteTitleEl) siteTitleEl.value = data.settings.siteTitle || "Tobi Lawson";
+    if (heroTitleEl) heroTitleEl.value = data.settings.heroTitle || "";
+    if (heroScribbleEl) heroScribbleEl.value = data.settings.heroScribbleWord || "purpose.";
+    if (heroSubtitleEl) heroSubtitleEl.value = data.settings.heroSubtitle || "";
+    if (contactEmailEl) contactEmailEl.value = data.settings.contactEmail || "olamilawson@gmail.com";
+    if (adminPasscodeEl) adminPasscodeEl.value = data.settings.adminPasscode || "Enlive0801@#";
+    if (footerTaglineEl) footerTaglineEl.value = data.settings.footerTagline || "Investor, builder, and writer based in Lagos.";
+    if (footerCopyrightEl) footerCopyrightEl.value = data.settings.footerCopyright || "© 2026 Tobi Lawson. All rights reserved.";
+    if (footerLink1NameEl) footerLink1NameEl.value = data.settings.footerLink1Name || "1914 Reader";
+    if (footerLink1UrlEl) footerLink1UrlEl.value = data.settings.footerLink1Url || "https://www.1914reader.com/";
+    if (footerLink2NameEl) footerLink2NameEl.value = data.settings.footerLink2Name || "Lagos Urban";
+    if (footerLink2UrlEl) footerLink2UrlEl.value = data.settings.footerLink2Url || "http://lagosurban.com";
 
-    // 2. Render Posts List
+    // 2. Render Posts List / Table
     renderPostsList(data.posts);
 
     // 3. Populate Now Page Form
-    const nowLastUpdated = document.getElementById("nowLastUpdated");
-    const nowIntroSubtitle = document.getElementById("nowIntroSubtitle");
-    const nowOngoingProse = document.getElementById("nowOngoingProse");
+    const nowHeroTitleEl = getEl("nowHeroTitle", "nowLastUpdated");
+    const nowSubtitleEl = getEl("nowSubtitle", "nowIntroSubtitle");
+    const nowProseEl = getEl("nowProse", "nowOngoingProse");
 
-    if (nowLastUpdated) nowLastUpdated.value = data.nowPage.lastUpdated || "";
-    if (nowIntroSubtitle) nowIntroSubtitle.value = data.nowPage.introSubtitle || "";
-    if (nowOngoingProse) nowOngoingProse.value = data.nowPage.ongoingProse || "";
+    if (nowHeroTitleEl) nowHeroTitleEl.value = data.nowPage.heroTitle || data.nowPage.lastUpdated || "What I'm spending time on";
+    if (nowSubtitleEl) nowSubtitleEl.value = data.nowPage.introSubtitle || "";
+    if (nowProseEl) nowProseEl.value = data.nowPage.ongoingProse || "";
 
-    // 4. Render Books List
-    renderBooksList(data.books);
-
-    // 5. Populate About Form
-    const aboutHeroTitle = document.getElementById("aboutHeroTitle");
-    const aboutHeroSubtitle = document.getElementById("aboutHeroSubtitle");
-    const aboutBodyProse = document.getElementById("aboutBodyProse");
-    const aboutProfileImage = document.getElementById("aboutProfileImage");
-    const aboutImgPreview = document.getElementById("aboutImgPreview");
-
-    if (aboutHeroTitle) aboutHeroTitle.value = data.settings.aboutHeroTitle || "About Tobi Lawson";
-    if (aboutHeroSubtitle) aboutHeroSubtitle.value = data.settings.aboutHeroSubtitle || "";
-    if (aboutBodyProse) aboutBodyProse.value = data.settings.aboutBodyProse || "";
-    if (aboutProfileImage) aboutProfileImage.value = data.settings.aboutProfileImage || "./assets/tobi-lawson.jpg";
-    if (aboutImgPreview) aboutImgPreview.src = data.settings.aboutProfileImage || "./assets/tobi-lawson.jpg";
-
-    // 6. Render Projects List
+    // 4. Render Projects List / Table
     renderProjectsList(data.projects);
 
-    // 7. Populate Settings & Footer Form
-    const settingSiteTitle = document.getElementById("settingSiteTitle");
-    const settingContactEmail = document.getElementById("settingContactEmail");
-    const settingAdminPasscode = document.getElementById("settingAdminPasscode");
-    const settingFooterTagline = document.getElementById("settingFooterTagline");
-    const settingFooterCopyright = document.getElementById("settingFooterCopyright");
-    const settingFooterLink1Name = document.getElementById("settingFooterLink1Name");
-    const settingFooterLink1Url = document.getElementById("settingFooterLink1Url");
-    const settingFooterLink2Name = document.getElementById("settingFooterLink2Name");
-    const settingFooterLink2Url = document.getElementById("settingFooterLink2Url");
+    // 5. Render Books Showcase & Chapters
+    renderBooksList(data.books);
 
-    if (settingSiteTitle) settingSiteTitle.value = data.settings.siteTitle || "";
-    if (settingContactEmail) settingContactEmail.value = data.settings.contactEmail || "olamilawson@gmail.com";
-    if (settingAdminPasscode) settingAdminPasscode.value = data.settings.adminPasscode || "Enlive0801@#";
-    if (settingFooterTagline) settingFooterTagline.value = data.settings.footerTagline || "Investor, builder, and writer based in Lagos.";
-    if (settingFooterCopyright) settingFooterCopyright.value = data.settings.footerCopyright || "© 2026 Tobi Lawson. All rights reserved.";
-    if (settingFooterLink1Name) settingFooterLink1Name.value = data.settings.footerLink1Name || "1914 Reader";
-    if (settingFooterLink1Url) settingFooterLink1Url.value = data.settings.footerLink1Url || "https://www.1914reader.com/";
-    if (settingFooterLink2Name) settingFooterLink2Name.value = data.settings.footerLink2Name || "Lagos Urban";
-    if (settingFooterLink2Url) settingFooterLink2Url.value = data.settings.footerLink2Url || "http://lagosurban.com";
-
-    // 8. Populate Course Settings & Render Lessons
+    // 6. Populate Course Settings & Render Lessons
     const cs = data.courseSettings || INITIAL_DATA.courseSettings;
-    const courseStatusTagInput = document.getElementById("courseStatusTagInput");
-    const courseTitleInput = document.getElementById("courseTitleInput");
-    const courseSubtitleInput = document.getElementById("courseSubtitleInput");
-    const courseOverviewProseInput = document.getElementById("courseOverviewProseInput");
-    const courseCtaTextInput = document.getElementById("courseCtaTextInput");
+    const courseStatusTagEl = getEl("courseStatusTag", "courseStatusTagInput");
+    const courseTitleEl = getEl("courseTitle", "courseTitleInput");
+    const courseSubtitleEl = getEl("courseSubtitle", "courseSubtitleInput");
+    const courseOverviewProseEl = getEl("courseOverviewProse", "courseOverviewProseInput");
+    const courseCtaTextEl = getEl("courseCtaText", "courseCtaTextInput");
 
-    if (courseStatusTagInput) courseStatusTagInput.value = cs.statusTag || "FREE COURSE • COMING SOON";
-    if (courseTitleInput) courseTitleInput.value = cs.title || "Artificial Intelligence in Frontier Markets";
-    if (courseSubtitleInput) courseSubtitleInput.value = cs.subtitle || "";
-    if (courseOverviewProseInput) courseOverviewProseInput.value = cs.overviewProse || "";
-    if (courseCtaTextInput) courseCtaTextInput.value = cs.ctaText || "";
+    if (courseStatusTagEl) courseStatusTagEl.value = cs.statusTag || "FREE COURSE • COMING SOON";
+    if (courseTitleEl) courseTitleEl.value = cs.title || "Artificial Intelligence in Frontier Markets";
+    if (courseSubtitleEl) courseSubtitleEl.value = cs.subtitle || "";
+    if (courseOverviewProseEl) courseOverviewProseEl.value = cs.overviewProse || "";
+    if (courseCtaTextEl) courseCtaTextEl.value = cs.ctaText || "";
 
     renderCourseLessonsAdminList(data.courseLessons || INITIAL_DATA.courseLessons);
   }
@@ -438,118 +416,151 @@ async function initAdminApp() {
   // Helper: Format Toast for Cloud Save Result
   function notifySaveResult(res, successMsg) {
     if (res && res.success === false) {
-      showToast("Saved locally! Supabase Cloud notice: " + (res.error?.message || "Table check needed (Tab 8)"));
+      showToast("Saved locally! Supabase Cloud notice: " + (res.error?.message || "Table check needed"));
     } else {
       showToast(successMsg);
     }
   }
 
-  // 1. Homepage Form Submission
-  const homepageForm = document.getElementById("homepageForm");
-  if (homepageForm) {
-    homepageForm.addEventListener("submit", async (e) => {
+  // Settings & Bio Form Submission (Supports #settingsForm and #homepageForm)
+  const settingsForm = getEl("settingsForm", "homepageForm");
+  if (settingsForm) {
+    settingsForm.addEventListener("submit", async (e) => {
       e.preventDefault();
       const data = await getMasterSiteData();
-      data.settings.heroTitle = document.getElementById("homeHeroTitle").value.trim();
-      data.settings.heroScribbleWord = document.getElementById("homeHeroScribble").value.trim();
-      data.settings.heroSubtitle = document.getElementById("homeHeroSubtitle").value.trim();
+      const siteTitleEl = getEl("siteTitle", "settingSiteTitle");
+      const heroTitleEl = getEl("heroTitle", "homeHeroTitle");
+      const heroScribbleEl = getEl("heroScribbleWord", "homeHeroScribble");
+      const heroSubtitleEl = getEl("heroSubtitle", "homeHeroSubtitle");
+      const contactEmailEl = getEl("contactEmail", "settingContactEmail");
+      const adminPasscodeEl = getEl("adminPasscode", "settingAdminPasscode");
+      const footerTaglineEl = getEl("footerTagline", "homeFooterTagline", "settingFooterTagline");
+      const footerCopyrightEl = getEl("footerCopyright", "homeFooterCopyright", "settingFooterCopyright");
+      const footerLink1NameEl = getEl("footerLink1Name", "homeFooterLink1Name", "settingFooterLink1Name");
+      const footerLink1UrlEl = getEl("footerLink1Url", "homeFooterLink1Url", "settingFooterLink1Url");
+      const footerLink2NameEl = getEl("footerLink2Name", "homeFooterLink2Name", "settingFooterLink2Name");
+      const footerLink2UrlEl = getEl("footerLink2Url", "homeFooterLink2Url", "settingFooterLink2Url");
 
-      const ft = document.getElementById("homeFooterTagline");
-      const fc = document.getElementById("homeFooterCopyright");
-      const fl1n = document.getElementById("homeFooterLink1Name");
-      const fl1u = document.getElementById("homeFooterLink1Url");
-      const fl2n = document.getElementById("homeFooterLink2Name");
-      const fl2u = document.getElementById("homeFooterLink2Url");
-
-      if (ft) data.settings.footerTagline = ft.value.trim();
-      if (fc) data.settings.footerCopyright = fc.value.trim();
-      if (fl1n) data.settings.footerLink1Name = fl1n.value.trim();
-      if (fl1u) data.settings.footerLink1Url = fl1u.value.trim();
-      if (fl2n) data.settings.footerLink2Name = fl2n.value.trim();
-      if (fl2u) data.settings.footerLink2Url = fl2u.value.trim();
+      if (siteTitleEl) data.settings.siteTitle = siteTitleEl.value.trim();
+      if (heroTitleEl) data.settings.heroTitle = heroTitleEl.value.trim();
+      if (heroScribbleEl) data.settings.heroScribbleWord = heroScribbleEl.value.trim();
+      if (heroSubtitleEl) data.settings.heroSubtitle = heroSubtitleEl.value.trim();
+      if (contactEmailEl) data.settings.contactEmail = contactEmailEl.value.trim();
+      if (adminPasscodeEl) data.settings.adminPasscode = adminPasscodeEl.value.trim();
+      if (footerTaglineEl) data.settings.footerTagline = footerTaglineEl.value.trim();
+      if (footerCopyrightEl) data.settings.footerCopyright = footerCopyrightEl.value.trim();
+      if (footerLink1NameEl) data.settings.footerLink1Name = footerLink1NameEl.value.trim();
+      if (footerLink1UrlEl) data.settings.footerLink1Url = footerLink1UrlEl.value.trim();
+      if (footerLink2NameEl) data.settings.footerLink2Name = footerLink2NameEl.value.trim();
+      if (footerLink2UrlEl) data.settings.footerLink2Url = footerLink2UrlEl.value.trim();
 
       data.settings.updatedAt = new Date().toISOString();
 
       saveLocalSiteData(data);
       const res = await saveSiteSettingsToSupabase(data.settings);
-      notifySaveResult(res, "Homepage hero & footer content updated!");
+      notifySaveResult(res, "Site settings & bio updated!");
     });
   }
 
-  // 2. Writing Posts Render & Listeners
+  // Writing Posts Render (Supports Table & Div Grid layouts)
   function renderPostsList(posts) {
-    const postsList = document.getElementById("postsList");
-    if (!postsList) return;
+    const listEl = getEl("postsTableBody", "postsList");
+    if (!listEl) return;
 
     if (!posts || posts.length === 0) {
-      postsList.innerHTML = `<div class="meta" style="padding: 2rem 0; color: var(--text-muted);">No published articles found. Click "+ Create New Article" to add one.</div>`;
+      if (listEl.tagName === "TBODY") {
+        listEl.innerHTML = `<tr><td colspan="5" class="meta" style="text-align: center; padding: 2rem; color: var(--text-muted);">No published articles found. Click "+ Write New Essay" to add one.</td></tr>`;
+      } else {
+        listEl.innerHTML = `<div class="meta" style="padding: 2rem 0; color: var(--text-muted);">No published articles found. Click "+ Write New Essay" to add one.</div>`;
+      }
       return;
     }
 
-    postsList.innerHTML = posts.map((post) => `
-      <div class="admin-grid-item">
-        <div class="admin-grid-item-content">
-          <div>
-            <span class="admin-badge meta">${post.category || 'Essay'}</span>
-            <span class="meta" style="color: var(--text-muted);">${post.date || ''}</span>
+    if (listEl.tagName === "TBODY") {
+      listEl.innerHTML = posts.map((post) => `
+        <tr>
+          <td style="font-weight: 700;">${post.title}</td>
+          <td><span class="meta">${post.category || 'Essay'}</span></td>
+          <td><span class="meta">${post.date || ''}</span></td>
+          <td><span class="meta" style="color: var(--text-muted);">${post.url}</span></td>
+          <td>
+            <div style="display: flex; gap: 0.5rem;">
+              <button class="admin-btn admin-btn-secondary edit-post-btn" data-id="${post.id}">Edit</button>
+              <button class="admin-btn admin-btn-danger delete-post-btn" data-id="${post.id}">Delete</button>
+            </div>
+          </td>
+        </tr>
+      `).join("");
+    } else {
+      listEl.innerHTML = posts.map((post) => `
+        <div class="admin-grid-item">
+          <div class="admin-grid-item-content">
+            <div>
+              <span class="admin-badge meta">${post.category || 'Essay'}</span>
+              <span class="meta" style="color: var(--text-muted);">${post.date || ''}</span>
+            </div>
+            <h4>${post.title}</h4>
+            <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.25rem;">${post.summary}</p>
+            <div class="meta" style="margin-top: 0.5rem; color: var(--text-muted);">${post.url}</div>
           </div>
-          <h4>${post.title}</h4>
-          <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.25rem;">${post.summary}</p>
-          <div class="meta" style="margin-top: 0.5rem; color: var(--text-muted);">${post.url}</div>
+          <div style="display: flex; gap: 0.5rem; flex-shrink: 0;">
+            <button class="admin-btn admin-btn-secondary edit-post-btn" data-id="${post.id}">Edit</button>
+            <button class="admin-btn admin-btn-danger delete-post-btn" data-id="${post.id}">Delete</button>
+          </div>
         </div>
-        <div style="display: flex; gap: 0.5rem; flex-shrink: 0;">
-          <button class="admin-btn admin-btn-secondary edit-post-btn" data-id="${post.id}">Edit</button>
-          <button class="admin-btn admin-btn-danger delete-post-btn" data-id="${post.id}">Delete</button>
-        </div>
-      </div>
-    `).join("");
+      `).join("");
+    }
 
-    postsList.querySelectorAll(".edit-post-btn").forEach((btn) => {
+    listEl.querySelectorAll(".edit-post-btn").forEach((btn) => {
       btn.addEventListener("click", () => openPostModal(btn.getAttribute("data-id")));
     });
 
-    postsList.querySelectorAll(".delete-post-btn").forEach((btn) => {
+    listEl.querySelectorAll(".delete-post-btn").forEach((btn) => {
       btn.addEventListener("click", () => deletePost(btn.getAttribute("data-id")));
     });
   }
 
-  // 3. Now Page Submission
-  const nowPageForm = document.getElementById("nowPageForm");
-  if (nowPageForm) {
-    nowPageForm.addEventListener("submit", async (e) => {
+  // Now Page Form Submission (Supports #nowForm and #nowPageForm)
+  const nowFormEl = getEl("nowForm", "nowPageForm");
+  if (nowFormEl) {
+    nowFormEl.addEventListener("submit", async (e) => {
       e.preventDefault();
       const data = await getMasterSiteData();
-      data.nowPage.lastUpdated = document.getElementById("nowLastUpdated").value.trim();
-      data.nowPage.introSubtitle = document.getElementById("nowIntroSubtitle").value.trim();
-      data.nowPage.ongoingProse = document.getElementById("nowOngoingProse").value.trim();
+      const nowHeroTitleEl = getEl("nowHeroTitle", "nowLastUpdated");
+      const nowSubtitleEl = getEl("nowSubtitle", "nowIntroSubtitle");
+      const nowProseEl = getEl("nowProse", "nowOngoingProse");
+
+      if (nowHeroTitleEl) data.nowPage.heroTitle = nowHeroTitleEl.value.trim();
+      if (nowSubtitleEl) data.nowPage.introSubtitle = nowSubtitleEl.value.trim();
+      if (nowProseEl) data.nowPage.ongoingProse = nowProseEl.value.trim();
       data.nowPage.updatedAt = new Date().toISOString();
 
       saveLocalSiteData(data);
       const res = await saveNowPageToSupabase(data.nowPage);
-      notifySaveResult(res, '"Now" page updated!');
+      notifySaveResult(res, '"Now" page content updated!');
     });
   }
 
-  // 4. Books Form & Chapters CMS Handler
+  // Books Form & Chapters CMS Handler
   function renderBooksList(books) {
     if (!books || books.length === 0) return;
     const b = books[0];
-    const bt = document.getElementById("bookTitleInput");
-    const bs = document.getElementById("bookSubtitleInput");
-    const bst = document.getElementById("bookStatusTagInput");
-    const brd = document.getElementById("bookReleaseDateInput");
-    const bimg = document.getElementById("bookCoverImageUrlInput");
-    const bp1 = document.getElementById("bookSynopsisP1Input");
-    const bp2 = document.getElementById("bookSynopsisP2Input");
-    const bau = document.getElementById("bookAuthorInput");
-    const bfmt = document.getElementById("bookFormatInput");
-    const bprv = document.getElementById("bookPreviewUrlInput");
+    const bt = getEl("bookTitleInput");
+    const bs = getEl("bookSubtitleInput");
+    const bst = getEl("bookStatusTagInput");
+    const brd = getEl("bookReleaseDateInput");
+    const bci = getEl("bookCoverImageUrlInput");
+    const bp1 = getEl("bookSynopsisP1Input");
+    const bp2 = getEl("bookSynopsisP2Input");
+    const bau = getEl("bookAuthorInput");
+    const bfmt = getEl("bookFormatInput");
+    const bprv = getEl("bookPreviewUrlInput");
 
     if (bt) bt.value = b.title || "";
     if (bs) bs.value = b.subtitle || "";
-    if (bst) bst.value = b.statusTag || "";
-    if (brd) brd.value = b.releaseDate || "";
-    if (bimg) bimg.value = b.coverImageUrl || "";
+    if (bst) bst.value = b.statusTag || "FORTHCOMING VOLUME • IN WRITING";
+    if (brd) brd.value = b.releaseDate || "Late 2026";
+    if (bci) bci.value = b.coverImageUrl || "/assets/who-made-this-cover.jpg";
     if (bp1) bp1.value = b.synopsisP1 || "";
     if (bp2) bp2.value = b.synopsisP2 || "";
     if (bau) bau.value = b.author || "Tobi Lawson";
@@ -559,7 +570,7 @@ async function initAdminApp() {
     renderChaptersAdminList(b.chapters || []);
   }
 
-  const booksForm = document.getElementById("booksForm");
+  const booksForm = getEl("booksForm");
   if (booksForm) {
     booksForm.addEventListener("submit", async (e) => {
       e.preventDefault();
@@ -568,16 +579,27 @@ async function initAdminApp() {
         data.books = [{ id: "who-made-this", chapters: [] }];
       }
       const b = data.books[0];
-      b.title = document.getElementById("bookTitleInput").value.trim();
-      b.subtitle = document.getElementById("bookSubtitleInput").value.trim();
-      b.statusTag = document.getElementById("bookStatusTagInput").value.trim();
-      b.releaseDate = document.getElementById("bookReleaseDateInput").value.trim();
-      b.coverImageUrl = document.getElementById("bookCoverImageUrlInput").value.trim();
-      b.synopsisP1 = document.getElementById("bookSynopsisP1Input").value.trim();
-      b.synopsisP2 = document.getElementById("bookSynopsisP2Input").value.trim();
-      b.author = document.getElementById("bookAuthorInput").value.trim();
-      b.format = document.getElementById("bookFormatInput").value.trim();
-      b.previewUrl = document.getElementById("bookPreviewUrlInput").value.trim();
+      const bt = getEl("bookTitleInput");
+      const bs = getEl("bookSubtitleInput");
+      const bst = getEl("bookStatusTagInput");
+      const brd = getEl("bookReleaseDateInput");
+      const bci = getEl("bookCoverImageUrlInput");
+      const bp1 = getEl("bookSynopsisP1Input");
+      const bp2 = getEl("bookSynopsisP2Input");
+      const bau = getEl("bookAuthorInput");
+      const bfmt = getEl("bookFormatInput");
+      const bprv = getEl("bookPreviewUrlInput");
+
+      if (bt) b.title = bt.value.trim();
+      if (bs) b.subtitle = bs.value.trim();
+      if (bst) b.statusTag = bst.value.trim();
+      if (brd) b.releaseDate = brd.value.trim();
+      if (bci) b.coverImageUrl = bci.value.trim();
+      if (bp1) b.synopsisP1 = bp1.value.trim();
+      if (bp2) b.synopsisP2 = bp2.value.trim();
+      if (bau) b.author = bau.value.trim();
+      if (bfmt) b.format = bfmt.value.trim();
+      if (bprv) b.previewUrl = bprv.value.trim();
 
       data.settings.updatedAt = new Date().toISOString();
       saveLocalSiteData(data);
@@ -586,14 +608,14 @@ async function initAdminApp() {
     });
   }
 
-  const bookCoverFileInput = document.getElementById("bookCoverFileInput");
+  const bookCoverFileInput = getEl("bookCoverFileInput");
   if (bookCoverFileInput) {
     bookCoverFileInput.addEventListener("change", (e) => {
       const file = e.target.files[0];
       if (!file) return;
       const reader = new FileReader();
       reader.onload = (evt) => {
-        const urlInput = document.getElementById("bookCoverImageUrlInput");
+        const urlInput = getEl("bookCoverImageUrlInput");
         if (urlInput) urlInput.value = evt.target.result;
         showToast("Book cover image attached!");
       };
@@ -602,62 +624,66 @@ async function initAdminApp() {
   }
 
   function renderChaptersAdminList(chapters) {
-    const listEl = document.getElementById("chaptersListAdmin");
+    const listEl = getEl("chaptersListAdmin", "chaptersList");
     if (!listEl) return;
 
     if (!chapters || chapters.length === 0) {
-      listEl.innerHTML = `<div class="meta" style="padding: 2rem 0; color: var(--text-muted);">No chapters added yet. Click "+ Add Chapter Entry" above.</div>`;
+      listEl.innerHTML = `<div class="meta" style="color: var(--text-muted); padding: 1.5rem 0;">No chapters added yet. Click "+ Add Chapter" above.</div>`;
       return;
     }
 
-    listEl.innerHTML = chapters.map((chap, idx) => `
-      <div class="admin-grid-item">
-        <div class="admin-grid-item-content">
-          <span class="admin-badge meta" style="color: var(--accent);">${chap.status || 'Chapter Entry'}</span>
-          <h4>${chap.title}</h4>
-          <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.25rem;">${chap.desc}</p>
+    listEl.innerHTML = chapters.map((c, idx) => `
+      <div style="background: var(--bg); border: 1px solid var(--line); padding: 1.25rem; display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;">
+        <div>
+          <span class="meta" style="color: var(--accent); display: block; margin-bottom: 0.25rem;">${c.status || 'Chapter'}</span>
+          <h4 style="font-size: 1.15rem; margin-bottom: 0.5rem;">${c.title}</h4>
+          <p style="font-size: 0.95rem; color: var(--text-muted); line-height: 1.5;">${c.desc}</p>
         </div>
-        <div style="display: flex; gap: 0.5rem; flex-shrink: 0; align-items: center;">
-          <button class="admin-btn admin-btn-secondary edit-chapter-btn" data-idx="${idx}">Edit</button>
-          <button class="admin-btn admin-btn-danger delete-chapter-btn" data-idx="${idx}">Delete</button>
+        <div style="display: flex; gap: 0.5rem; flex-shrink: 0;">
+          <button class="admin-btn admin-btn-secondary edit-chap-btn" data-idx="${idx}">Edit</button>
+          <button class="admin-btn admin-btn-danger delete-chap-btn" data-idx="${idx}">Delete</button>
         </div>
       </div>
     `).join("");
 
-    listEl.querySelectorAll(".edit-chapter-btn").forEach((btn) => {
+    listEl.querySelectorAll(".edit-chap-btn").forEach((btn) => {
       btn.addEventListener("click", () => openChapterModal(parseInt(btn.getAttribute("data-idx"))));
     });
 
-    listEl.querySelectorAll(".delete-chapter-btn").forEach((btn) => {
+    listEl.querySelectorAll(".delete-chap-btn").forEach((btn) => {
       btn.addEventListener("click", () => deleteChapter(parseInt(btn.getAttribute("data-idx"))));
     });
   }
 
-  const chapterModal = document.getElementById("chapterModal");
-  const newChapterBtn = document.getElementById("newChapterBtn");
-  const closeChapterModalBtn = document.getElementById("closeChapterModalBtn");
-  const cancelChapterModalBtn = document.getElementById("cancelChapterModalBtn");
-  const chapterForm = document.getElementById("chapterForm");
+  // Chapter Modal Controls
+  const chapterModal = getEl("chapterModal");
+  const addChapterBtn = getEl("addChapterBtn");
+  const closeChapterModalBtn = getEl("closeChapterModalBtn");
+  const cancelChapterModalBtn = getEl("cancelChapterModalBtn");
+  const chapterForm = getEl("chapterForm");
 
-  if (newChapterBtn) newChapterBtn.addEventListener("click", () => openChapterModal());
+  if (addChapterBtn) addChapterBtn.addEventListener("click", () => openChapterModal());
   if (closeChapterModalBtn) closeChapterModalBtn.addEventListener("click", () => { if (chapterModal) chapterModal.style.display = "none"; });
   if (cancelChapterModalBtn) cancelChapterModalBtn.addEventListener("click", () => { if (chapterModal) chapterModal.style.display = "none"; });
 
   async function openChapterModal(idx = null) {
     const data = await getMasterSiteData();
-    const chapters = data.books && data.books[0] ? (data.books[0].chapters || []) : [];
-    const indexInput = document.getElementById("chapterIndex");
-    const titleInput = document.getElementById("chapterTitle");
-    const statusInput = document.getElementById("chapterStatus");
-    const descInput = document.getElementById("chapterDesc");
+    const b = (data.books && data.books[0]) ? data.books[0] : { chapters: [] };
+    const modalTitle = getEl("chapterModalTitle");
+    const indexInput = getEl("chapterIndex");
+    const titleInput = getEl("chapterTitle");
+    const statusInput = getEl("chapterStatus");
+    const descInput = getEl("chapterDesc");
 
-    if (idx !== null && chapters[idx]) {
-      const c = chapters[idx];
+    if (idx !== null && b.chapters && b.chapters[idx]) {
+      const c = b.chapters[idx];
+      if (modalTitle) modalTitle.textContent = "Edit Chapter Entry";
       if (indexInput) indexInput.value = idx;
       if (titleInput) titleInput.value = c.title;
       if (statusInput) statusInput.value = c.status;
       if (descInput) descInput.value = c.desc;
     } else {
+      if (modalTitle) modalTitle.textContent = "Add Chapter Entry";
       if (chapterForm) chapterForm.reset();
       if (indexInput) indexInput.value = "";
     }
@@ -675,10 +701,10 @@ async function initAdminApp() {
       const b = data.books[0];
       if (!b.chapters) b.chapters = [];
 
-      const idxVal = document.getElementById("chapterIndex").value;
-      const title = document.getElementById("chapterTitle").value.trim();
-      const status = document.getElementById("chapterStatus").value.trim();
-      const desc = document.getElementById("chapterDesc").value.trim();
+      const idxVal = getEl("chapterIndex").value;
+      const title = getEl("chapterTitle").value.trim();
+      const status = getEl("chapterStatus").value.trim();
+      const desc = getEl("chapterDesc").value.trim();
 
       const chapObj = { title, status, desc };
 
@@ -710,72 +736,61 @@ async function initAdminApp() {
     }
   }
 
-  // 5. About Form & Image File Upload Listeners
-  const aboutImgFileInput = document.getElementById("aboutImgFileInput");
-  if (aboutImgFileInput) {
-    aboutImgFileInput.addEventListener("change", (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (evt) => {
-        const dataUrl = evt.target.result;
-        const aboutProfileImage = document.getElementById("aboutProfileImage");
-        const aboutImgPreview = document.getElementById("aboutImgPreview");
-        if (aboutProfileImage) aboutProfileImage.value = dataUrl;
-        if (aboutImgPreview) aboutImgPreview.src = dataUrl;
-        showToast("New image uploaded and previewed!");
-      };
-      reader.readAsDataURL(file);
-    });
-  }
-
-  const aboutForm = document.getElementById("aboutForm");
-  if (aboutForm) {
-    aboutForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const data = await getMasterSiteData();
-      data.settings.aboutHeroTitle = document.getElementById("aboutHeroTitle").value.trim();
-      data.settings.aboutHeroSubtitle = document.getElementById("aboutHeroSubtitle").value.trim();
-      data.settings.aboutBodyProse = document.getElementById("aboutBodyProse").value.trim();
-      data.settings.aboutProfileImage = document.getElementById("aboutProfileImage").value.trim();
-      data.settings.updatedAt = new Date().toISOString();
-
-      saveLocalSiteData(data);
-      const res = await saveSiteSettingsToSupabase(data.settings);
-      notifySaveResult(res, "About page content & photo updated!");
-    });
-  }
-
-  // 6. Projects Render & Modal Listeners
+  // 6. Projects Render (Table & List formats)
   function renderProjectsList(projects) {
-    const projectsList = document.getElementById("projectsList");
-    if (!projectsList) return;
+    const listEl = getEl("projectsTableBody", "projectsList");
+    if (!listEl) return;
 
-    projectsList.innerHTML = (projects || []).map((proj) => `
-      <div class="admin-grid-item">
-        <div class="admin-grid-item-content">
-          <span class="admin-badge meta">${proj.roleTag || 'Project'}</span>
-          <h4>${proj.title}</h4>
-          <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.25rem;">${proj.description}</p>
-        </div>
-        <div style="display: flex; gap: 0.5rem; flex-shrink: 0; align-items: center;">
-          <a href="${proj.link}" target="_blank" class="meta" style="color: var(--text-muted); margin-right: 0.5rem;">${proj.link} ↗</a>
-          <button class="admin-btn admin-btn-danger delete-project-btn" data-id="${proj.id}">Delete</button>
-        </div>
-      </div>
-    `).join("");
+    if (!projects || projects.length === 0) {
+      if (listEl.tagName === "TBODY") {
+        listEl.innerHTML = `<tr><td colspan="4" class="meta" style="text-align: center; padding: 2rem; color: var(--text-muted);">No active projects found. Click "+ Add Project" to add one.</td></tr>`;
+      } else {
+        listEl.innerHTML = `<div class="meta" style="padding: 2rem 0; color: var(--text-muted);">No active projects found. Click "+ Add Project" to add one.</div>`;
+      }
+      return;
+    }
 
-    projectsList.querySelectorAll(".delete-project-btn").forEach((btn) => {
+    if (listEl.tagName === "TBODY") {
+      listEl.innerHTML = projects.map((proj) => `
+        <tr>
+          <td style="font-weight: 700;">${proj.title}</td>
+          <td><span class="meta">${proj.roleTag || 'Project'}</span></td>
+          <td><span class="meta" style="color: var(--accent);">${proj.status || 'Active'}</span></td>
+          <td>
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+              <a href="${proj.link}" target="_blank" class="meta" style="color: var(--text-muted); margin-right: 0.5rem;">Visit ↗</a>
+              <button class="admin-btn admin-btn-danger delete-project-btn" data-id="${proj.id}">Delete</button>
+            </div>
+          </td>
+        </tr>
+      `).join("");
+    } else {
+      listEl.innerHTML = projects.map((proj) => `
+        <div class="admin-grid-item">
+          <div class="admin-grid-item-content">
+            <span class="admin-badge meta">${proj.roleTag || 'Project'}</span>
+            <h4>${proj.title}</h4>
+            <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.25rem;">${proj.description}</p>
+          </div>
+          <div style="display: flex; gap: 0.5rem; flex-shrink: 0; align-items: center;">
+            <a href="${proj.link}" target="_blank" class="meta" style="color: var(--text-muted); margin-right: 0.5rem;">${proj.link} ↗</a>
+            <button class="admin-btn admin-btn-danger delete-project-btn" data-id="${proj.id}">Delete</button>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    listEl.querySelectorAll(".delete-project-btn").forEach((btn) => {
       btn.addEventListener("click", () => deleteProject(btn.getAttribute("data-id")));
     });
   }
 
   // Modal Handlers for Articles
-  const postModal = document.getElementById("postModal");
-  const newPostBtn = document.getElementById("newPostBtn");
-  const closePostModalBtn = document.getElementById("closePostModalBtn");
-  const cancelPostModalBtn = document.getElementById("cancelPostModalBtn");
-  const postForm = document.getElementById("postForm");
+  const postModal = getEl("postModal");
+  const newPostBtn = getEl("newPostBtn");
+  const closePostModalBtn = getEl("closePostModalBtn");
+  const cancelPostModalBtn = getEl("cancelPostModalBtn");
+  const postForm = getEl("postForm");
 
   if (newPostBtn) newPostBtn.addEventListener("click", () => openPostModal());
   if (closePostModalBtn) closePostModalBtn.addEventListener("click", closePostModal);
@@ -783,13 +798,13 @@ async function initAdminApp() {
 
   async function openPostModal(postId = null) {
     const data = await getMasterSiteData();
-    const modalTitle = document.getElementById("postModalTitle");
-    const idInput = document.getElementById("postId");
-    const titleInput = document.getElementById("postTitle");
-    const typeInput = document.getElementById("postType");
-    const dateInput = document.getElementById("postDate");
-    const summaryInput = document.getElementById("postSummary");
-    const urlInput = document.getElementById("postUrl");
+    const modalTitle = getEl("postModalTitle");
+    const idInput = getEl("postId");
+    const titleInput = getEl("postTitleInput", "postTitle");
+    const typeInput = getEl("postCategoryInput", "postType");
+    const dateInput = getEl("postDateInput", "postDate");
+    const summaryInput = getEl("postSummaryInput", "postSummary");
+    const urlInput = getEl("postUrlInput", "postUrl");
 
     if (postId) {
       const existing = data.posts.find((p) => p.id === postId);
@@ -819,12 +834,12 @@ async function initAdminApp() {
     postForm.addEventListener("submit", async (e) => {
       e.preventDefault();
       const data = await getMasterSiteData();
-      const idInput = document.getElementById("postId").value;
-      const title = document.getElementById("postTitle").value.trim();
-      const category = document.getElementById("postType").value;
-      const date = document.getElementById("postDate").value.trim();
-      const summary = document.getElementById("postSummary").value.trim();
-      const url = document.getElementById("postUrl").value.trim();
+      const idInput = getEl("postId").value;
+      const title = getEl("postTitleInput", "postTitle").value.trim();
+      const category = getEl("postCategoryInput", "postType").value.trim();
+      const date = getEl("postDateInput", "postDate").value.trim();
+      const summary = getEl("postSummaryInput", "postSummary").value.trim();
+      const url = getEl("postUrlInput", "postUrl").value.trim();
 
       const newPost = {
         id: idInput || title.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
@@ -865,11 +880,11 @@ async function initAdminApp() {
   }
 
   // Modal Handlers for Projects
-  const projectModal = document.getElementById("projectModal");
-  const newProjectBtn = document.getElementById("newProjectBtn");
-  const closeProjectModalBtn = document.getElementById("closeProjectModalBtn");
-  const cancelProjectModalBtn = document.getElementById("cancelProjectModalBtn");
-  const projectForm = document.getElementById("projectForm");
+  const projectModal = getEl("projectModal");
+  const newProjectBtn = getEl("newProjectBtn");
+  const closeProjectModalBtn = getEl("closeProjectModalBtn");
+  const cancelProjectModalBtn = getEl("cancelProjectModalBtn");
+  const projectForm = getEl("projectForm");
 
   if (newProjectBtn) newProjectBtn.addEventListener("click", () => {
     if (projectForm) projectForm.reset();
@@ -883,14 +898,15 @@ async function initAdminApp() {
     projectForm.addEventListener("submit", async (e) => {
       e.preventDefault();
       const data = await getMasterSiteData();
-      const title = document.getElementById("projectTitle").value.trim();
-      const roleTag = document.getElementById("projectRoleTag").value.trim();
-      const status = document.getElementById("projectStatus").value.trim();
-      const description = document.getElementById("projectDesc").value.trim();
-      const link = document.getElementById("projectLink").value.trim();
+      const idInput = getEl("projectId").value;
+      const title = getEl("projectTitleInput", "projectTitle").value.trim();
+      const roleTag = getEl("projectRoleInput", "projectRole").value.trim();
+      const status = getEl("projectStatusInput", "projectStatus").value.trim();
+      const description = getEl("projectDescInput", "projectDesc").value.trim();
+      const link = getEl("projectLinkInput", "projectLink").value.trim();
 
       const newProj = {
-        id: title.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+        id: idInput || title.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
         title,
         roleTag,
         status,
@@ -899,14 +915,20 @@ async function initAdminApp() {
       };
 
       if (!data.projects) data.projects = [];
-      data.projects.push(newProj);
+
+      if (idInput) {
+        const idx = data.projects.findIndex((p) => p.id === idInput);
+        if (idx !== -1) data.projects[idx] = newProj;
+      } else {
+        data.projects.unshift(newProj);
+      }
+
       data.settings.updatedAt = new Date().toISOString();
       saveLocalSiteData(data);
       const res = await saveProjectToSupabase(newProj);
-
       if (projectModal) projectModal.style.display = "none";
       await renderConsoleData();
-      notifySaveResult(res, "New project added!");
+      notifySaveResult(res, idInput ? "Project updated." : "New project added.");
     });
   }
 
@@ -921,69 +943,49 @@ async function initAdminApp() {
     notifySaveResult(res, "Project removed.");
   }
 
-  // 7. Global Settings & Footer Submission
-  const settingsForm = document.getElementById("settingsForm");
-  if (settingsForm) {
-    settingsForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const data = await getMasterSiteData();
-      data.settings.siteTitle = document.getElementById("settingSiteTitle").value.trim();
-      data.settings.contactEmail = document.getElementById("settingContactEmail").value.trim();
-      data.settings.adminPasscode = document.getElementById("settingAdminPasscode").value.trim();
-      data.settings.footerTagline = document.getElementById("settingFooterTagline").value.trim();
-      data.settings.footerCopyright = document.getElementById("settingFooterCopyright").value.trim();
-      data.settings.footerLink1Name = document.getElementById("settingFooterLink1Name").value.trim();
-      data.settings.footerLink1Url = document.getElementById("settingFooterLink1Url").value.trim();
-      data.settings.footerLink2Name = document.getElementById("settingFooterLink2Name").value.trim();
-      data.settings.footerLink2Url = document.getElementById("settingFooterLink2Url").value.trim();
-      data.settings.updatedAt = new Date().toISOString();
-
-      saveLocalSiteData(data);
-      const res = await saveSiteSettingsToSupabase(data.settings);
-      notifySaveResult(res, "Global site settings & footer updated!");
-    });
-  }
-
-  // 8. Course CMS Settings Submission & Lesson Modal Handlers
-  const courseSettingsForm = document.getElementById("courseSettingsForm");
+  // Course Settings Form Handler (Supports #courseSettingsForm)
+  const courseSettingsForm = getEl("courseSettingsForm");
   if (courseSettingsForm) {
     courseSettingsForm.addEventListener("submit", async (e) => {
       e.preventDefault();
       const data = await getMasterSiteData();
       if (!data.courseSettings) data.courseSettings = {};
 
-      data.courseSettings.statusTag = document.getElementById("courseStatusTagInput").value.trim();
-      data.courseSettings.title = document.getElementById("courseTitleInput").value.trim();
-      data.courseSettings.subtitle = document.getElementById("courseSubtitleInput").value.trim();
-      data.courseSettings.overviewProse = document.getElementById("courseOverviewProseInput").value.trim();
-      data.courseSettings.ctaText = document.getElementById("courseCtaTextInput").value.trim();
-      data.courseSettings.updatedAt = new Date().toISOString();
+      const st = getEl("courseStatusTag", "courseStatusTagInput");
+      const ct = getEl("courseTitle", "courseTitleInput");
+      const cs = getEl("courseSubtitle", "courseSubtitleInput");
+      const co = getEl("courseOverviewProse", "courseOverviewProseInput");
+      const cta = getEl("courseCtaText", "courseCtaTextInput");
 
+      if (st) data.courseSettings.statusTag = st.value.trim();
+      if (ct) data.courseSettings.title = ct.value.trim();
+      if (cs) data.courseSettings.subtitle = cs.value.trim();
+      if (co) data.courseSettings.overviewProse = co.value.trim();
+      if (cta) data.courseSettings.ctaText = cta.value.trim();
+
+      data.courseSettings.updatedAt = new Date().toISOString();
       saveLocalSiteData(data);
       const res = await saveCourseSettingsToSupabase(data.courseSettings);
-      notifySaveResult(res, "Course settings updated!");
+      notifySaveResult(res, "Course syllabus & overview updated!");
     });
   }
 
+  // Course Lessons Render
   function renderCourseLessonsAdminList(lessons) {
-    const listEl = document.getElementById("courseLessonsAdminList");
+    const listEl = getEl("courseLessonsAdminList", "courseLessonsList");
     if (!listEl) return;
 
     if (!lessons || lessons.length === 0) {
-      listEl.innerHTML = `<div class="meta" style="padding: 2rem 0; color: var(--text-muted);">No lessons or video modules created yet. Click "+ Add Lesson / Video Module" above to add one.</div>`;
+      listEl.innerHTML = `<div class="meta" style="color: var(--text-muted); padding: 1.5rem 0;">No lesson modules published yet. Click "+ Add Lesson Module" above.</div>`;
       return;
     }
 
     listEl.innerHTML = lessons.map((l) => `
-      <div class="admin-grid-item">
-        <div class="admin-grid-item-content">
-          <div>
-            <span class="admin-badge meta">${l.moduleNumber || 'MODULE 01'}</span>
-            <span class="meta" style="color: var(--text-muted);">${l.status || 'Published'}</span>
-            <span class="meta" style="color: var(--accent); margin-left: 0.5rem;">${l.videoType === 'youtube' ? '▶ YouTube Video' : l.videoType === 'upload' ? '📹 Direct Video' : '📄 Text Lecture'}</span>
-          </div>
-          <h4>${l.title}</h4>
-          <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.25rem;">${l.summary}</p>
+      <div style="background: var(--bg); border: 1px solid var(--line); padding: 1.25rem; display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;">
+        <div>
+          <span class="meta" style="color: var(--accent); display: block; margin-bottom: 0.25rem;">${l.moduleNumber || 'MODULE'} • ${l.status || 'Published'}</span>
+          <h4 style="font-size: 1.15rem; margin-bottom: 0.5rem;">${l.title}</h4>
+          <p style="font-size: 0.95rem; color: var(--text-muted); line-height: 1.5;">${l.summary}</p>
         </div>
         <div style="display: flex; gap: 0.5rem; flex-shrink: 0; align-items: center;">
           <button class="admin-btn admin-btn-secondary edit-lesson-btn" data-id="${l.id}">Edit</button>
@@ -1002,189 +1004,114 @@ async function initAdminApp() {
   }
 
   // Lesson Modal Handlers
-  const lessonModal = document.getElementById("lessonModal");
-  const newLessonBtn = document.getElementById("newLessonBtn");
-  const closeLessonModalBtn = document.getElementById("closeLessonModalBtn");
-  const cancelLessonModalBtn = document.getElementById("cancelLessonModalBtn");
-  const lessonForm = document.getElementById("lessonForm");
-  const lessonVideoType = document.getElementById("lessonVideoType");
-  const youtubeGroup = document.getElementById("youtubeGroup");
-  const uploadGroup = document.getElementById("uploadGroup");
-  const lessonVideoFileInput = document.getElementById("lessonVideoFileInput");
-  const lessonVideoFileName = document.getElementById("lessonVideoFileName");
-  const lessonVideoPreview = document.getElementById("lessonVideoPreview");
+  const lessonModal = getEl("lessonModal");
+  const newLessonBtn = getEl("newLessonBtn");
+  const closeLessonModalBtn = getEl("closeLessonModalBtn");
+  const cancelLessonModalBtn = getEl("cancelLessonModalBtn");
+  const lessonForm = getEl("lessonForm");
 
   if (newLessonBtn) newLessonBtn.addEventListener("click", () => openLessonModal());
-  if (closeLessonModalBtn) closeLessonModalBtn.addEventListener("click", closeLessonModal);
-  if (cancelLessonModalBtn) cancelLessonModalBtn.addEventListener("click", closeLessonModal);
-
-  if (lessonVideoType) {
-    lessonVideoType.addEventListener("change", () => {
-      const type = lessonVideoType.value;
-      if (type === "youtube") {
-        if (youtubeGroup) youtubeGroup.style.display = "block";
-        if (uploadGroup) uploadGroup.style.display = "none";
-      } else if (type === "upload") {
-        if (youtubeGroup) youtubeGroup.style.display = "none";
-        if (uploadGroup) uploadGroup.style.display = "block";
-      } else {
-        if (youtubeGroup) youtubeGroup.style.display = "none";
-        if (uploadGroup) uploadGroup.style.display = "none";
-      }
-    });
-  }
-
-  if (lessonVideoFileInput) {
-    lessonVideoFileInput.addEventListener("change", (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      if (lessonVideoFileName) lessonVideoFileName.textContent = file.name;
-      const reader = new FileReader();
-      reader.onload = (evt) => {
-        const videoDataUrl = evt.target.result;
-        const lessonVideoUrl = document.getElementById("lessonVideoUrl");
-        if (lessonVideoUrl) lessonVideoUrl.value = videoDataUrl;
-        if (lessonVideoPreview) {
-          lessonVideoPreview.src = videoDataUrl;
-          lessonVideoPreview.style.display = "block";
-        }
-        showToast("Video file attached and preview ready!");
-      };
-      reader.readAsDataURL(file);
-    });
-  }
+  if (closeLessonModalBtn) closeLessonModalBtn.addEventListener("click", () => { if (lessonModal) lessonModal.style.display = "none"; });
+  if (cancelLessonModalBtn) cancelLessonModalBtn.addEventListener("click", () => { if (lessonModal) lessonModal.style.display = "none"; });
 
   async function openLessonModal(lessonId = null) {
     const data = await getMasterSiteData();
-    const modalTitle = document.getElementById("lessonModalTitle");
-    const idInput = document.getElementById("lessonId");
-    const moduleInput = document.getElementById("lessonModuleNumber");
-    const statusInput = document.getElementById("lessonStatus");
-    const titleInput = document.getElementById("lessonTitle");
-    const summaryInput = document.getElementById("lessonSummary");
-    const textInput = document.getElementById("lessonTextContent");
-    const videoTypeSelect = document.getElementById("lessonVideoType");
-    const videoUrlInput = document.getElementById("lessonVideoUrl");
+    const modalTitle = getEl("lessonModalTitle");
+    const idInput = getEl("lessonId");
+    const numInput = getEl("lessonModuleNumber");
+    const titleInput = getEl("lessonTitle");
+    const statusInput = getEl("lessonStatus");
+    const summaryInput = getEl("lessonSummary");
+    const textInput = getEl("lessonTextContent");
 
     if (lessonId && data.courseLessons) {
       const existing = data.courseLessons.find((l) => l.id === lessonId);
       if (existing) {
-        if (modalTitle) modalTitle.textContent = "Edit Lesson / Module";
+        if (modalTitle) modalTitle.textContent = "Edit Lesson Module";
         if (idInput) idInput.value = existing.id;
-        if (moduleInput) moduleInput.value = existing.moduleNumber || "MODULE 01";
-        if (statusInput) statusInput.value = existing.status || "Published";
+        if (numInput) numInput.value = existing.moduleNumber || "MODULE 01";
         if (titleInput) titleInput.value = existing.title;
-        if (summaryInput) summaryInput.value = existing.summary;
+        if (statusInput) statusInput.value = existing.status || "Published";
+        if (summaryInput) summaryInput.value = existing.summary || "";
         if (textInput) textInput.value = existing.textContent || "";
-        if (videoTypeSelect) videoTypeSelect.value = existing.videoType || "none";
-        if (videoUrlInput) videoUrlInput.value = existing.videoUrl || "";
-
-        if (existing.videoType === "upload" && existing.videoUrl && lessonVideoPreview) {
-          lessonVideoPreview.src = existing.videoUrl;
-          lessonVideoPreview.style.display = "block";
-        } else if (lessonVideoPreview) {
-          lessonVideoPreview.style.display = "none";
-        }
       }
     } else {
-      if (modalTitle) modalTitle.textContent = "Create Lesson / Module";
+      if (modalTitle) modalTitle.textContent = "Add Lesson Module";
       if (lessonForm) lessonForm.reset();
       if (idInput) idInput.value = "";
-      if (lessonVideoPreview) lessonVideoPreview.style.display = "none";
-      if (lessonVideoFileName) lessonVideoFileName.textContent = "No file selected";
     }
 
-    if (lessonVideoType) lessonVideoType.dispatchEvent(new Event("change"));
     if (lessonModal) lessonModal.style.display = "flex";
-  }
-
-  function closeLessonModal() {
-    if (lessonModal) lessonModal.style.display = "none";
   }
 
   if (lessonForm) {
     lessonForm.addEventListener("submit", async (e) => {
       e.preventDefault();
       const data = await getMasterSiteData();
-      const idInput = document.getElementById("lessonId").value;
-      const moduleNumber = document.getElementById("lessonModuleNumber").value.trim();
-      const status = document.getElementById("lessonStatus").value;
-      const title = document.getElementById("lessonTitle").value.trim();
-      const summary = document.getElementById("lessonSummary").value.trim();
-      const textContent = document.getElementById("lessonTextContent").value.trim();
-      const videoType = document.getElementById("lessonVideoType").value;
-      const videoUrl = document.getElementById("lessonVideoUrl").value.trim();
+      const idInput = getEl("lessonId").value;
+      const moduleNumber = getEl("lessonModuleNumber").value.trim();
+      const title = getEl("lessonTitle").value.trim();
+      const status = getEl("lessonStatus").value.trim();
+      const summary = getEl("lessonSummary").value.trim();
+      const textContent = getEl("lessonTextContent").value.trim();
 
-      const lessonData = {
+      const lessonObj = {
         id: idInput || title.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
         moduleNumber,
-        status,
         title,
+        status,
         summary,
         textContent,
-        videoType,
-        videoUrl
+        videoType: "none",
+        videoUrl: ""
       };
 
       if (!data.courseLessons) data.courseLessons = [];
 
       if (idInput) {
         const idx = data.courseLessons.findIndex((l) => l.id === idInput);
-        if (idx !== -1) data.courseLessons[idx] = lessonData;
+        if (idx !== -1) data.courseLessons[idx] = lessonObj;
       } else {
-        data.courseLessons.push(lessonData);
+        data.courseLessons.push(lessonObj);
       }
 
       data.settings.updatedAt = new Date().toISOString();
       saveLocalSiteData(data);
-      const res = await saveCourseLessonToSupabase(lessonData);
-      closeLessonModal();
+      const res = await saveCourseLessonToSupabase(lessonObj);
+      if (lessonModal) lessonModal.style.display = "none";
       await renderConsoleData();
-      notifySaveResult(res, idInput ? "Lesson updated successfully." : "New lesson module added!");
+      notifySaveResult(res, "Lesson module saved!");
     });
   }
 
   async function deleteLesson(lessonId) {
-    if (!confirm("Are you sure you want to delete this lesson module?")) return;
+    if (!confirm("Delete this lesson module?")) return;
     const data = await getMasterSiteData();
     data.courseLessons = (data.courseLessons || []).filter((l) => l.id !== lessonId);
     data.settings.updatedAt = new Date().toISOString();
     saveLocalSiteData(data);
     const res = await deleteCourseLessonFromSupabase(lessonId);
     await renderConsoleData();
-    notifySaveResult(res, "Lesson deleted.");
+    notifySaveResult(res, "Lesson module deleted.");
   }
 
-  // 9. Supabase Seeding & Backup Handlers
-  const seedSupabaseBtn = document.getElementById("seedSupabaseBtn");
-  const exportJsonBtn = document.getElementById("exportJsonBtn");
-  const importJsonInput = document.getElementById("importJsonInput");
-  const resetDefaultsBtn = document.getElementById("resetDefaultsBtn");
-
-  if (seedSupabaseBtn) {
-    seedSupabaseBtn.addEventListener("click", async () => {
-      const data = getLocalSiteData();
-      showToast("Pushing local data snapshot to Supabase Cloud...");
-      const res = await seedInitialDataToSupabase(data);
-      if (res && res.success === false) {
-        showToast("Supabase Notice: " + (res.error?.message || "Failed to seed tables. Run SQL schema in Supabase."));
-      } else {
-        showToast("Supabase Cloud database seeded successfully!");
-      }
-    });
-  }
+  // Backup & Restore Buttons
+  const exportJsonBtn = getEl("exportJsonBtn");
+  const importJsonInput = getEl("importJsonInput");
+  const resetDefaultsBtn = getEl("resetDefaultsBtn");
 
   if (exportJsonBtn) {
     exportJsonBtn.addEventListener("click", async () => {
       const data = await getMasterSiteData();
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const jsonStr = JSON.stringify(data, null, 2);
+      const blob = new Blob([jsonStr], { type: "application/json" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `tobi-lawson-site-backup-${new Date().toISOString().slice(0, 10)}.json`;
+      a.download = `tobi-lawson-site-backup-${new Date().toISOString().split("T")[0]}.json`;
       a.click();
       URL.revokeObjectURL(url);
-      showToast("Database snapshot exported successfully.");
+      showToast("JSON backup downloaded!");
     });
   }
 
@@ -1192,18 +1119,15 @@ async function initAdminApp() {
     importJsonInput.addEventListener("change", (e) => {
       const file = e.target.files[0];
       if (!file) return;
-
       const reader = new FileReader();
       reader.onload = async (evt) => {
         try {
-          const imported = JSON.parse(evt.target.result);
-          if (imported && imported.settings && imported.posts) {
-            saveLocalSiteData(imported);
-            await seedInitialDataToSupabase(imported);
+          const parsed = JSON.parse(evt.target.result);
+          if (parsed && parsed.settings) {
+            saveLocalSiteData(parsed);
+            await seedInitialDataToSupabase(parsed);
             await renderConsoleData();
-            showToast("Database snapshot imported and pushed to Supabase Cloud.");
-          } else {
-            alert("Invalid backup file format.");
+            showToast("Backup restored successfully!");
           }
         } catch (err) {
           alert("Error parsing backup JSON file.");
@@ -1219,6 +1143,9 @@ async function initAdminApp() {
         saveLocalSiteData(INITIAL_DATA);
         await seedInitialDataToSupabase(INITIAL_DATA);
         await renderConsoleData();
+        showToast("Site data reset to factory defaults.");
+      }
+    });
   }
 }
 
