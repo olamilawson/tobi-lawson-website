@@ -27,7 +27,7 @@ import {
   subscribeToSupabaseRealtime
 } from "/supabase.js";
 
-const STORAGE_KEY = "tobi_site_data_v1";
+const STORAGE_KEY = "tobi_site_data_v2";
 const AUTH_KEY = "tobi_admin_authenticated";
 
 // Factory Defaults (Hardcoded Credentials)
@@ -161,7 +161,6 @@ function getEl(...ids) {
   return null;
 }
 
-// Local Storage Helper
 export function getLocalSiteData() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -170,7 +169,10 @@ export function getLocalSiteData() {
       return INITIAL_DATA;
     }
     const parsed = JSON.parse(raw);
-    if (parsed && parsed.settings) {
+    if (parsed) {
+      parsed.settings = { ...INITIAL_DATA.settings, ...(parsed.settings || {}) };
+      parsed.nowPage = { ...INITIAL_DATA.nowPage, ...(parsed.nowPage || {}) };
+      parsed.courseSettings = { ...INITIAL_DATA.courseSettings, ...(parsed.courseSettings || {}) };
       if (!parsed.settings.aboutProfileImage) {
         parsed.settings.aboutProfileImage = "/assets/tobi-lawson.jpg";
       }

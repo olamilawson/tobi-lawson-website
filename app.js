@@ -10,7 +10,7 @@ import {
   subscribeToSupabaseRealtime
 } from "/supabase.js";
 
-const STORAGE_KEY = "tobi_site_data_v1";
+const STORAGE_KEY = "tobi_site_data_v2";
 
 // Local Storage Helper
 function getLocalSiteData() {
