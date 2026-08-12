@@ -26,12 +26,12 @@ export async function syncSiteSettingsFromSupabase() {
       aboutProfileImage: data.about_profile_image || "/assets/tobi-lawson.jpg",
       contactEmail: data.contact_email || "olamilawson@gmail.com",
       adminPasscode: data.admin_passcode || "Enlive0801@#",
-      footerTagline: data.footer_tagline || "Investor, builder, and writer based in Lagos.",
-      footerCopyright: data.footer_copyright || "© 2026 Tobi Lawson. All rights reserved.",
-      footerLink1Name: data.footer_link1_name || "1914 Reader",
-      footerLink1Url: data.footer_link1_url || "https://www.1914reader.com/",
-      footerLink2Name: data.footer_link2_name || "Lagos Urban",
-      footerLink2Url: data.footer_link2_url || "http://lagosurban.com",
+      footerTagline: data.footer_tagline || null,
+      footerCopyright: data.footer_copyright || null,
+      footerLink1Name: data.footer_link1_name || null,
+      footerLink1Url: data.footer_link1_url || null,
+      footerLink2Name: data.footer_link2_name || null,
+      footerLink2Url: data.footer_link2_url || null,
       updatedAt: data.updated_at || null
     };
   } catch (err) {
@@ -65,7 +65,6 @@ export async function saveSiteSettingsToSupabase(settings) {
     };
     const { data, error } = await supabase.from("site_settings").upsert(payload);
     if (error) {
-      // If error is due to missing new columns in Supabase table schema, retry with basic payload
       if (error.message && (error.message.includes("column") || error.code === "PGRST204")) {
         const fallbackPayload = {
           id: "global",
@@ -83,7 +82,7 @@ export async function saveSiteSettingsToSupabase(settings) {
         };
         const fallbackRes = await supabase.from("site_settings").upsert(fallbackPayload);
         if (!fallbackRes.error) {
-          return { success: true, data: fallbackRes.data, notice: "Saved to Supabase Cloud! Run updated SQL schema to enable remote footer columns." };
+          return { success: true, data: fallbackRes.data, notice: "Saved locally and synced available fields to Supabase Cloud!" };
         }
       }
       console.error("Error saving site settings to Supabase:", error);

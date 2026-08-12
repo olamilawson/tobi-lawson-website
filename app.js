@@ -39,12 +39,17 @@ async function fetchMasterData() {
       syncCourseLessonsFromSupabase()
     ]);
 
-    const localSettingsTs = local?.settings?.updatedAt ? new Date(local.settings.updatedAt).getTime() : 0;
-    const cloudSettingsTs = cloudSettings?.updatedAt ? new Date(cloudSettings.updatedAt).getTime() : 0;
-
-    let mergedSettings = cloudSettings || (local ? local.settings : null);
-    if (local?.settings && localSettingsTs >= cloudSettingsTs) {
-      mergedSettings = local.settings;
+    let mergedSettings = {
+      ...(cloudSettings || {}),
+      ...(local?.settings || {})
+    };
+    if (cloudSettings) {
+      if (cloudSettings.footerTagline) mergedSettings.footerTagline = cloudSettings.footerTagline;
+      if (cloudSettings.footerCopyright) mergedSettings.footerCopyright = cloudSettings.footerCopyright;
+      if (cloudSettings.footerLink1Name) mergedSettings.footerLink1Name = cloudSettings.footerLink1Name;
+      if (cloudSettings.footerLink1Url) mergedSettings.footerLink1Url = cloudSettings.footerLink1Url;
+      if (cloudSettings.footerLink2Name) mergedSettings.footerLink2Name = cloudSettings.footerLink2Name;
+      if (cloudSettings.footerLink2Url) mergedSettings.footerLink2Url = cloudSettings.footerLink2Url;
     }
 
     const mergedPosts = (Array.isArray(cloudPosts) && cloudPosts.length > 0)
