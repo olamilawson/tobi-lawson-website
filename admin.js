@@ -378,6 +378,19 @@ async function initAdminApp() {
     if (footerLink2NameEl) footerLink2NameEl.value = data.settings.footerLink2Name || "Lagos Urban";
     if (footerLink2UrlEl) footerLink2UrlEl.value = data.settings.footerLink2Url || "http://lagosurban.com";
 
+    // Populate About Page Section
+    const aboutHeroTitleEl = getEl("aboutHeroTitle");
+    const aboutHeroSubtitleEl = getEl("aboutHeroSubtitle");
+    const aboutBodyProseEl = getEl("aboutBodyProse");
+    const aboutProfileImageEl = getEl("aboutProfileImage");
+    const aboutImgPreviewEl = getEl("aboutImgPreview");
+
+    if (aboutHeroTitleEl) aboutHeroTitleEl.value = data.settings.aboutHeroTitle || "About Tobi Lawson";
+    if (aboutHeroSubtitleEl) aboutHeroSubtitleEl.value = data.settings.aboutHeroSubtitle || "";
+    if (aboutBodyProseEl) aboutBodyProseEl.value = data.settings.aboutBodyProse || "";
+    if (aboutProfileImageEl) aboutProfileImageEl.value = data.settings.aboutProfileImage || "/assets/tobi-lawson.jpg";
+    if (aboutImgPreviewEl) aboutImgPreviewEl.src = data.settings.aboutProfileImage || "/assets/tobi-lawson.jpg";
+
     // 2. Render Posts List / Table
     renderPostsList(data.posts);
 
@@ -441,6 +454,11 @@ async function initAdminApp() {
       const footerLink2NameEl = getEl("footerLink2Name", "homeFooterLink2Name", "settingFooterLink2Name");
       const footerLink2UrlEl = getEl("footerLink2Url", "homeFooterLink2Url", "settingFooterLink2Url");
 
+      const aboutHeroTitleEl = getEl("aboutHeroTitle");
+      const aboutHeroSubtitleEl = getEl("aboutHeroSubtitle");
+      const aboutBodyProseEl = getEl("aboutBodyProse");
+      const aboutProfileImageEl = getEl("aboutProfileImage");
+
       if (siteTitleEl) data.settings.siteTitle = siteTitleEl.value.trim();
       if (heroTitleEl) data.settings.heroTitle = heroTitleEl.value.trim();
       if (heroScribbleEl) data.settings.heroScribbleWord = heroScribbleEl.value.trim();
@@ -454,11 +472,34 @@ async function initAdminApp() {
       if (footerLink2NameEl) data.settings.footerLink2Name = footerLink2NameEl.value.trim();
       if (footerLink2UrlEl) data.settings.footerLink2Url = footerLink2UrlEl.value.trim();
 
+      if (aboutHeroTitleEl) data.settings.aboutHeroTitle = aboutHeroTitleEl.value.trim();
+      if (aboutHeroSubtitleEl) data.settings.aboutHeroSubtitle = aboutHeroSubtitleEl.value.trim();
+      if (aboutBodyProseEl) data.settings.aboutBodyProse = aboutBodyProseEl.value.trim();
+      if (aboutProfileImageEl) data.settings.aboutProfileImage = aboutProfileImageEl.value.trim();
+
       data.settings.updatedAt = new Date().toISOString();
 
       saveLocalSiteData(data);
       const res = await saveSiteSettingsToSupabase(data.settings);
-      notifySaveResult(res, "Site settings & bio updated!");
+      notifySaveResult(res, "Site settings & About page content updated!");
+    });
+  }
+
+  // Portrait Photo Upload Handler
+  const aboutImgFileInput = getEl("aboutImgFileInput");
+  if (aboutImgFileInput) {
+    aboutImgFileInput.addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        const urlInput = getEl("aboutProfileImage");
+        const previewImg = getEl("aboutImgPreview");
+        if (urlInput) urlInput.value = evt.target.result;
+        if (previewImg) previewImg.src = evt.target.result;
+        showToast("New portrait photo attached! Click Save Site Settings to apply.");
+      };
+      reader.readAsDataURL(file);
     });
   }
 

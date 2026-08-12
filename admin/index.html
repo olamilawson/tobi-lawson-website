@@ -301,6 +301,41 @@
             </div>
 
             <div style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--line);">
+              <h3 style="font-family: var(--font-serif); font-size: 1.5rem; margin-bottom: 0.5rem;">About Page & Bio Editorial</h3>
+              <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 1.5rem;">Edit your bio headline, lead subtitle, full editorial prose, and portrait photograph.</p>
+
+              <div class="admin-form-group">
+                <label for="aboutHeroTitle" class="meta">About Page Hero Headline</label>
+                <input type="text" id="aboutHeroTitle" class="admin-input" placeholder="About Tobi Lawson" />
+              </div>
+
+              <div class="admin-form-group">
+                <label for="aboutHeroSubtitle" class="meta">About Page Hero Subtitle</label>
+                <textarea id="aboutHeroSubtitle" class="admin-textarea" placeholder="Investor and builder based in Lagos..."></textarea>
+              </div>
+
+              <div class="admin-form-group">
+                <label for="aboutBodyProse" class="meta">About Page Full Bio Prose (Paragraphs)</label>
+                <textarea id="aboutBodyProse" class="admin-textarea" style="min-height: 160px;" placeholder="I'm an investor and builder based in Lagos..."></textarea>
+              </div>
+
+              <div class="admin-form-group">
+                <label for="aboutProfileImage" class="meta">Portrait Photo URL or Upload</label>
+                <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 0.75rem;">
+                  <input type="text" id="aboutProfileImage" class="admin-input" placeholder="/assets/tobi-lawson.jpg" />
+                  <label class="admin-btn admin-btn-secondary" style="margin: 0; cursor: pointer; flex-shrink: 0;">
+                    📷 Upload Photo
+                    <input type="file" id="aboutImgFileInput" accept="image/*" style="display: none;" />
+                  </label>
+                </div>
+                <div style="margin-top: 0.75rem;">
+                  <span class="meta" style="color: var(--text-muted); display: block; margin-bottom: 0.5rem;">Current Portrait Preview:</span>
+                  <img id="aboutImgPreview" src="/assets/tobi-lawson.jpg" alt="Preview" style="width: 120px; height: 150px; object-fit: cover; border: 1px solid var(--line);" />
+                </div>
+              </div>
+            </div>
+
+            <div style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--line);">
               <h3 style="font-family: var(--font-serif); font-size: 1.5rem; margin-bottom: 1rem;">Footer Content & Custom Links</h3>
               
               <div class="admin-form-group">
