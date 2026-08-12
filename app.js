@@ -39,17 +39,41 @@ async function fetchMasterData() {
       syncCourseLessonsFromSupabase()
     ]);
 
-    let mergedSettings = {
-      ...(cloudSettings || {}),
-      ...(local?.settings || {})
+    const baseDefaults = {
+      siteTitle: "Tobi Lawson",
+      heroTitle: "Building and investing with purpose.",
+      heroSubtitle: "Notes on capital, cities, and the slow work of building things that last. Based in Lagos, working across fintech, SME services, and education technology.",
+      heroScribbleWord: "purpose.",
+      aboutHeroTitle: "About Tobi Lawson",
+      aboutHeroSubtitle: "Investor and builder based in Lagos. Background in investment analysis and development research, now running companies across fintech, SME services, and education technology.",
+      aboutBodyProse: "I'm an investor and builder based in Lagos. My background is in investment analysis and development research, work that shaped how I think about capital, institutions, and the slow processes that move a country's fortunes.\n\nToday I run and invest in companies across fintech, SME services technology, product development, and education technology. Alongside that, I co-founded 1914 Reader with Feyi Fawehinmi, where we read Nigeria and Africa's biggest stories through the lens of global economic and political change.\n\nI also work on Lagos Urban Project, a platform reimagining Lagos as a more inclusive and livable city, and Long Africa, a new institution focused on the long-run foundations of African prosperity.\n\nMy interests run wide: markets, cities, governance, technology, and the books that help make sense of them. This site is where I write about all of it, and keep a running account of what I'm building.",
+      aboutProfileImage: "/assets/tobi-lawson.jpg",
+      contactEmail: "olamilawson@gmail.com",
+      adminPasscode: "Enlive0801@#",
+      footerTagline: "Investor, builder, and writer based in Lagos.",
+      footerCopyright: "© 2026 Tobi Lawson. All rights reserved.",
+      footerLink1Name: "1914 Reader",
+      footerLink1Url: "https://www.1914reader.com/",
+      footerLink2Name: "Lagos Urban",
+      footerLink2Url: "http://lagosurban.com"
     };
+
+    let mergedSettings = { ...baseDefaults };
+
     if (cloudSettings) {
-      if (cloudSettings.footerTagline) mergedSettings.footerTagline = cloudSettings.footerTagline;
-      if (cloudSettings.footerCopyright) mergedSettings.footerCopyright = cloudSettings.footerCopyright;
-      if (cloudSettings.footerLink1Name) mergedSettings.footerLink1Name = cloudSettings.footerLink1Name;
-      if (cloudSettings.footerLink1Url) mergedSettings.footerLink1Url = cloudSettings.footerLink1Url;
-      if (cloudSettings.footerLink2Name) mergedSettings.footerLink2Name = cloudSettings.footerLink2Name;
-      if (cloudSettings.footerLink2Url) mergedSettings.footerLink2Url = cloudSettings.footerLink2Url;
+      for (const [key, val] of Object.entries(cloudSettings)) {
+        if (val !== null && val !== undefined && val !== "") {
+          mergedSettings[key] = val;
+        }
+      }
+    }
+
+    if (local && local.settings) {
+      for (const [key, val] of Object.entries(local.settings)) {
+        if (val !== null && val !== undefined && val !== "") {
+          mergedSettings[key] = val;
+        }
+      }
     }
 
     const mergedPosts = (Array.isArray(cloudPosts) && cloudPosts.length > 0)

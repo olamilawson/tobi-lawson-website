@@ -213,18 +213,22 @@ export async function getMasterSiteData() {
     const localSettingsTs = local?.settings?.updatedAt ? new Date(local.settings.updatedAt).getTime() : 0;
     const cloudSettingsTs = cloudSettings?.updatedAt ? new Date(cloudSettings.updatedAt).getTime() : 0;
 
-    let mergedSettings = {
-      ...INITIAL_DATA.settings,
-      ...(cloudSettings || {}),
-      ...(local?.settings || {})
-    };
+    let mergedSettings = { ...INITIAL_DATA.settings };
+
     if (cloudSettings) {
-      if (cloudSettings.footerTagline) mergedSettings.footerTagline = cloudSettings.footerTagline;
-      if (cloudSettings.footerCopyright) mergedSettings.footerCopyright = cloudSettings.footerCopyright;
-      if (cloudSettings.footerLink1Name) mergedSettings.footerLink1Name = cloudSettings.footerLink1Name;
-      if (cloudSettings.footerLink1Url) mergedSettings.footerLink1Url = cloudSettings.footerLink1Url;
-      if (cloudSettings.footerLink2Name) mergedSettings.footerLink2Name = cloudSettings.footerLink2Name;
-      if (cloudSettings.footerLink2Url) mergedSettings.footerLink2Url = cloudSettings.footerLink2Url;
+      for (const [key, val] of Object.entries(cloudSettings)) {
+        if (val !== null && val !== undefined && val !== "") {
+          mergedSettings[key] = val;
+        }
+      }
+    }
+
+    if (local && local.settings) {
+      for (const [key, val] of Object.entries(local.settings)) {
+        if (val !== null && val !== undefined && val !== "") {
+          mergedSettings[key] = val;
+        }
+      }
     }
 
     const mergedPosts = (Array.isArray(cloudPosts) && cloudPosts.length > 0)
