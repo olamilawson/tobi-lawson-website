@@ -385,12 +385,12 @@ async function initAdminApp() {
     if (heroSubtitleEl) heroSubtitleEl.value = data.settings.heroSubtitle || "";
     if (contactEmailEl) contactEmailEl.value = data.settings.contactEmail || "olamilawson@gmail.com";
     if (adminPasscodeEl) adminPasscodeEl.value = data.settings.adminPasscode || "Enlive0801@#";
-    if (footerTaglineEl) footerTaglineEl.value = data.settings.footerTagline || "Investor, builder, and writer based in Lagos.";
-    if (footerCopyrightEl) footerCopyrightEl.value = data.settings.footerCopyright || "© 2026 Tobi Lawson. All rights reserved.";
-    if (footerLink1NameEl) footerLink1NameEl.value = data.settings.footerLink1Name || "1914 Reader";
-    if (footerLink1UrlEl) footerLink1UrlEl.value = data.settings.footerLink1Url || "https://www.1914reader.com/";
-    if (footerLink2NameEl) footerLink2NameEl.value = data.settings.footerLink2Name || "Lagos Urban";
-    if (footerLink2UrlEl) footerLink2UrlEl.value = data.settings.footerLink2Url || "http://lagosurban.com";
+    if (footerTaglineEl) footerTaglineEl.value = data.settings.footerTagline ?? "Investor, builder, and writer based in Lagos.";
+    if (footerCopyrightEl) footerCopyrightEl.value = data.settings.footerCopyright ?? "© 2026 Tobi Lawson. All rights reserved.";
+    if (footerLink1NameEl) footerLink1NameEl.value = data.settings.footerLink1Name ?? "1914 Reader";
+    if (footerLink1UrlEl) footerLink1UrlEl.value = data.settings.footerLink1Url ?? "https://www.1914reader.com/";
+    if (footerLink2NameEl) footerLink2NameEl.value = data.settings.footerLink2Name ?? "Lagos Urban";
+    if (footerLink2UrlEl) footerLink2UrlEl.value = data.settings.footerLink2Url ?? "http://lagosurban.com";
 
     // Populate About Page Section
     const aboutHeroTitleEl = getEl("aboutHeroTitle");
