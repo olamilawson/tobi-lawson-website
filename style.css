@@ -129,6 +129,11 @@ h3 {
   min-height: 45vh;
 }
 
+.hero.page-hero {
+  min-height: auto;
+  margin-bottom: 2.5rem;
+}
+
 .hero-subtitle {
   font-size: clamp(1.125rem, 1.8vw, 1.5rem);
   font-family: var(--font-display);

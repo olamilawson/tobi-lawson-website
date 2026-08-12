@@ -101,28 +101,24 @@ async function hydratePage() {
       });
     }
 
-    // Dynamic Footer Hydration
-    const footerTagline = document.querySelector(".footer-tagline");
-    if (footerTagline && data.settings.footerTagline) {
-      footerTagline.textContent = data.settings.footerTagline;
-    }
+    // Dynamic Footer & Custom Links Hydration across all pages
+    document.querySelectorAll(".footer-tagline").forEach(el => {
+      if (data.settings.footerTagline) el.textContent = data.settings.footerTagline;
+    });
 
-    const footerCopyright = document.querySelector(".footer-copyright");
-    if (footerCopyright && data.settings.footerCopyright) {
-      footerCopyright.textContent = data.settings.footerCopyright;
-    }
+    document.querySelectorAll(".footer-copyright").forEach(el => {
+      if (data.settings.footerCopyright) el.textContent = data.settings.footerCopyright;
+    });
 
-    const footerLink1 = document.querySelector(".footer-custom-link-1");
-    if (footerLink1 && data.settings.footerLink1Name && data.settings.footerLink1Url) {
-      footerLink1.textContent = data.settings.footerLink1Name;
-      footerLink1.href = data.settings.footerLink1Url;
-    }
+    document.querySelectorAll(".footer-custom-link-1").forEach(el => {
+      if (data.settings.footerLink1Name) el.textContent = data.settings.footerLink1Name;
+      if (data.settings.footerLink1Url) el.href = data.settings.footerLink1Url;
+    });
 
-    const footerLink2 = document.querySelector(".footer-custom-link-2");
-    if (footerLink2 && data.settings.footerLink2Name && data.settings.footerLink2Url) {
-      footerLink2.textContent = data.settings.footerLink2Name;
-      footerLink2.href = data.settings.footerLink2Url;
-    }
+    document.querySelectorAll(".footer-custom-link-2").forEach(el => {
+      if (data.settings.footerLink2Name) el.textContent = data.settings.footerLink2Name;
+      if (data.settings.footerLink2Url) el.href = data.settings.footerLink2Url;
+    });
   }
 
   // 2. Hydrate Homepage (Presence of #projects or #writing on index.html)
