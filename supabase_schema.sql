@@ -1,165 +1,82 @@
--- ==============================================================================
--- TOBI LAWSON WEBSITE — SUPABASE DATABASE SCHEMA & REALTIME CONFIGURATION
--- Safe & Idempotent SQL Script
--- ==============================================================================
+-- Tobi Lawson — site content schema (v3)
+--
+-- Run this once in the Supabase dashboard: SQL Editor -> New query -> Run.
+-- It is idempotent, so running it again is harmless.
+--
+-- The entire site is one JSONB document in one row. That is deliberate: under
+-- the old design every new editable field needed its own snake_case column
+-- across seven tables, and fields that were added in the app but not in the
+-- database silently failed to save. With a document there is nothing to keep
+-- in sync — content-schema.js is the only definition of what exists.
 
--- 1. GLOBAL SITE SETTINGS TABLE
-CREATE TABLE IF NOT EXISTS public.site_settings (
-  id TEXT PRIMARY KEY DEFAULT 'global',
-  site_title TEXT DEFAULT 'Tobi Lawson',
-  hero_title TEXT DEFAULT 'Building and investing with purpose.',
-  hero_subtitle TEXT DEFAULT 'Notes on capital, cities, and the slow work of building things that last. Based in Lagos, working across fintech, SME services, and education technology.',
-  hero_scribble_word TEXT DEFAULT 'purpose.',
-  about_hero_title TEXT DEFAULT 'About Tobi Lawson',
-  about_hero_subtitle TEXT DEFAULT 'Investor and builder based in Lagos. Background in investment analysis and development research, now running companies across fintech, SME services, and education technology.',
-  about_body_prose TEXT DEFAULT 'I''m an investor and builder based in Lagos. My background is in investment analysis and development research, work that shaped how I think about capital, institutions, and the slow processes that move a country''s fortunes.\n\nToday I run and invest in companies across fintech, SME services technology, product development, and education technology. Alongside that, I co-founded 1914 Reader with Feyi Fawehinmi, where we read Nigeria and Africa''s biggest stories through the lens of global economic and political change.\n\nI also work on Lagos Urban Project, a platform reimagining Lagos as a more inclusive and livable city, and Long Africa, a new institution focused on the long-run foundations of African prosperity.',
-  contact_email TEXT DEFAULT 'olamilawson@gmail.com',
-  about_profile_image TEXT DEFAULT './assets/tobi-lawson.jpg',
-  admin_passcode TEXT DEFAULT 'Enlive0801@#',
-  footer_tagline TEXT DEFAULT 'Investor, builder, and writer based in Lagos.',
-  footer_copyright TEXT DEFAULT '© 2026 Tobi Lawson. All rights reserved.',
-  footer_link1_name TEXT DEFAULT '1914 Reader',
-  footer_link1_url TEXT DEFAULT 'https://www.1914reader.com/',
-  footer_link2_name TEXT DEFAULT 'Lagos Urban',
-  footer_link2_url TEXT DEFAULT 'http://lagosurban.com',
-  updated_at TIMESTAMPTZ DEFAULT NOW()
+CREATE TABLE IF NOT EXISTS public.site_content (
+  id          TEXT PRIMARY KEY,
+  doc         JSONB NOT NULL DEFAULT '{}'::jsonb,
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-ALTER TABLE public.site_settings ADD COLUMN IF NOT EXISTS about_profile_image TEXT DEFAULT './assets/tobi-lawson.jpg';
-ALTER TABLE public.site_settings ADD COLUMN IF NOT EXISTS footer_tagline TEXT DEFAULT 'Investor, builder, and writer based in Lagos.';
-ALTER TABLE public.site_settings ADD COLUMN IF NOT EXISTS footer_copyright TEXT DEFAULT '© 2026 Tobi Lawson. All rights reserved.';
-ALTER TABLE public.site_settings ADD COLUMN IF NOT EXISTS footer_link1_name TEXT DEFAULT '1914 Reader';
-ALTER TABLE public.site_settings ADD COLUMN IF NOT EXISTS footer_link1_url TEXT DEFAULT 'https://www.1914reader.com/';
-ALTER TABLE public.site_settings ADD COLUMN IF NOT EXISTS footer_link2_name TEXT DEFAULT 'Lagos Urban';
-ALTER TABLE public.site_settings ADD COLUMN IF NOT EXISTS footer_link2_url TEXT DEFAULT 'http://lagosurban.com';
+INSERT INTO public.site_content (id) VALUES ('global')
+  ON CONFLICT (id) DO NOTHING;
 
-ALTER TABLE public.site_settings ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Allow public access to site_settings" ON public.site_settings;
-CREATE POLICY "Allow public access to site_settings" ON public.site_settings FOR ALL USING (true) WITH CHECK (true);
+ALTER TABLE public.site_content ENABLE ROW LEVEL SECURITY;
 
--- Insert Default Global Site Settings
-INSERT INTO public.site_settings (id) VALUES ('global') ON CONFLICT (id) DO NOTHING;
+-- ---------------------------------------------------------------------------
+-- Access policy
+-- ---------------------------------------------------------------------------
+-- The console authenticates with a passcode in the browser, not with Supabase
+-- Auth, so the anonymous key must be able to write. That means anyone who
+-- reads the page source can also write to this table. This is a deliberate
+-- trade-off for passcode-only access, not an oversight.
+--
+-- To close it later: create a user in Authentication -> Users, switch the
+-- console to supabase.auth.signInWithPassword, then replace the policy below
+-- with the two commented-out policies underneath it.
 
--- 2. WRITING & ESSAYS TABLE
-CREATE TABLE IF NOT EXISTS public.posts (
-  id TEXT PRIMARY KEY,
-  title TEXT NOT NULL,
-  category TEXT DEFAULT 'Essay',
-  date TEXT NOT NULL,
-  summary TEXT NOT NULL,
-  url TEXT NOT NULL,
-  content_html TEXT DEFAULT '',
-  is_featured BOOLEAN DEFAULT true,
-  sort_order INT DEFAULT 0,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
+DROP POLICY IF EXISTS "site_content public read/write" ON public.site_content;
+CREATE POLICY "site_content public read/write"
+  ON public.site_content FOR ALL
+  USING (true) WITH CHECK (true);
 
-ALTER TABLE public.posts ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Allow public access to posts" ON public.posts;
-CREATE POLICY "Allow public access to posts" ON public.posts FOR ALL USING (true) WITH CHECK (true);
+-- -- Locked-down replacement, for when you move to Supabase Auth:
+-- DROP POLICY IF EXISTS "site_content public read/write" ON public.site_content;
+-- CREATE POLICY "site_content read" ON public.site_content
+--   FOR SELECT USING (true);
+-- CREATE POLICY "site_content write" ON public.site_content
+--   FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
--- 3. PROJECTS & INITIATIVES TABLE
-CREATE TABLE IF NOT EXISTS public.projects (
-  id TEXT PRIMARY KEY,
-  title TEXT NOT NULL,
-  role_tag TEXT NOT NULL,
-  description TEXT NOT NULL,
-  link TEXT NOT NULL,
-  status TEXT DEFAULT 'Active',
-  sort_order INT DEFAULT 0,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
+-- ---------------------------------------------------------------------------
+-- Realtime — so an edit on one device appears on the others without a reload
+-- ---------------------------------------------------------------------------
 
-ALTER TABLE public.projects ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Allow public access to projects" ON public.projects;
-CREATE POLICY "Allow public access to projects" ON public.projects FOR ALL USING (true) WITH CHECK (true);
-
--- 4. NOW PAGE CMS TABLE
-CREATE TABLE IF NOT EXISTS public.now_page (
-  id TEXT PRIMARY KEY DEFAULT 'global',
-  last_updated TEXT DEFAULT 'July 2026',
-  hero_title TEXT DEFAULT 'What I''m spending time on',
-  intro_subtitle TEXT DEFAULT 'A running account of the projects I''m building, updated as things move. Last updated July 2026.',
-  ongoing_prose TEXT DEFAULT 'I run and invest in companies across fintech, SME services technology, product development, and education technology. Some are early-stage, some are further along. I share specifics and case studies here as each venture is ready to talk about publicly.',
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
-ALTER TABLE public.now_page ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Allow public access to now_page" ON public.now_page;
-CREATE POLICY "Allow public access to now_page" ON public.now_page FOR ALL USING (true) WITH CHECK (true);
-
-INSERT INTO public.now_page (id) VALUES ('global') ON CONFLICT (id) DO NOTHING;
-
--- 5. BOOKS & MONOGRAPHS TABLE
-CREATE TABLE IF NOT EXISTS public.books (
-  id TEXT PRIMARY KEY,
-  title TEXT NOT NULL,
-  subtitle TEXT DEFAULT '',
-  status_tag TEXT DEFAULT 'FORTHCOMING VOLUME • IN WRITING',
-  cover_image_url TEXT DEFAULT 'assets/who-made-this-cover.jpg',
-  synopsis_p1 TEXT DEFAULT '',
-  synopsis_p2 TEXT DEFAULT '',
-  author TEXT DEFAULT 'Tobi Lawson',
-  format TEXT DEFAULT 'Hardcover & Digital',
-  release_date TEXT DEFAULT 'Late 2026',
-  preview_url TEXT DEFAULT 'books/who-made-this-preview.html',
-  chapters JSONB DEFAULT '[]'::jsonb,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
-ALTER TABLE public.books ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Allow public access to books" ON public.books;
-CREATE POLICY "Allow public access to books" ON public.books FOR ALL USING (true) WITH CHECK (true);
-
--- 6. COURSE CMS TABLES (Artificial Intelligence in Frontier Markets)
-CREATE TABLE IF NOT EXISTS public.course_settings (
-  id TEXT PRIMARY KEY DEFAULT 'global',
-  status_tag TEXT DEFAULT 'FREE COURSE • COMING SOON',
-  title TEXT DEFAULT 'Artificial Intelligence in Frontier Markets',
-  subtitle TEXT DEFAULT 'A free masterclass series exploring how compute, data pipelines, and foundation models are reshaped by the physical realities of emerging economies.',
-  overview_prose TEXT DEFAULT 'Artificial Intelligence is often analyzed through the lens of Silicon Valley capital and hyperscaler data centers. But the real friction—and the highest-leverage opportunities—happen at the edges of global networks: in Lagos, Nairobi, Jakarta, and São Paulo.\n\nThis free course examines compute constraints, local dataset curation, offline-first inference architectures, and real-world deployment across fintech, SME logistics, and public institutions in frontier markets.',
-  cta_text TEXT DEFAULT 'Enrollment is completely free. Leave your email to receive early lesson drops, video modules, and lecture notes as modules go live.',
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
-ALTER TABLE public.course_settings ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Allow public access to course_settings" ON public.course_settings;
-CREATE POLICY "Allow public access to course_settings" ON public.course_settings FOR ALL USING (true) WITH CHECK (true);
-
-INSERT INTO public.course_settings (id) VALUES ('global') ON CONFLICT (id) DO NOTHING;
-
-CREATE TABLE IF NOT EXISTS public.course_lessons (
-  id TEXT PRIMARY KEY,
-  module_number TEXT DEFAULT 'MODULE 01',
-  title TEXT NOT NULL,
-  status TEXT DEFAULT 'Published',
-  summary TEXT NOT NULL,
-  text_content TEXT DEFAULT '',
-  video_type TEXT DEFAULT 'youtube',
-  video_url TEXT DEFAULT '',
-  sort_order INT DEFAULT 0,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
-ALTER TABLE public.course_lessons ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Allow public access to course_lessons" ON public.course_lessons;
-CREATE POLICY "Allow public access to course_lessons" ON public.course_lessons FOR ALL USING (true) WITH CHECK (true);
-
--- 7. REALTIME SUBSCRIPTIONS
 DO $$
 BEGIN
   IF NOT EXISTS (
-    SELECT 1 FROM pg_publication_tables 
-    WHERE pubname = 'supabase_realtime' 
-    AND schemaname = 'public' 
-    AND tablename = 'site_settings'
+    SELECT 1 FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime'
+      AND schemaname = 'public'
+      AND tablename = 'site_content'
   ) THEN
-    ALTER PUBLICATION supabase_realtime ADD TABLE public.site_settings;
-    ALTER PUBLICATION supabase_realtime ADD TABLE public.posts;
-    ALTER PUBLICATION supabase_realtime ADD TABLE public.projects;
-    ALTER PUBLICATION supabase_realtime ADD TABLE public.now_page;
-    ALTER PUBLICATION supabase_realtime ADD TABLE public.books;
-    ALTER PUBLICATION supabase_realtime ADD TABLE public.course_settings;
-    ALTER PUBLICATION supabase_realtime ADD TABLE public.course_lessons;
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.site_content;
   END IF;
 END $$;
+
+-- ---------------------------------------------------------------------------
+-- Cleanup of the old layout — OPTIONAL, and only after you have confirmed the
+-- site renders correctly and you have downloaded a JSON backup from the
+-- console's Cloud & Backup tab. The app migrates these tables into
+-- site_content automatically on first load, so do not drop them before that.
+-- ---------------------------------------------------------------------------
+
+-- The old site_settings table stored the admin passcode in a column that any
+-- anonymous API caller could SELECT. Nothing reads it any more; the console now
+-- keeps only a SHA-256 hash inside the document. Drop the column when ready:
+--
+-- ALTER TABLE public.site_settings DROP COLUMN IF EXISTS admin_passcode;
+--
+-- DROP TABLE IF EXISTS public.site_settings;
+-- DROP TABLE IF EXISTS public.posts;
+-- DROP TABLE IF EXISTS public.projects;
+-- DROP TABLE IF EXISTS public.now_page;
+-- DROP TABLE IF EXISTS public.books;
+-- DROP TABLE IF EXISTS public.course_settings;
+-- DROP TABLE IF EXISTS public.course_lessons;

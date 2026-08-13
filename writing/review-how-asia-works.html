@@ -7,10 +7,9 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
     <title>Tobi Lawson</title>
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%232E5A52'/%3E%3Cpath d='M7 10H25M16 10V24M16 24H25' stroke='%23F7F3EA' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E" />
-  <link rel="icon" type="image/x-icon" href="/favicon.ico" />
-  <link rel="shortcut icon" href="/favicon.ico" />
-  <link rel="apple-touch-icon" href="/assets/favicon.png" />
+  <link rel="icon" href="/favicon.ico" sizes="any" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="apple-touch-icon" href="/favicon.png" />
   <meta name="description" content="Joe Studwell's case for land reform and export discipline holds up. The parts that don't translate say a lot about the starting point." />
 
   
@@ -18,25 +17,25 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/base.css?v=1.0.6" />
-  <link rel="stylesheet" href="/style.css?v=1.0.6" />
+  <link rel="stylesheet" href="/base.css?v=3.0.0" />
+  <link rel="stylesheet" href="/style.css?v=3.0.0" />
 </head>
 <body>
 
   <header class="header-nav fade-up">
-            <a href="/" class="meta-brand">Tobi Lawson</a>
+            <a href="/" class="meta-brand" data-cms="siteTitle">Tobi Lawson</a>
     <nav class="meta-links meta" aria-label="Primary Navigation">
-      <a href="/">Home</a>
-      <a href="/books/">Books</a>
-      <a href="/writing/" aria-current="page">Writing</a>
-      <a href="/now/">Now</a>
-      <a href="/course/">Course</a>
-      <a href="/about/">About</a>
+      <a href="/" data-cms="navHome">Home</a>
+      <a href="/books/" data-cms="navBooks">Books</a>
+      <a href="/writing/" aria-current="page" data-cms="navWriting">Writing</a>
+      <a href="/now/" data-cms="navNow">Now</a>
+      <a href="/course/" data-cms="navCourse">Course</a>
+      <a href="/about/" data-cms="navAbout">About</a>
     </nav>
   </header>
 
   <main id="main">
-    <article class="prose-container fade-up delay-1">
+    <article class="prose-container fade-up delay-1" data-cms-post>
       <header class="article-header">
         <div class="article-meta meta">
           <span>Book Review</span>
@@ -45,12 +44,12 @@
           <span>·</span>
           <span>6 min read</span>
         </div>
-        <h1>How Asia Works, and What It Leaves Unanswered for Africa</h1>
-        <p class="article-dek">Joe Studwell's case for land reform and export discipline holds up. The parts that don't translate say a lot about the starting point.</p>
+        <h1 data-cms-post-title>How Asia Works, and What It Leaves Unanswered for Africa</h1>
+        <p class="article-dek" data-cms-post-summary>Joe Studwell's case for land reform and export discipline holds up. The parts that don't translate say a lot about the starting point.</p>
         <div class="meta" style="color: var(--text-muted);">By Tobi Lawson</div>
       </header>
 
-      <div class="article-body">
+      <div class="article-body" data-cms-post-body>
         <p>Joe Studwell's "How Asia Works" demonstrates a clear thesis: Japan, South Korea, Taiwan, and China built wealth by breaking standard economic prescriptions. They redistributed land to small farmers before industrializing, forced manufacturers to compete in export markets rather than protecting domestic monopolies, and directed credit toward production instead of speculation.</p>
 
         <p>Studwell supports each claim with concrete historical records. He details specific export quotas set by South Korea's government for chaebols in the 1960s and 1970s, alongside consequences for underperforming firms. He documents how Taiwan redistributed rice paddies to active tillers. These case records give the book lasting weight in development literature.</p>
@@ -73,8 +72,8 @@
       </div>
 
       <div style="margin-top: 4rem; padding-top: 2rem; border-top: 1px solid var(--line);">
-        <div class="meta" style="margin-bottom: 1.5rem;">More Writing</div>
-        <div class="grid-3" style="margin-bottom: 2rem;">
+        <div class="meta" style="margin-bottom: 1.5rem;" data-cms="writingMoreLabel">More Writing</div>
+        <div class="grid-3" style="margin-bottom: 2rem;" data-cms-list="relatedPosts">
           <a class="grid-item" href="the-shape-lagos-takes.html" style="text-decoration:none;">
             <div class="grid-item-header">
               <h3>The Shape Lagos Takes When No One Is Planning It</h3>
@@ -93,14 +92,20 @@
   </main>
 
   <footer class="fade-up">
-    <div class="meta">© 2026 Tobi Lawson · Lagos, Nigeria</div>
-    <div class="meta footer-links">
-      <a href="mailto:olamilawson@gmail.com">Email</a>
-      <a href="https://www.1914reader.com/" target="_blank" rel="noopener noreferrer">1914 Reader</a>
-      <a href="http://lagosurban.com" target="_blank" rel="noopener noreferrer">Lagos Urban</a>
+    <div>
+      <div class="meta-brand" style="margin-bottom: 0.5rem;" data-cms="siteTitle">Tobi Lawson</div>
+      <p class="footer-tagline" style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 0.5rem;" data-cms="footerTagline">Investor, builder, and writer based in Lagos.</p>
+      <div class="meta footer-copyright" style="color: var(--text-muted); font-size: 0.8rem;" data-cms="footerCopyright">
+        © 2026 Tobi Lawson. All rights reserved.
+      </div>
+    </div>
+    <div class="meta-links meta footer-links">
+      <a href="mailto:olamilawson@gmail.com" class="footer-email-link" data-cms="footerEmailLabel" data-cms-attr="mailto:contactEmail">Email</a>
+      <a href="https://www.1914reader.com/" target="_blank" rel="noopener noreferrer" class="footer-custom-link-1" data-cms="footerLink1Name" data-cms-attr="href:footerLink1Url">1914 Reader</a>
+      <a href="http://lagosurban.com" target="_blank" rel="noopener noreferrer" class="footer-custom-link-2" data-cms="footerLink2Name" data-cms-attr="href:footerLink2Url">Lagos Urban</a>
     </div>
   </footer>
 
-  <script src="../app.js" defer></script>
+  <script type="module" src="/app.js?v=3.0.0"></script>
 </body>
 </html>

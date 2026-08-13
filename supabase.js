@@ -1,3 +1,15 @@
+/**
+ * Tobi Lawson — Supabase cloud adapter.
+ *
+ * The whole site is one JSONB document in one row: site_content(id='global').
+ * Adding a new editable field therefore never requires a database migration —
+ * that was the single biggest source of half-wired fields in the old design,
+ * where every field needed its own snake_case column in seven separate tables.
+ *
+ * The legacy readers at the bottom exist only to migrate the old seven-table
+ * layout across on first load. They can be deleted once you've saved once.
+ */
+
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.1/+esm";
 
 export const SUPABASE_URL = "https://xifwswzqfqwfhihglubs.supabase.co";
@@ -9,462 +21,187 @@ export const supabase = isSupabaseConfigured
   ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
   : null;
 
-// SITE SETTINGS SYNC
-export async function syncSiteSettingsFromSupabase() {
+const DOC_TABLE = "site_content";
+const DOC_ID = "global";
+
+/**
+ * Read the content document from the cloud.
+ * Returns null when Supabase is unreachable or the table doesn't exist yet,
+ * so callers can fall back to local content rather than blanking the page.
+ */
+export async function fetchCloudDoc() {
   if (!supabase) return null;
   try {
-    const { data, error } = await supabase.from("site_settings").select("*").eq("id", "global").maybeSingle();
-    if (error || !data) return null;
-    return {
-      siteTitle: data.site_title || "Tobi Lawson",
-      heroTitle: data.hero_title || "Building and investing with purpose.",
-      heroSubtitle: data.hero_subtitle || "",
-      heroScribbleWord: data.hero_scribble_word || "purpose.",
-      aboutHeroTitle: data.about_hero_title || "About Tobi Lawson",
-      aboutHeroSubtitle: data.about_hero_subtitle || "",
-      aboutBodyProse: data.about_body_prose || "",
-      aboutProfileImage: data.about_profile_image || "/assets/tobi-lawson.jpg",
-      contactEmail: data.contact_email || "olamilawson@gmail.com",
-      adminPasscode: data.admin_passcode || "Enlive0801@#",
-      footerTagline: data.footer_tagline || null,
-      footerCopyright: data.footer_copyright || null,
-      footerLink1Name: data.footer_link1_name || null,
-      footerLink1Url: data.footer_link1_url || null,
-      footerLink2Name: data.footer_link2_name || null,
-      footerLink2Url: data.footer_link2_url || null,
-      updatedAt: data.updated_at || null
-    };
+    const { data, error } = await supabase
+      .from(DOC_TABLE)
+      .select("doc, updated_at")
+      .eq("id", DOC_ID)
+      .maybeSingle();
+
+    if (error || !data || !data.doc) return null;
+
+    const doc = data.doc;
+    // The row's own updated_at is authoritative over anything inside the blob.
+    if (data.updated_at) doc.updatedAt = data.updated_at;
+    return doc;
   } catch (err) {
-    console.warn("Supabase site_settings fetch error:", err);
+    console.warn("Supabase read failed, using local content:", err);
     return null;
   }
 }
 
-export async function saveSiteSettingsToSupabase(settings) {
-  if (!supabase) return { success: false, error: "Supabase client not initialized" };
+/** Write the content document to the cloud. */
+export async function saveCloudDoc(doc) {
+  if (!supabase) return { success: false, error: "Cloud sync is not configured." };
   try {
-    const payload = {
-      id: "global",
-      site_title: settings.siteTitle,
-      hero_title: settings.heroTitle,
-      hero_subtitle: settings.heroSubtitle,
-      hero_scribble_word: settings.heroScribbleWord || "purpose.",
-      about_hero_title: settings.aboutHeroTitle,
-      about_hero_subtitle: settings.aboutHeroSubtitle,
-      about_body_prose: settings.aboutBodyProse,
-      about_profile_image: settings.aboutProfileImage || "./assets/tobi-lawson.jpg",
-      contact_email: settings.contactEmail,
-      admin_passcode: settings.adminPasscode,
-      footer_tagline: settings.footerTagline || "Investor, builder, and writer based in Lagos.",
-      footer_copyright: settings.footerCopyright || "© 2026 Tobi Lawson. All rights reserved.",
-      footer_link1_name: settings.footerLink1Name || "1914 Reader",
-      footer_link1_url: settings.footerLink1Url || "https://www.1914reader.com/",
-      footer_link2_name: settings.footerLink2Name || "Lagos Urban",
-      footer_link2_url: settings.footerLink2Url || "http://lagosurban.com",
-      updated_at: settings.updatedAt || new Date().toISOString()
-    };
-    const { data, error } = await supabase.from("site_settings").upsert(payload);
+    const { data, error } = await supabase
+      .from(DOC_TABLE)
+      .upsert({ id: DOC_ID, doc, updated_at: doc.updatedAt || new Date().toISOString() })
+      .select();
+
     if (error) {
-      if (error.message && (error.message.includes("column") || error.code === "PGRST204")) {
-        const fallbackPayload = {
-          id: "global",
-          site_title: settings.siteTitle,
-          hero_title: settings.heroTitle,
-          hero_subtitle: settings.heroSubtitle,
-          hero_scribble_word: settings.heroScribbleWord || "purpose.",
-          about_hero_title: settings.aboutHeroTitle,
-          about_hero_subtitle: settings.aboutHeroSubtitle,
-          about_body_prose: settings.aboutBodyProse,
-          about_profile_image: settings.aboutProfileImage || "./assets/tobi-lawson.jpg",
-          contact_email: settings.contactEmail,
-          admin_passcode: settings.adminPasscode,
-          updated_at: settings.updatedAt || new Date().toISOString()
-        };
-        const fallbackRes = await supabase.from("site_settings").upsert(fallbackPayload);
-        if (!fallbackRes.error) {
-          return { success: true, data: fallbackRes.data, notice: "Saved locally and synced available fields to Supabase Cloud!" };
-        }
-      }
-      console.error("Error saving site settings to Supabase:", error);
+      console.error("Supabase write failed:", error);
       return { success: false, error };
     }
     return { success: true, data };
   } catch (err) {
-    console.error("Supabase site_settings upsert error:", err);
+    console.error("Supabase write threw:", err);
     return { success: false, error: err };
   }
 }
 
-// POSTS / WRITING SYNC
-export async function syncPostsFromSupabase() {
+/** Fire `callback` whenever the document changes in the cloud. */
+export function subscribeToCloud(callback) {
   if (!supabase) return null;
-  try {
-    const { data, error } = await supabase.from("posts").select("*").order("created_at", { ascending: false });
-    if (error || !data) return null;
-    return data.map((p) => ({
-      id: p.id,
-      title: p.title,
-      category: p.category,
-      date: p.date,
-      summary: p.summary,
-      url: p.url,
-      contentHtml: p.content_html || ""
-    }));
-  } catch (err) {
-    console.warn("Supabase posts fetch error:", err);
-    return null;
-  }
-}
-
-export async function savePostToSupabase(post) {
-  if (!supabase) return { success: false, error: "Supabase client not initialized" };
-  try {
-    const payload = {
-      id: post.id,
-      title: post.title,
-      category: post.category,
-      date: post.date,
-      summary: post.summary,
-      url: post.url,
-      content_html: post.contentHtml || ""
-    };
-    const { data, error } = await supabase.from("posts").upsert(payload);
-    if (error) {
-      console.error("Error saving post to Supabase:", error);
-      return { success: false, error };
-    }
-    return { success: true, data };
-  } catch (err) {
-    console.error("Supabase post upsert error:", err);
-    return { success: false, error: err };
-  }
-}
-
-export async function deletePostFromSupabase(postId) {
-  if (!supabase) return { success: false, error: "Supabase client not initialized" };
-  try {
-    const { data, error } = await supabase.from("posts").delete().eq("id", postId);
-    if (error) {
-      console.error("Error deleting post from Supabase:", error);
-      return { success: false, error };
-    }
-    return { success: true, data };
-  } catch (err) {
-    console.error("Supabase post delete error:", err);
-    return { success: false, error: err };
-  }
-}
-
-// PROJECTS SYNC
-export async function syncProjectsFromSupabase() {
-  if (!supabase) return null;
-  try {
-    const { data, error } = await supabase.from("projects").select("*").order("created_at", { ascending: true });
-    if (error || !data) return null;
-    return data.map((pr) => ({
-      id: pr.id,
-      title: pr.title,
-      roleTag: pr.role_tag,
-      description: pr.description,
-      link: pr.link,
-      status: pr.status || "Active"
-    }));
-  } catch (err) {
-    console.warn("Supabase projects fetch error:", err);
-    return null;
-  }
-}
-
-export async function saveProjectToSupabase(project) {
-  if (!supabase) return { success: false, error: "Supabase client not initialized" };
-  try {
-    const payload = {
-      id: project.id,
-      title: project.title,
-      role_tag: project.roleTag,
-      description: project.description,
-      link: project.link,
-      status: project.status || "Active"
-    };
-    const { data, error } = await supabase.from("projects").upsert(payload);
-    if (error) {
-      console.error("Error saving project to Supabase:", error);
-      return { success: false, error };
-    }
-    return { success: true, data };
-  } catch (err) {
-    console.error("Supabase project upsert error:", err);
-    return { success: false, error: err };
-  }
-}
-
-export async function deleteProjectFromSupabase(projectId) {
-  if (!supabase) return { success: false, error: "Supabase client not initialized" };
-  try {
-    const { data, error } = await supabase.from("projects").delete().eq("id", projectId);
-    if (error) {
-      console.error("Error deleting project from Supabase:", error);
-      return { success: false, error };
-    }
-    return { success: true, data };
-  } catch (err) {
-    console.error("Supabase project delete error:", err);
-    return { success: false, error: err };
-  }
-}
-
-// NOW PAGE SYNC
-export async function syncNowPageFromSupabase() {
-  if (!supabase) return null;
-  try {
-    const { data, error } = await supabase.from("now_page").select("*").eq("id", "global").maybeSingle();
-    if (error || !data) return null;
-    return {
-      lastUpdated: data.last_updated || "July 2026",
-      heroTitle: data.hero_title || "What I'm spending time on",
-      introSubtitle: data.intro_subtitle || "",
-      ongoingProse: data.ongoing_prose || "",
-      updatedAt: data.updated_at || null
-    };
-  } catch (err) {
-    console.warn("Supabase now_page fetch error:", err);
-    return null;
-  }
-}
-
-export async function saveNowPageToSupabase(nowData) {
-  if (!supabase) return { success: false, error: "Supabase client not initialized" };
-  try {
-    const payload = {
-      id: "global",
-      last_updated: nowData.lastUpdated,
-      hero_title: nowData.heroTitle || "What I'm spending time on",
-      intro_subtitle: nowData.introSubtitle,
-      ongoing_prose: nowData.ongoingProse,
-      updated_at: nowData.updatedAt || new Date().toISOString()
-    };
-    const { data, error } = await supabase.from("now_page").upsert(payload);
-    if (error) {
-      console.error("Error saving now_page to Supabase:", error);
-      return { success: false, error };
-    }
-    return { success: true, data };
-  } catch (err) {
-    console.error("Supabase now_page upsert error:", err);
-    return { success: false, error: err };
-  }
-}
-
-// BOOKS SYNC
-export async function syncBooksFromSupabase() {
-  if (!supabase) return null;
-  try {
-    const { data, error } = await supabase.from("books").select("*").order("created_at", { ascending: true });
-    if (error || !data) return null;
-    return data.map((b) => ({
-      id: b.id,
-      title: b.title,
-      subtitle: b.subtitle,
-      statusTag: b.status_tag,
-      coverImageUrl: b.cover_image_url,
-      synopsisP1: b.synopsis_p1,
-      synopsisP2: b.synopsis_p2,
-      author: b.author,
-      format: b.format,
-      releaseDate: b.release_date,
-      previewUrl: b.preview_url,
-      chapters: b.chapters || []
-    }));
-  } catch (err) {
-    console.warn("Supabase books fetch error:", err);
-    return null;
-  }
-}
-
-export async function saveBookToSupabase(book) {
-  if (!supabase) return { success: false, error: "Supabase client not initialized" };
-  try {
-    const payload = {
-      id: book.id,
-      title: book.title,
-      subtitle: book.subtitle || "",
-      status_tag: book.statusTag || "FORTHCOMING VOLUME • IN WRITING",
-      cover_image_url: book.coverImageUrl || "/assets/who-made-this-cover.jpg",
-      synopsis_p1: book.synopsisP1 || "",
-      synopsis_p2: book.synopsisP2 || "",
-      author: book.author || "Tobi Lawson",
-      format: book.format || "Hardcover & Digital",
-      release_date: book.releaseDate || "Late 2026",
-      preview_url: book.previewUrl || "books/who-made-this-preview.html",
-      chapters: book.chapters || []
-    };
-    const { data, error } = await supabase.from("books").upsert(payload);
-    if (error) {
-      console.error("Error saving book to Supabase:", error);
-      return { success: false, error };
-    }
-    return { success: true, data };
-  } catch (err) {
-    console.error("Supabase book upsert error:", err);
-    return { success: false, error: err };
-  }
-}
-
-export async function deleteBookFromSupabase(bookId) {
-  if (!supabase) return { success: false, error: "Supabase client not initialized" };
-  try {
-    const { data, error } = await supabase.from("books").delete().eq("id", bookId);
-    if (error) {
-      console.error("Error deleting book from Supabase:", error);
-      return { success: false, error };
-    }
-    return { success: true, data };
-  } catch (err) {
-    console.error("Supabase book delete error:", err);
-    return { success: false, error: err };
-  }
-}
-
-// COURSE CMS SYNC
-export async function syncCourseSettingsFromSupabase() {
-  if (!supabase) return null;
-  try {
-    const { data, error } = await supabase.from("course_settings").select("*").eq("id", "global").maybeSingle();
-    if (error || !data) return null;
-    return {
-      statusTag: data.status_tag || "FREE COURSE • COMING SOON",
-      title: data.title || "Artificial Intelligence in Frontier Markets",
-      subtitle: data.subtitle || "",
-      overviewProse: data.overview_prose || "",
-      ctaText: data.cta_text || "",
-      updatedAt: data.updated_at || null
-    };
-  } catch (err) {
-    console.warn("Supabase course_settings fetch error:", err);
-    return null;
-  }
-}
-
-export async function saveCourseSettingsToSupabase(courseSettings) {
-  if (!supabase) return { success: false, error: "Supabase client not initialized" };
-  try {
-    const payload = {
-      id: "global",
-      status_tag: courseSettings.statusTag,
-      title: courseSettings.title,
-      subtitle: courseSettings.subtitle,
-      overview_prose: courseSettings.overviewProse,
-      cta_text: courseSettings.ctaText,
-      updated_at: courseSettings.updatedAt || new Date().toISOString()
-    };
-    const { data, error } = await supabase.from("course_settings").upsert(payload);
-    if (error) {
-      console.error("Error saving course_settings to Supabase:", error);
-      return { success: false, error };
-    }
-    return { success: true, data };
-  } catch (err) {
-    console.error("Supabase course_settings upsert error:", err);
-    return { success: false, error: err };
-  }
-}
-
-export async function syncCourseLessonsFromSupabase() {
-  if (!supabase) return null;
-  try {
-    const { data, error } = await supabase.from("course_lessons").select("*").order("created_at", { ascending: true });
-    if (error || !data) return null;
-    return data.map((l) => ({
-      id: l.id,
-      moduleNumber: l.module_number || "MODULE 01",
-      title: l.title,
-      status: l.status || "Published",
-      summary: l.summary,
-      textContent: l.text_content || "",
-      videoType: l.video_type || "none",
-      videoUrl: l.video_url || ""
-    }));
-  } catch (err) {
-    console.warn("Supabase course_lessons fetch error:", err);
-    return null;
-  }
-}
-
-export async function saveCourseLessonToSupabase(lesson) {
-  if (!supabase) return { success: false, error: "Supabase client not initialized" };
-  try {
-    const payload = {
-      id: lesson.id,
-      module_number: lesson.moduleNumber,
-      title: lesson.title,
-      status: lesson.status || "Published",
-      summary: lesson.summary,
-      text_content: lesson.textContent || "",
-      video_type: lesson.videoType || "none",
-      video_url: lesson.videoUrl || ""
-    };
-    const { data, error } = await supabase.from("course_lessons").upsert(payload);
-    if (error) {
-      console.error("Error saving course_lesson to Supabase:", error);
-      return { success: false, error };
-    }
-    return { success: true, data };
-  } catch (err) {
-    console.error("Supabase course_lesson upsert error:", err);
-    return { success: false, error: err };
-  }
-}
-
-export async function deleteCourseLessonFromSupabase(lessonId) {
-  if (!supabase) return { success: false, error: "Supabase client not initialized" };
-  try {
-    const { data, error } = await supabase.from("course_lessons").delete().eq("id", lessonId);
-    if (error) {
-      console.error("Error deleting course_lesson from Supabase:", error);
-      return { success: false, error };
-    }
-    return { success: true, data };
-  } catch (err) {
-    console.error("Supabase course_lesson delete error:", err);
-    return { success: false, error: err };
-  }
-}
-
-// REALTIME SUBSCRIPTION
-export function subscribeToSupabaseRealtime(callback) {
-  if (!supabase) return null;
-  const channel = supabase
-    .channel("tobi_site_changes")
-    .on("postgres_changes", { event: "*", schema: "public" }, () => {
-      if (callback) callback();
-    })
+  return supabase
+    .channel("tobi_site_content")
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: DOC_TABLE },
+      () => { if (callback) callback(); }
+    )
     .subscribe();
-  return channel;
 }
 
-// INITIAL SEEDING HELPER
-export async function seedInitialDataToSupabase(data) {
-  if (!supabase) return { success: false, error: "Supabase client not initialized" };
+// ---------------------------------------------------------------------------
+// Legacy migration — reads the old seven-table layout exactly once.
+// ---------------------------------------------------------------------------
+
+/**
+ * Compose a v3 document from the old per-table rows, so nothing you had in
+ * Supabase before this rebuild is lost. Returns null if there's nothing there.
+ */
+export async function fetchLegacyDoc() {
+  if (!supabase) return null;
+
+  const table = async (name, query) => {
+    try {
+      const { data, error } = await query;
+      if (error) return null;
+      return data;
+    } catch (err) {
+      console.warn(`Legacy read of ${name} skipped:`, err);
+      return null;
+    }
+  };
+
   try {
-    let res = { success: true };
-    if (data.settings) res = await saveSiteSettingsToSupabase(data.settings);
-    if (data.nowPage) await saveNowPageToSupabase(data.nowPage);
-    if (data.courseSettings) await saveCourseSettingsToSupabase(data.courseSettings);
-    if (data.posts) {
-      for (const p of data.posts) await savePostToSupabase(p);
+    const [settings, nowPage, courseSettings, posts, projects, books, lessons] = await Promise.all([
+      table("site_settings", supabase.from("site_settings").select("*").eq("id", "global").maybeSingle()),
+      table("now_page", supabase.from("now_page").select("*").eq("id", "global").maybeSingle()),
+      table("course_settings", supabase.from("course_settings").select("*").eq("id", "global").maybeSingle()),
+      table("posts", supabase.from("posts").select("*")),
+      table("projects", supabase.from("projects").select("*")),
+      table("books", supabase.from("books").select("*")),
+      table("course_lessons", supabase.from("course_lessons").select("*"))
+    ]);
+
+    const nothing =
+      !settings && !nowPage && !courseSettings &&
+      !(posts && posts.length) && !(projects && projects.length) &&
+      !(books && books.length) && !(lessons && lessons.length);
+
+    if (nothing) return null;
+
+    const s = settings || {};
+    const n = nowPage || {};
+    const c = courseSettings || {};
+
+    // The old schema had no way to store line breaks in the headline, so the
+    // hero was flattened to one line. Restore the three-line setting it was
+    // designed around; any headline that has since been edited is left alone.
+    const heroTitle = s.hero_title === "Building and investing with purpose."
+      ? "Building\nand investing\nwith purpose."
+      : s.hero_title;
+
+    // Several old column defaults were written as plain SQL strings containing
+    // a literal backslash-n rather than a real newline, so "\n\n" was rendering
+    // visibly in the prose. Turn those back into paragraph breaks.
+    const unescapeNewlines = (v) =>
+      typeof v === "string" ? v.replace(/\\r\\n|\\n/g, "\n") : v;
+
+    // Old keys on the left of each ?? pair; anything absent falls through to
+    // the schema default later in the merge.
+    const mapped = {
+      siteTitle: s.site_title,
+      contactEmail: s.contact_email,
+      homeHeroTitle: heroTitle,
+      homeHeroScribbleWord: s.hero_scribble_word,
+      homeHeroSubtitle: s.hero_subtitle,
+      aboutHeroTitle: s.about_hero_title,
+      aboutHeroSubtitle: s.about_hero_subtitle,
+      aboutBodyProse: unescapeNewlines(s.about_body_prose),
+      aboutProfileImage: s.about_profile_image,
+      footerTagline: s.footer_tagline,
+      footerCopyright: s.footer_copyright,
+      footerLink1Name: s.footer_link1_name,
+      footerLink1Url: s.footer_link1_url,
+      footerLink2Name: s.footer_link2_name,
+      footerLink2Url: s.footer_link2_url,
+      nowHeroTitle: n.hero_title,
+      nowHeroSubtitle: n.intro_subtitle,
+      nowOngoingProse: unescapeNewlines(n.ongoing_prose),
+      courseStatusTag: c.status_tag,
+      courseTitle: c.title,
+      courseSubtitle: c.subtitle,
+      courseOverviewProse: unescapeNewlines(c.overview_prose),
+      courseCtaText: c.cta_text
+    };
+
+    const legacySettings = {};
+    for (const [k, v] of Object.entries(mapped)) {
+      if (v !== null && v !== undefined) legacySettings[k] = v;
     }
-    if (data.projects) {
-      for (const pr of data.projects) await saveProjectToSupabase(pr);
-    }
-    if (data.books) {
-      for (const b of data.books) await saveBookToSupabase(b);
-    }
-    if (data.courseLessons) {
-      for (const l of data.courseLessons) await saveCourseLessonToSupabase(l);
-    }
-    return res;
+
+    return {
+      version: 3,
+      migratedFrom: "supabase-v2-tables",
+      settings: legacySettings,
+      collections: {
+        projects: (projects || []).map((p) => ({
+          id: p.id, title: p.title, roleTag: p.role_tag,
+          description: p.description, link: p.link, status: p.status || "Active"
+        })),
+        posts: (posts || []).map((p) => ({
+          id: p.id, title: p.title, category: p.category, date: p.date,
+          summary: p.summary, url: p.url, bodyProse: p.content_html || ""
+        })),
+        books: (books || []).map((b) => ({
+          id: b.id, title: b.title, subtitle: b.subtitle, statusTag: b.status_tag,
+          coverImageUrl: b.cover_image_url, synopsisP1: b.synopsis_p1, synopsisP2: b.synopsis_p2,
+          author: b.author, format: b.format, releaseDate: b.release_date,
+          previewUrl: b.preview_url, chapters: b.chapters || []
+        })),
+        lessons: (lessons || []).map((l) => ({
+          id: l.id, moduleNumber: l.module_number, title: l.title, status: l.status,
+          summary: l.summary, textContent: unescapeNewlines(l.text_content) || "",
+          videoType: l.video_type || "none", videoUrl: l.video_url || ""
+        }))
+      },
+      updatedAt: s.updated_at || new Date(0).toISOString()
+    };
   } catch (err) {
-    console.warn("Auto-seed to Supabase skipped or failed:", err);
-    return { success: false, error: err };
+    console.warn("Legacy migration read skipped:", err);
+    return null;
   }
 }

@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <title>Tobi Lawson</title>
+  <link rel="icon" href="/favicon.ico" sizes="any" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="apple-touch-icon" href="/favicon.png" />
+  <meta name="description" content="An essay by Tobi Lawson." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/base.css?v=3.0.0" />
+  <link rel="stylesheet" href="/style.css?v=3.0.0" />
+</head>
+<body>
+
+  <header class="header-nav fade-up">
+    <a href="/" class="meta-brand" data-cms="siteTitle">Tobi Lawson</a>
+    <nav class="meta-links meta" aria-label="Primary Navigation">
+      <a href="/" data-cms="navHome">Home</a>
+      <a href="/books/" data-cms="navBooks">Books</a>
+      <a href="/writing/" aria-current="page" data-cms="navWriting">Writing</a>
+      <a href="/now/" data-cms="navNow">Now</a>
+      <a href="/course/" data-cms="navCourse">Course</a>
+      <a href="/about/" data-cms="navAbout">About</a>
+    </nav>
+  </header>
+
+  <main id="main">
+    <article class="prose-container fade-up delay-1" data-cms-post data-cms-post-dynamic>
+      <header class="article-header">
+        <div class="article-meta meta" data-cms-post-meta>Essay</div>
+        <h1 data-cms-post-title>Loading…</h1>
+        <p class="article-dek" data-cms-post-summary></p>
+        <div class="meta" style="color: var(--text-muted);">By <span data-cms="siteTitle">Tobi Lawson</span></div>
+      </header>
+
+      <div class="article-body" data-cms-post-body></div>
+
+      <div style="margin-top: 4rem; padding-top: 2rem; border-top: 1px solid var(--line);">
+        <div class="meta" style="margin-bottom: 1.5rem;" data-cms="writingMoreLabel">More Writing</div>
+        <div class="grid-3" style="margin-bottom: 2rem;" data-cms-list="relatedPosts"></div>
+      </div>
+    </article>
+  </main>
+
+  <footer class="fade-up">
+    <div>
+      <div class="meta-brand" style="margin-bottom: 0.5rem;" data-cms="siteTitle">Tobi Lawson</div>
+      <p class="footer-tagline" style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 0.5rem;" data-cms="footerTagline">Investor, builder, and writer based in Lagos.</p>
+      <div class="meta footer-copyright" style="color: var(--text-muted); font-size: 0.8rem;" data-cms="footerCopyright">
+        © 2026 Tobi Lawson. All rights reserved.
+      </div>
+    </div>
+    <div class="meta-links meta footer-links">
+      <a href="mailto:olamilawson@gmail.com" class="footer-email-link" data-cms="footerEmailLabel" data-cms-attr="mailto:contactEmail">Email</a>
+      <a href="https://www.1914reader.com/" target="_blank" rel="noopener noreferrer" class="footer-custom-link-1" data-cms="footerLink1Name" data-cms-attr="href:footerLink1Url">1914 Reader</a>
+      <a href="http://lagosurban.com" target="_blank" rel="noopener noreferrer" class="footer-custom-link-2" data-cms="footerLink2Name" data-cms-attr="href:footerLink2Url">Lagos Urban</a>
+    </div>
+  </footer>
+
+  <script type="module" src="/app.js?v=3.0.0"></script>
+</body>
+</html>

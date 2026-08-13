@@ -3,3 +3,11 @@ node_modules/
 dist/
 .env
 *.log
+
+# Content backups downloaded from the console may contain the passcode hash
+# and any images you pasted in as data URIs. Keep them out of the repo.
+tobi-lawson-content-*.json
+tobi-lawson-site-backup-*.json
+
+# Claude Code local settings (machine-specific)
+.claude/settings.local.json

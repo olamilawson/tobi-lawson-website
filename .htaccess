@@ -18,10 +18,25 @@ RewriteRule ^writing/?$ writing/index.html [L]
 # 4. Handle /admin route
 RewriteRule ^admin/?$ admin.html [L]
 
-# 5. Security & Caching Headers
+# 5. Block source, docs, and config files from being served
+#    Without this, https://tobilawson.com/HANDOFF.md and /supabase_schema.sql
+#    are both publicly fetchable.
+<FilesMatch "\.(md|sql|json|toml|yml|yaml)$">
+  Require all denied
+</FilesMatch>
+<Files ".htaccess">
+  Require all denied
+</Files>
+
+# 6. Security & Caching Headers
 <IfModule mod_headers.c>
   Header set X-Content-Type-Options "nosniff"
   Header set X-Frame-Options "SAMEORIGIN"
   Header set X-XSS-Protection "1; mode=block"
   Header set Referrer-Policy "no-referrer-when-downgrade"
+
+  # The console must never be indexed.
+  <FilesMatch "^admin\.html$">
+    Header set X-Robots-Tag "noindex, nofollow"
+  </FilesMatch>
 </IfModule>

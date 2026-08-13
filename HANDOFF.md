@@ -1,93 +1,157 @@
-# Project Handoff & Technical Documentation
-**Tobi Lawson — Personal Website & Editorial Platform**  
-**Repository**: [github.com/olamilawson/tobi-lawson-website](https://github.com/olamilawson/tobi-lawson-website)  
-**Branch**: `main`  
-**Domain**: [https://tobilawson.com](https://tobilawson.com)
+# Tobi Lawson — Site & Editorial Console
+
+**Live**: https://tobilawson.com · **Console**: https://tobilawson.com/admin
+**Stack**: static HTML, vanilla ES modules, Supabase for storage. No build step.
+
+> This file is documentation, not a password store. The console passcode is not
+> written down here — it lives only as a SHA-256 hash inside the content
+> document, and you change it from the console's **Access** tab.
 
 ---
 
-## 1. Overview & Key Credentials
+## 1. Do this once, now
 
-- **Admin Console URL**: `https://tobilawson.com/admin.html` or `https://tobilawson.com/admin/`
-- **Admin Passcode**: `Enlive0801@#`
-- **Local Storage Key**: `tobi_site_data_v2`
-- **Supabase Cloud Project URL**: `https://xifwswzqfqwfhihglubs.supabase.co`
-- **Supabase Public API Key**: `sb_publishable_Q71S8qzFcM80ikZ6bhPQgg_6HxUgzmI`
+The rebuild moved storage from seven tables to a single document table. Until
+you create it, the console will save your edits on the device you're using and
+show a message saying the cloud rejected the write.
 
----
+1. Open the Supabase dashboard → **SQL Editor** → **New query**.
+2. Paste the contents of [`supabase_schema.sql`](supabase_schema.sql) and run it.
+3. Open https://tobilawson.com/admin, sign in, and press **Save** on any tab.
 
-## 2. Architecture & Tech Stack
+Your existing content migrates automatically: on first load the app reads the
+old `site_settings` / `posts` / `projects` / `now_page` / `books` /
+`course_settings` / `course_lessons` tables and folds them into the new
+document. The old tables are left untouched. Once you've confirmed the site
+looks right and downloaded a backup, the commented-out `DROP TABLE` lines at the
+bottom of the schema file will clean them up.
 
-This website is engineered as a dependency-free, high-performance static editorial site powered by Vanilla JavaScript (ES Modules), Custom CSS Design Tokens, and two-way Supabase Cloud Sync with LocalStorage fallbacks.
-
-### Core Files
-- `index.html` — Homepage (Hero, Selected Ventures & Projects, Recent Essays & Notes, Footer)
-- `about.html` / `about/index.html` — About Page (Hero, Lead Subtitle, Portrait Image, Bio Prose, Direct Contact)
-- `books.html` / `books/index.html` — Books & Monographs Showcase (Book Cover, Synopsis, Table of Contents Grid)
-- `now.html` / `now/index.html` — Now Page (Running account of active initiatives & portfolio)
-- `course.html` / `course/index.html` — Free Course Platform (*Artificial Intelligence in Frontier Markets*)
-- `admin.html` / `admin/index.html` — Editorial Admin Console (6-Tab CMS for full website content editing)
-- `base.css` & `style.css` — Modern design system (Hallmark typography pairing: `Playfair Display` + `Inter`)
-- `app.js` — Public site hydration engine & real-time sync listener
-- `admin.js` — Admin Console controller, passcode authentication, form handlers, tab switcher
-- `supabase.js` — Supabase client initialization, REST API fallback methods, real-time channels
-- `supabase_schema.sql` — Idempotent SQL schema file for Supabase database tables
+**Change the passcode.** The old one was committed to this repo in plaintext and
+published at `tobilawson.com/HANDOFF.md`, so treat it as public. Console →
+**Access** → new passcode → save.
 
 ---
 
-## 3. Editorial Admin Console Capabilities
+## 2. How content works
 
-The Admin Console contains 6 functional tabs:
+One idea runs through the whole thing: **[`content-schema.js`](content-schema.js)
+is the only definition of what is editable.** The console UI, the page
+hydration, and the database payload are all derived from it.
 
-1. **Tab 1: Site Settings & Bio**
-   - Site Title & Brand Name
-   - Homepage Hero Headline & Lead Subtitle
-   - About Page Headline, Lead Subtitle, Bio Prose, and Portrait Photo (URL + File Upload)
-   - Contact Email & Admin Passcode
-   - Footer Tagline, Copyright, Custom Link 1 (Name & URL), Custom Link 2 (Name & URL)
+Previously a field had to be hand-wired in four places — a form input in
+`admin.html`, a save handler in `admin.js`, a hydrator in `app.js`, and a
+snake_case column in `supabase.js` plus the SQL. Nothing checked that those four
+agreed, so fields routinely existed in one or two and silently did nothing.
 
-2. **Tab 2: Now Page & Projects**
-   - "Now" Page Headline, Intro Subtitle, and Ongoing Focus Prose
-   - Projects List (Add, Edit, Delete active initiatives like *1914 Reader*, *Lagos Urban*, *Long Africa*)
+### Adding something editable
 
-3. **Tab 3: Writing & Essays**
-   - Essay & Review Catalog (Add, Edit, Delete articles with custom dates, summaries, and URLs)
+Two steps.
 
-4. **Tab 4: Books & Monographs**
-   - Book Showcase Details (Title, Subtitle, Status Tag, Cover Image, Synopsis, Preview URL)
-   - Chapters CMS (Add, Edit, Delete Table of Contents entries)
+1. Add the field to the relevant group in `content-schema.js`:
 
-5. **Tab 5: Free Course CMS**
-   - Masterclass Syllabus Overview & Status Tag
-   - Video Lesson Modules (Add, Edit, Delete modules with YouTube embeds or video uploads)
+   ```js
+   { key: "homeProjectsHeading", label: "Projects Section — Heading", type: "text",
+     default: "Selected Ventures & Projects" }
+   ```
 
-6. **Tab 6: Cloud & Backup**
-   - Real-time Supabase Cloud Connection Status
-   - Full JSON Export / Download Backup
-   - Full JSON Import / Restore Backup
-   - Factory Reset to Initial Defaults
+2. Point the page element at it:
+
+   ```html
+   <h2 data-cms="homeProjectsHeading">Selected Ventures &amp; Projects</h2>
+   ```
+
+The console form, the storage, and the cloud sync all follow automatically.
+No database migration — the document is JSONB.
+
+### Page attributes
+
+| Attribute | Effect |
+|---|---|
+| `data-cms="key"` | Sets the element's text. `prose` fields render as paragraphs; `##` becomes a subheading and `>` a pull quote. |
+| `data-cms-attr="href:key"` | Sets an attribute from a field. Several allowed, separated by `;`. `mailto:key` writes `href="mailto:…"`. |
+| `data-cms-list="name"` | Marks a repeating region, rendered by a named renderer in `app.js`. |
+| `data-cms-book="key"` | A field of the featured (first) book. |
+| `data-cms-post` | Marks an essay page; the essay is matched by URL or `?id=`. |
+| `data-cms-scribble` | The homepage headline, with one word circled. |
+
+The static HTML inside a `data-cms-list` region stays as the pre-JavaScript
+fallback and is replaced on hydration.
+
+### Field types
+
+`text`, `textarea` (line breaks preserved), `prose` (blank line = new
+paragraph), `url`, `email`, `image` (URL box plus file picker that inlines the
+image as a data URI), `select`.
 
 ---
 
-## 7. Hostinger Deployment Instructions
+## 3. Files
 
-To sync updates from GitHub to your Hostinger VPS, run this command in your Hostinger Web Terminal:
+| File | Role |
+|---|---|
+| `content-schema.js` | Every editable field and list. Start here. |
+| `content-store.js` | Local cache, cloud merge, escaping, passcode hashing. |
+| `supabase.js` | Cloud read/write, realtime, legacy migration. |
+| `app.js` | Public-site hydration. Generic — no per-page code. |
+| `admin.js` | Console. Generates all forms from the schema. |
+| `admin.html` | Console shell: auth screen, tab container, modal, toast. |
+| `supabase_schema.sql` | Database setup. Idempotent. |
+| `base.css`, `style.css` | Design system (Playfair Display + Inter). |
+
+Public pages: `index`, `about`, `books`, `now`, `course`, `writing/index`, plus
+`writing/post.html`, which renders any essay created in the console.
+
+### The duplicated page files
+
+`about.html` and `about/index.html` are byte-identical copies, as are `books`,
+`now`, `course`, and `admin`. They exist so both `/about` and `/about/` resolve.
+**If you edit one, copy it over the other**, or they will drift:
+
+```bash
+for p in about books now course admin; do cp $p.html $p/index.html; done
+```
+
+---
+
+## 4. Sync behaviour
+
+Content is one document. Whichever copy has the newer `updatedAt` wins —
+the cloud copy or the local one. Editing on two devices at once means the last
+save wins for the whole document, so avoid simultaneous edits on phone and
+laptop.
+
+The console subscribes to Supabase realtime and refreshes when another device
+publishes, unless you have a modal open or unsaved changes in a form.
+
+**Cloud & Backup tab**: download a JSON backup, restore one, force this device's
+copy over the cloud, or reset to factory defaults.
+
+---
+
+## 5. Known limits
+
+- **The database is writable by anyone.** The console gates on a passcode in the
+  browser, so the Supabase anonymous key has to be able to write, and that key
+  ships in the page source. Anyone who views source can rewrite your content.
+  Closing this means switching to Supabase Auth; `supabase_schema.sql` has the
+  replacement policy commented out and ready.
+- **Uploaded images are stored as data URIs inside the document.** Fine for a
+  portrait and a book cover; the console rejects files over 1.5 MB. For anything
+  heavier, upload to `/assets/` and paste the path.
+- **Essay bodies written in the console** render at
+  `/writing/post.html?id=<slug>`. The three hand-built essays under `/writing/`
+  keep their own URLs and their existing HTML unless you type a body for them in
+  the console, which then takes over.
+
+---
+
+## 6. Deploying
+
+Hostinger VPS, from the web terminal:
 
 ```bash
 cd /var/www/tobilawson.com && git fetch origin main && git reset --hard origin/main
 ```
 
----
-
-## 8. Optional Supabase Database Maintenance
-
-If you wish to ensure all database columns exist in Supabase Cloud, run the following script in your **Supabase Dashboard** → **SQL Editor**:
-
-```sql
-ALTER TABLE public.site_settings ADD COLUMN IF NOT EXISTS footer_tagline TEXT DEFAULT 'Investor, builder, and writer based in Lagos.';
-ALTER TABLE public.site_settings ADD COLUMN IF NOT EXISTS footer_copyright TEXT DEFAULT '© 2026 Tobi Lawson. All rights reserved.';
-ALTER TABLE public.site_settings ADD COLUMN IF NOT EXISTS footer_link1_name TEXT DEFAULT '1914 Reader';
-ALTER TABLE public.site_settings ADD COLUMN IF NOT EXISTS footer_link1_url TEXT DEFAULT 'https://www.1914reader.com/';
-ALTER TABLE public.site_settings ADD COLUMN IF NOT EXISTS footer_link2_name TEXT DEFAULT 'Lagos Urban';
-ALTER TABLE public.site_settings ADD COLUMN IF NOT EXISTS footer_link2_url TEXT DEFAULT 'http://lagosurban.com';
-```
+Serving is static. `.htaccess` handles extensionless URLs, blocks `.md`/`.sql`
+from being served, and marks the console `noindex`.
