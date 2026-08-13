@@ -10,7 +10,7 @@
   <link rel="icon" href="/favicon.ico" sizes="any" />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="apple-touch-icon" href="/favicon.png" />
-  <meta name="description" content="An essay by Tobi Lawson." />
+  <meta name="description" content="A chapter from a book by Tobi Lawson." />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -24,8 +24,8 @@
     <a href="/" class="meta-brand" data-cms="siteTitle">Tobi Lawson</a>
     <nav class="meta-links meta" aria-label="Primary Navigation">
       <a href="/" data-cms="navHome">Home</a>
-      <a href="/books/" data-cms="navBooks">Books</a>
-      <a href="/writing/" aria-current="page" data-cms="navWriting">Writing</a>
+      <a href="/books/" aria-current="page" data-cms="navBooks">Books</a>
+      <a href="/writing/" data-cms="navWriting">Writing</a>
       <a href="/now/" data-cms="navNow">Now</a>
       <a href="/course/" data-cms="navCourse">Course</a>
       <a href="/about/" data-cms="navAbout">About</a>
@@ -33,19 +33,26 @@
   </header>
 
   <main id="main">
-    <article class="prose-container fade-up delay-1" data-cms-post data-cms-post-dynamic>
+    <article class="prose-container fade-up delay-1" data-cms-chapter>
       <header class="article-header">
-        <div class="article-meta meta" data-cms-post-meta>Essay</div>
-        <h1 data-cms-post-title>Loading…</h1>
-        <p class="article-dek" data-cms-post-summary></p>
+        <div class="article-meta meta">
+          <a data-cms-chapter-back href="/books/" style="text-decoration: underline;">
+            <span data-cms-chapter-booktitle>Book</span>
+          </a>
+          <span>·</span>
+          <span data-cms-chapter-status>Chapter</span>
+        </div>
+        <h1 data-cms-chapter-title>Loading…</h1>
+        <p class="article-dek" data-cms-chapter-desc></p>
         <div class="meta" style="color: var(--text-muted);">By <span data-cms="siteTitle">Tobi Lawson</span></div>
       </header>
 
-      <div class="article-body" data-cms-post-body></div>
+      <div class="article-body" data-cms-chapter-body></div>
 
       <div style="margin-top: 4rem; padding-top: 2rem; border-top: 1px solid var(--line);">
-        <div class="meta" style="margin-bottom: 1.5rem;" data-cms="writingMoreLabel">More Writing</div>
-        <div class="grid-3" style="margin-bottom: 2rem;" data-cms-list="relatedPosts"></div>
+        <div class="meta" style="margin-bottom: 1.5rem;" data-cms="booksTocEyebrow">TABLE OF CONTENTS</div>
+        <div class="grid-3" style="margin-bottom: 2rem;" data-cms-chapter-nav></div>
+        <a href="/books/" class="grid-item-link">← All chapters</a>
       </div>
     </article>
   </main>

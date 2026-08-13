@@ -138,10 +138,35 @@ copy over the cloud, or reset to factory defaults.
 - **Uploaded images are stored as data URIs inside the document.** Fine for a
   portrait and a book cover; the console rejects files over 1.5 MB. For anything
   heavier, upload to `/assets/` and paste the path.
-- **Essay bodies written in the console** render at
-  `/writing/post.html?id=<slug>`. The three hand-built essays under `/writing/`
-  keep their own URLs and their existing HTML unless you type a body for them in
-  the console, which then takes over.
+- **Essay bodies written in the console** render at `/writing/post#id=<slug>`.
+  The three hand-built essays under `/writing/` keep their own URLs and their
+  existing HTML unless you type a body for them in the console, which then
+  takes over.
+- **Deep links use the fragment, not a query string.** `.htaccess`
+  301-redirects `/foo.html` to `/foo`, and a query string does not reliably
+  survive that hop. A fragment never leaves the browser, so it always does.
+
+---
+
+## 5a. Writing full book chapters
+
+Books tab → **Edit** a book → each chapter has a **Chapter Text** box. Write the
+chapter there, using the same conventions as essays: blank line between
+paragraphs, `##` for a subheading, `>` for a pull quote.
+
+- A chapter **with** text gets its own page at
+  `/books/chapter#book=<book-id>&chapter=<chapter-id>`, and its card on the
+  books page links there with the "Read Chapter →" label.
+- A chapter **without** text keeps the old behaviour: its card links to the
+  book's preview page with "Read Chapter Preview →".
+
+So you can publish chapters one at a time and the rest of the page keeps
+working. Chapter pages carry previous/next links that skip any chapter you
+haven't written yet.
+
+Both link labels are editable in the Books tab. Chapter ids are minted from the
+title the first time a chapter is saved and then held fixed, so renaming a
+chapter does not break a link you have already shared.
 
 ---
 

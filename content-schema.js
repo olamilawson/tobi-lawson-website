@@ -125,7 +125,10 @@ export const GROUPS = [
       { key: "booksPreviewCta", label: "Preview Button Text", type: "text", default: "Read Chapter 01 Preview →" },
       { key: "booksTocHeading", label: "Contents Section — Heading", type: "text", default: "Volume Outline & Chapter Previews" },
       { key: "booksTocEyebrow", label: "Contents Section — Eyebrow", type: "text", default: "TABLE OF CONTENTS" },
-      { key: "booksChapterCta", label: "Chapter Card Link Text", type: "text", default: "Read Chapter Preview →" }
+      { key: "booksChapterCta", label: "Chapter Card Link — Preview", type: "text", default: "Read Chapter Preview →",
+        help: "Used for chapters that have no text of their own yet." },
+      { key: "booksReadChapterCta", label: "Chapter Card Link — Full Chapter", type: "text", default: "Read Chapter →",
+        help: "Used once a chapter has text, and links to the full chapter." }
     ]
   },
 
@@ -240,7 +243,7 @@ export const COLLECTIONS = [
       { key: "date", label: "Date", type: "text", default: "", help: 'Free text, e.g. "Jun 2026"' },
       { key: "summary", label: "Summary", type: "textarea", rows: 3,
         help: "The one-line description shown on cards." },
-      { key: "url", label: "Page URL", type: "text",
+      { key: "url", label: "Page URL", type: "text", path: true,
         help: "Leave blank and one will be generated for you. Existing hand-built essays keep their own file paths." },
       { key: "bodyProse", label: "Essay Body", type: "prose", rows: 18,
         help: "Blank line between paragraphs. Start a line with ## for a subheading, or > for a pull quote." }
@@ -267,7 +270,7 @@ export const COLLECTIONS = [
       { key: "author", label: "Author", type: "text", default: "Tobi Lawson" },
       { key: "format", label: "Format", type: "text", default: "Hardcover & Digital" },
       { key: "releaseDate", label: "Release", type: "text", default: "Late 2026" },
-      { key: "previewUrl", label: "Preview Page URL", type: "text", default: "/books/who-made-this-preview.html" }
+      { key: "previewUrl", label: "Preview Page URL", type: "text", path: true, default: "/books/who-made-this-preview.html" }
     ],
     // A list nested inside each item of this collection.
     subCollection: {
@@ -280,7 +283,10 @@ export const COLLECTIONS = [
       fields: [
         { key: "title", label: "Chapter Title", type: "text", required: true },
         { key: "status", label: "Status Line", type: "text", default: "Chapter 01 • In Research" },
-        { key: "desc", label: "Description", type: "textarea", rows: 3 }
+        { key: "desc", label: "Description", type: "textarea", rows: 3,
+          help: "The one-line summary shown on the chapter card." },
+        { key: "bodyProse", label: "Chapter Text", type: "prose", rows: 20,
+          help: "The full chapter. Blank line between paragraphs; ## for a subheading, > for a pull quote. Leave empty and the card links to the preview page instead." }
       ]
     }
   },

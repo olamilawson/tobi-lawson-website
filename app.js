@@ -132,20 +132,28 @@ const RENDERERS = {
     return postCards(doc.collections.posts);
   },
 
-  /** Chapter cards on the books page. */
+  /**
+   * Chapter cards on the books page. A chapter that has text of its own links
+   * to the reader; one that doesn't falls back to the book's preview page.
+   */
   bookChapters(mount, doc) {
     const book = doc.collections.books[0];
     if (!book || !book.chapters.length) return empty("No chapters added yet.");
-    const cta = doc.settings.booksChapterCta;
-    return book.chapters.map((c) => `
+
+    return book.chapters.map((c) => {
+      const readable = String(c.bodyProse || "").trim();
+      const href = readable ? chapterUrl(book, c) : book.previewUrl;
+      const label = readable ? doc.settings.booksReadChapterCta : doc.settings.booksChapterCta;
+      return `
       <article class="grid-item">
         <div class="grid-item-header">
           <span class="meta" style="color: var(--accent);">${esc(c.status)}</span>
           <h3>${esc(c.title)}</h3>
         </div>
         <p class="grid-item-desc">${esc(c.desc)}</p>
-        ${book.previewUrl ? `<a href="${escUrl(book.previewUrl)}" class="grid-item-link">${esc(cta)}</a>` : ""}
-      </article>`).join("");
+        ${href ? `<a href="${escUrl(href)}" class="grid-item-link">${esc(label)}</a>` : ""}
+      </article>`;
+    }).join("");
   },
 
   /** Course modules, with YouTube embeds or uploaded video. */
@@ -256,14 +264,99 @@ function applyFeaturedBook(doc) {
 }
 
 // ---------------------------------------------------------------------------
+// Book chapters
+// ---------------------------------------------------------------------------
+
+/**
+ * Deep links use the hash, not a query string. `.htaccess` 301-redirects
+ * `/foo.html` to `/foo`, and a query string does not reliably survive that
+ * hop; a fragment never leaves the browser, so it always does.
+ */
+export function readParams() {
+  const fromHash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+  if ([...fromHash.keys()].length) return fromHash;
+  return new URLSearchParams(window.location.search);
+}
+
+const chapterUrl = (book, chapter) =>
+  `/books/chapter#book=${encodeURIComponent(book.id)}&chapter=${encodeURIComponent(chapter.id)}`;
+
+/** Locate the chapter this page is for. */
+function currentChapter(doc) {
+  const params = readParams();
+  const bookId = params.get("book");
+  const chapterId = params.get("chapter");
+  if (!chapterId) return null;
+
+  const books = bookId
+    ? doc.collections.books.filter((b) => b.id === bookId)
+    : doc.collections.books;
+
+  for (const book of books) {
+    const index = (book.chapters || []).findIndex((c) => c.id === chapterId);
+    if (index !== -1) return { book, chapter: book.chapters[index], index };
+  }
+  return null;
+}
+
+function applyChapterPage(doc) {
+  const mount = document.querySelector("[data-cms-chapter]");
+  if (!mount) return;
+
+  const found = currentChapter(doc);
+  if (!found || !String(found.chapter.bodyProse || "").trim()) {
+    mount.innerHTML = `
+      <h1>Chapter not available</h1>
+      <p class="hero-subtitle">This chapter may not be published yet. <a href="/books/">Back to the book →</a></p>`;
+    return;
+  }
+
+  const { book, chapter } = found;
+
+  const set = (sel, value) => {
+    const el = mount.querySelector(sel);
+    if (el) el.textContent = value;
+  };
+  set("[data-cms-chapter-booktitle]", book.title);
+  set("[data-cms-chapter-status]", chapter.status);
+  set("[data-cms-chapter-title]", chapter.title);
+  set("[data-cms-chapter-desc]", chapter.desc);
+
+  const body = mount.querySelector("[data-cms-chapter-body]");
+  if (body) body.innerHTML = renderProse(chapter.bodyProse);
+
+  const backLink = mount.querySelector("[data-cms-chapter-back]");
+  if (backLink) backLink.setAttribute("href", "/books/");
+
+  // Previous / next, skipping chapters that have no text yet.
+  const readable = book.chapters.filter((c) => String(c.bodyProse || "").trim());
+  const position = readable.findIndex((c) => c.id === chapter.id);
+  const nav = mount.querySelector("[data-cms-chapter-nav]");
+  if (nav) {
+    const link = (target, label) =>
+      target
+        ? `<a class="grid-item" href="${escUrl(chapterUrl(book, target))}" style="text-decoration:none;">
+             <div class="grid-item-header">
+               <div class="meta">${esc(label)}</div>
+               <h3>${esc(target.title)}</h3>
+             </div>
+           </a>`
+        : "";
+    nav.innerHTML =
+      link(readable[position - 1], "Previous chapter") +
+      link(readable[position + 1], "Next chapter");
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Essay pages
 // ---------------------------------------------------------------------------
 
 /** Match this page to a post by ?id=, or by its own path. */
 function currentPost(doc) {
-  const byQuery = new URLSearchParams(window.location.search).get("id");
-  if (byQuery) {
-    const found = doc.collections.posts.find((p) => p.id === byQuery);
+  const byId = readParams().get("id");
+  if (byId) {
+    const found = doc.collections.posts.find((p) => p.id === byId);
     if (found) return found;
   }
 
@@ -334,10 +427,12 @@ async function hydrate() {
   applyFeaturedBook(doc);
   applyLists(doc);
   applyPostPage(doc);
+  applyChapterPage(doc);
 }
 
 function initSmoothScroll() {
-  document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
+  // Deep-link fragments (#book=…&chapter=…) are data, not scroll targets.
+  document.querySelectorAll('a[href^="#"]:not([href*="="])').forEach((anchor) => {
     anchor.addEventListener("click", function (e) {
       const targetId = this.getAttribute("href");
       if (targetId === "#") return;
@@ -355,6 +450,8 @@ function init() {
   hydrate();
   onContentUpdated(hydrate);
   subscribeToCloud(hydrate);
+  // Moving between chapters only changes the fragment, so re-render on that.
+  window.addEventListener("hashchange", hydrate);
 }
 
 if (document.readyState === "loading") {

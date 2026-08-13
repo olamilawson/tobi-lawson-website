@@ -426,6 +426,7 @@ function renderSubRow(sub, item, index) {
           <button type="button" class="admin-btn admin-btn-danger" data-sub-remove="${index}">Remove</button>
         </div>
       </div>
+      <input type="hidden" data-sub-id value="${esc(item.id || "")}" />
       ${sub.fields.map((f) => fieldControl(f, item[f.key], `sub${index}`)).join("")}
     </div>`;
 }
@@ -434,11 +435,13 @@ function renderSubRow(sub, item, index) {
 function captureSub(sub) {
   const rows = [];
   $("modalBody").querySelectorAll("[data-sub-row]").forEach((row) => {
-    const item = {};
+    // Carry the existing id through, so renaming a chapter doesn't change its URL.
+    const item = { id: row.querySelector("[data-sub-id]")?.value || "" };
     sub.fields.forEach((f) => {
       const el = row.querySelector(`[data-field="${f.key}"]`);
       item[f.key] = el ? el.value : (f.default ?? "");
     });
+    if (!item.id) delete item.id; // let normalize() mint one from the title
     rows.push(item);
   });
   return rows;
@@ -511,7 +514,7 @@ async function submitItemModal(e) {
 
   // Give new essays a working URL if one wasn't supplied.
   if (col.id === "posts" && !String(item.url || "").trim()) {
-    item.url = `/writing/post.html?id=${encodeURIComponent(item.id)}`;
+    item.url = `/writing/post#id=${encodeURIComponent(item.id)}`;
   }
 
   if (existing) items[index] = item;

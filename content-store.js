@@ -133,14 +133,28 @@ function normalizeItem(col, item) {
     if (out[f.key] === null || out[f.key] === undefined) out[f.key] = f.default ?? "";
   }
 
-  // Legacy post URLs were stored relative ("writing/foo.html"), which resolves
-  // to /writing/writing/foo.html when linked from the archive page. Anchor them.
-  if (col.id === "posts" && out.url && !/^(https?:|\/|#)/i.test(out.url)) {
-    out.url = `/${out.url.replace(/^\.?\//, "")}`;
+  // Fields marked `path: true` are site paths. Legacy values were stored
+  // relative ("writing/foo.html"), which resolves to /writing/writing/foo.html
+  // when linked from the archive page, and is rejected outright by escUrl.
+  for (const f of col.fields) {
+    if (!f.path) continue;
+    const value = String(out[f.key] || "").trim();
+    if (value && !/^(https?:|\/|#)/i.test(value)) {
+      out[f.key] = `/${value.replace(/^\.?\//, "")}`;
+    }
   }
   if (col.subCollection) {
-    const sub = out[col.subCollection.id];
-    out[col.subCollection.id] = Array.isArray(sub) ? sub : [];
+    const sub = col.subCollection;
+    const items = Array.isArray(out[sub.id]) ? out[sub.id] : [];
+    out[sub.id] = items.map((item, i) => {
+      const child = { ...item };
+      // Sub-items need stable ids too, so chapters can have their own URLs.
+      if (!child.id) child.id = slugify(child[sub.titleField] || `${sub.singular}-${i + 1}`);
+      for (const f of sub.fields) {
+        if (child[f.key] === null || child[f.key] === undefined) child[f.key] = f.default ?? "";
+      }
+      return child;
+    });
   }
   return out;
 }
