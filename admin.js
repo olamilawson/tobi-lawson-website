@@ -9,12 +9,12 @@
 
 import {
   GROUPS, COLLECTIONS, blankItem
-} from "/content-schema.js";
+} from "/content-schema.js?v=3.2.0";
 import {
   loadContent, publish, seedDoc, normalize,
   esc, slugify, hashPasscode, verifyPasscode, isSupabaseConfigured
-} from "/content-store.js";
-import { subscribeToCloud } from "/supabase.js";
+} from "/content-store.js?v=3.2.0";
+import { subscribeToCloud } from "/supabase.js?v=3.2.0";
 
 const AUTH_KEY = "tobi_admin_authenticated";
 
