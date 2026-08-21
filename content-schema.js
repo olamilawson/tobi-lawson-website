@@ -54,6 +54,12 @@ export const GROUPS = [
         help: "Must appear in the headline above, exactly, for the scribble to draw." },
       { key: "homeHeroSubtitle", label: "Hero Lead Paragraph", type: "textarea", rows: 3,
         default: "Notes on capital, cities, and the slow work of building things that last. Based in Lagos, working across fintech, SME services, and education technology." },
+      { key: "homeHeroImage", label: "Hero Portrait", type: "image",
+        default: "/assets/tobi-hero.jpg",
+        help: "Sits beside the headline on desktop, below it on mobile. Edges are feathered into the page background." },
+      { key: "homeHeroImageAlt", label: "Hero Portrait Alt Text", type: "text",
+        default: "Tobi Lawson — Investor and Builder based in Lagos",
+        help: "Describes the photo for screen readers and when the image fails to load." },
       { key: "homeProjectsHeading", label: "Projects Section — Heading", type: "text", default: "Selected Ventures & Projects" },
       { key: "homeProjectsEyebrow", label: "Projects Section — Eyebrow", type: "text", default: "01 / CORE INITIATIVES" },
       { key: "homeWritingHeading", label: "Writing Section — Heading", type: "text", default: "Recent Essays & Notes" },
@@ -75,8 +81,8 @@ export const GROUPS = [
         default: "Tobi Lawson — Investor and Builder based in Lagos",
         help: "Describes the photo for screen readers and when the image fails to load." },
       { key: "aboutBodyProse", label: "Bio Prose", type: "prose", rows: 12,
-        default: "I'm an investor and builder based in Lagos. My background is in investment analysis and development research, work that shaped how I think about capital, institutions, and the slow processes that move a country's fortunes.\n\nToday I run and invest in companies across fintech, SME services technology, product development, and education technology. Alongside that, I co-founded 1914 Reader with Feyi Fawehinmi, where we read Nigeria and Africa's biggest stories through the lens of global economic and political change.\n\nI also work on Lagos Urban Project, a platform reimagining Lagos as a more inclusive and livable city, and Long Africa, a new institution focused on the long-run foundations of African prosperity.\n\nMy interests run wide: markets, cities, governance, technology, and the books that help make sense of them. This site is where I write about all of it, and keep a running account of what I'm building.",
-        help: "Leave a blank line between paragraphs." },
+        default: "The early part of my career was as an investment analyst and development researcher, the latter of which has been the focus of my public writing. For the last decade and a half I have built digital technologies at different nodes of the stack, including cloud computing, enterprise solutions, and application development. I run [Miomir Labs](https://miomirlabs.com/), a systems engineering company building reliable software for consumer and enterprise markets, with the ambition of pushing the frontier of artificial intelligence in Africa.",
+        help: "Leave a blank line between paragraphs. Use [label](https://example.com) for links." },
       { key: "aboutContactLabel", label: "Contact Row Label", type: "text", default: "Direct Contact" }
     ]
   },
@@ -89,11 +95,11 @@ export const GROUPS = [
     fields: [
       { key: "nowHeroTitle", label: "Headline", type: "text", default: "What I'm spending time on" },
       { key: "nowHeroSubtitle", label: "Lead Paragraph", type: "textarea", rows: 3,
-        default: "A running account of the projects I'm building, updated as things move. Last updated July 2026." },
+        default: "A running account of what I am building, updated as things move. Last updated August 2026." },
       { key: "nowProjectsHeading", label: "Projects Section — Heading", type: "text", default: "Active Initiatives & Portfolio" },
       { key: "nowProjectsEyebrow", label: "Projects Section — Eyebrow", type: "text", default: "01 / CURRENT FOCUS" },
-      { key: "nowOngoingProse", label: "Ongoing Focus Prose", type: "prose", rows: 6,
-        default: "I run and invest in companies across fintech, SME services technology, product development, and education technology. Some are early-stage, some are further along.\n\nI share specifics and case studies here as each venture is ready to talk about publicly." }
+      { key: "nowOngoingProse", label: "Ongoing Focus Prose", type: "prose", rows: 12,
+        default: "Most of my week goes to [Miomir Labs](https://miomirlabs.com/), an engineering and research house in Lagos. We build ledgers, identity systems, and settlement pipelines for organisations where a wrong number costs real money. Generating code is the cheap part of that work now. The expensive part is deciding whether the code is right, and proving it stays right as the system changes.\n\nTwo products run on those foundations. Prager is the app a small business runs on, where an owner invoices a customer, takes the payment, watches stock, and pays a supplier without leaving the thread the sale started in. Prai is a productivity assistant that reads Nigerian Pidgin alongside English, in the register customers actually write in.\n\n[Praiki](https://praiki.com) is the wider platform, and its premise is continuity. Most African businesses die with their founder because the structure never existed outside one person\u2019s head. Connect finds vetted professionals, Workplace gives an owner a command centre, Studio runs a professional practice, Agency carries a services firm, and PraikiPay holds the money in escrow until the work is approved.\n\nCrapht launches shortly. It is a platform for developers, and I will say more about it when it ships.\n\nAlongside the engineering, I co-founded 1914 Reader with Feyi Fawehinmi, where we read Nigeria and Africa\u2019s biggest stories through global economic and political change. Lagos Urban Project works on the city. Long Africa takes the longest horizon of the three." }
     ]
   },
 
@@ -167,7 +173,9 @@ export const GROUPS = [
       { key: "footerLink1Name", label: "Custom Link 1 — Label", type: "text", default: "1914 Reader" },
       { key: "footerLink1Url", label: "Custom Link 1 — URL", type: "url", default: "https://www.1914reader.com/" },
       { key: "footerLink2Name", label: "Custom Link 2 — Label", type: "text", default: "Lagos Urban" },
-      { key: "footerLink2Url", label: "Custom Link 2 — URL", type: "url", default: "http://lagosurban.com" }
+      { key: "footerLink2Url", label: "Custom Link 2 — URL", type: "url", default: "http://lagosurban.com" },
+      { key: "footerLink3Name", label: "Custom Link 3 — Label", type: "text", default: "Miomir Labs" },
+      { key: "footerLink3Url", label: "Custom Link 3 — URL", type: "url", default: "https://miomirlabs.com/" }
     ]
   },
 
@@ -350,6 +358,15 @@ export function blankItem(fields) {
  */
 export const SEED_COLLECTIONS = {
   projects: [
+    { id: "miomir-labs", title: "Miomir Labs", roleTag: "Engineering & Research House / Founder", status: "Active",
+      description: "Correctness-first engineering for ledgers, identity, and money movement, for organisations where a wrong number costs real money.",
+      link: "https://miomirlabs.com/" },
+    { id: "praiki", title: "Praiki", roleTag: "Business Infrastructure / Founder", status: "Active",
+      description: "Infrastructure for African founders and professionals: vetted help, an operating layer for the business, and escrow that releases when the work ships.",
+      link: "https://praiki.com" },
+    { id: "crapht", title: "Crapht", roleTag: "Developer Platform / Founder", status: "Launching Soon",
+      description: "A platform for developers. More to say when it ships.",
+      link: "" },
     { id: "1914-reader", title: "1914 Reader", roleTag: "Publication / Co-founder", status: "Active",
       description: "A publication co-founded with Feyi Fawehinmi reading African stories through the lens of global economic change.",
       link: "https://www.1914reader.com/" },

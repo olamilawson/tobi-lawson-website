@@ -36,10 +36,40 @@ export function escUrl(value) {
 }
 
 /**
+ * Escape a run of prose text, turning `[label](url)` into a link on the way.
+ * The URL goes through escUrl, so javascript: and data: are dropped; an
+ * unsafe or empty URL leaves the label as plain text rather than a dead link.
+ * External links get target/rel; internal ones (/, #, ./) stay in the tab.
+ */
+export function renderInline(value) {
+  const text = String(value ?? "");
+  let out = "";
+  let last = 0;
+  const pattern = /\[([^\]\n]+)\]\(([^)\s]+)\)/g;
+  let m;
+  while ((m = pattern.exec(text)) !== null) {
+    out += esc(text.slice(last, m.index));
+    const href = escUrl(m[2]);
+    const label = esc(m[1]);
+    if (!href) {
+      out += esc(m[0]); // unsafe scheme: leave the source visible rather than a mangled link
+    } else if (/^https?:/i.test(m[2])) {
+      out += `<a href="${href}" target="_blank" rel="noopener noreferrer">${label}</a>`;
+    } else {
+      out += `<a href="${href}">${label}</a>`;
+    }
+    last = m.index + m[0].length;
+  }
+  out += esc(text.slice(last));
+  return out;
+}
+
+/**
  * Render a `prose` field to HTML.
- *   blank line  -> new paragraph
- *   ## text     -> subheading
- *   > text      -> pull quote
+ *   blank line       -> new paragraph
+ *   ## text          -> subheading
+ *   > text           -> pull quote
+ *   [label](url)     -> link, inside paragraphs and pull quotes
  */
 export function renderProse(value) {
   const text = String(value ?? "").trim();
@@ -52,9 +82,9 @@ export function renderProse(value) {
       if (b.startsWith("##")) return `<h2>${esc(b.replace(/^##\s*/, ""))}</h2>`;
       if (b.startsWith(">")) {
         const quote = b.split("\n").map((l) => l.replace(/^>\s?/, "")).join(" ");
-        return `<blockquote>${esc(quote)}</blockquote>`;
+        return `<blockquote>${renderInline(quote)}</blockquote>`;
       }
-      return `<p>${esc(b).replace(/\n/g, "<br>")}</p>`;
+      return `<p>${renderInline(b).replace(/\n/g, "<br>")}</p>`;
     })
     .filter(Boolean)
     .join("\n");

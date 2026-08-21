@@ -150,7 +150,15 @@ function bindFieldBehaviour(container) {
   };
   container.querySelectorAll("[data-field]").forEach((el) => {
     el.addEventListener("change", applyConditionals);
-    el.addEventListener("input", () => { state.dirty = true; });
+    el.addEventListener("input", () => {
+      state.dirty = true;
+      // Settings panels are re-rendered from state.doc whenever a tab is
+      // clicked, so an edit that lives only in the DOM is destroyed by the
+      // next tab switch. Keep state.doc current on every keystroke; Save
+      // still controls what reaches the cloud.
+      const form = el.closest("form[data-group]");
+      if (form) state.doc.settings[el.getAttribute("data-field")] = el.value;
+    });
   });
   applyConditionals();
 }
