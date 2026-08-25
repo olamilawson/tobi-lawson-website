@@ -5,8 +5,8 @@
  * Owns: local cache, cloud merge, defaults, escaping, and passcode hashing.
  */
 
-import { GROUPS, COLLECTIONS, SEED_COLLECTIONS, SCHEMA_VERSION, BOOTSTRAP_PASSCODE_HASH, defaultSettings } from "/content-schema.js?v=3.3.0";
-import { fetchCloudDoc, saveCloudDoc, fetchLegacyDoc, isSupabaseConfigured } from "/supabase.js?v=3.3.0";
+import { GROUPS, COLLECTIONS, SEED_COLLECTIONS, SCHEMA_VERSION, BOOTSTRAP_PASSCODE_HASH, defaultSettings } from "/content-schema.js?v=3.3.1";
+import { fetchCloudDoc, saveCloudDoc, fetchLegacyDoc, isSupabaseConfigured } from "/supabase.js?v=3.3.1";
 
 const STORAGE_KEY = "tobi_site_content_v3";
 const LEGACY_KEYS = ["tobi_site_data_v2", "tobi_site_data_v1", "tobi_site_data"];
@@ -31,6 +31,10 @@ export function esc(value) {
 export function escUrl(value) {
   const raw = String(value ?? "").trim();
   if (!raw) return "";
+  // A scheme with nothing after it is an unfilled placeholder from the editor
+  // toolbar. Refusing it here means the raw text shows on the page, so a
+  // forgotten URL is visible rather than a link that quietly goes nowhere.
+  if (/^(https?:\/\/|mailto:)$/i.test(raw)) return "";
   if (/^(https?:|mailto:|\/|#|\.\/|\.\.\/)/i.test(raw)) return esc(raw);
   return ""; // blocks javascript: and data: in href position
 }

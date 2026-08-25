@@ -125,9 +125,10 @@ from an id extracted from what you typed, so nothing from the document reaches
 the `iframe` src directly. A link to any other host renders as a plain link
 rather than a frame.
 
-**Unsafe links.** A `javascript:` or `data:` URL in link position is refused
-and the raw text is shown instead, so a broken link is visible rather than
-silently live.
+**Links.** Select the words you want to link, then press **Link**. The
+address is left selected so you can type it straight in. An address you never
+filled in stays visible as raw text on the page rather than becoming a link
+that goes nowhere, and a `javascript:` or `data:` URL is refused the same way.
 
 ---
 

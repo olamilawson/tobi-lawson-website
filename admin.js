@@ -9,12 +9,12 @@
 
 import {
   GROUPS, COLLECTIONS, blankItem
-} from "/content-schema.js?v=3.3.0";
+} from "/content-schema.js?v=3.3.1";
 import {
   loadContent, publish, seedDoc, normalize,
   esc, slugify, hashPasscode, verifyPasscode, isSupabaseConfigured, renderProse
-} from "/content-store.js?v=3.3.0";
-import { subscribeToCloud } from "/supabase.js?v=3.3.0";
+} from "/content-store.js?v=3.3.1";
+import { subscribeToCloud } from "/supabase.js?v=3.3.1";
 
 const AUTH_KEY = "tobi_admin_authenticated";
 
@@ -131,14 +131,17 @@ const PROSE_TOOLS = [
   { id: "bold",    label: "B",       title: "Bold",             wrap: ["**", "**"], sample: "bold text" },
   { id: "italic",  label: "I",       title: "Italic",           wrap: ["*", "*"],   sample: "italic text" },
   { id: "code",    label: "Code",    title: "Inline code",      wrap: [TICK, TICK], sample: "code" },
-  { id: "link",    label: "Link",    title: "Link",             wrap: ["[", "](https://)"], sample: "link text" },
+  { id: "link",    label: "Link",    title: "Link",             wrap: ["[", "](https://)"],
+    sample: "link text", selectToken: "https://" },
   { id: "quote",   label: "Quote",   title: "Pull quote",       block: "> ",   sample: "Quoted line" },
   { id: "ul",      label: "List",    title: "Bulleted list",    block: "- ",   sample: "First item" },
   { id: "ol",      label: "1.",      title: "Numbered list",    block: "1. ",  sample: "First item" },
   { id: "image",   label: "Image",   title: "Image by path or URL",
-    block: "", sample: '![Describe the picture](/assets/your-image.jpg "Optional caption")' },
+    block: "", sample: '![Describe the picture](/assets/your-image.jpg "Optional caption")',
+    selectToken: "/assets/your-image.jpg" },
   { id: "video",   label: "Video",   title: "YouTube or Vimeo",
-    block: "", sample: "@video(https://www.youtube.com/watch?v=...)" },
+    block: "", sample: "@video(https://www.youtube.com/watch?v=...)",
+    selectToken: "https://www.youtube.com/watch?v=..." },
   { id: "fence",   label: "Block",   title: "Code block",
     block: "", sample: TICK + TICK + TICK + "\ncode\n" + TICK + TICK + TICK },
   { id: "rule",    label: "Divider", title: "Divider",          block: "", sample: "---" }
@@ -187,6 +190,23 @@ function insertAtCaret(ta, text, selectFrom, selectTo) {
   ta.dispatchEvent(new Event("input", { bubbles: true }));
 }
 
+/**
+ * Where to leave the selection after inserting `text`.
+ *
+ * A tool carrying an address selects the address, because that is the part
+ * still to be typed: the label is either the words already highlighted or an
+ * obvious placeholder, while an unfilled URL produces a link that looks fine
+ * in the editor and is broken on the page. Everything else selects the body,
+ * so the placeholder can be typed straight over.
+ */
+function selectionFor(tool, text, bodyFrom, bodyTo) {
+  if (tool.selectToken) {
+    const at = text.lastIndexOf(tool.selectToken);
+    if (at !== -1) return [at, at + tool.selectToken.length];
+  }
+  return [bodyFrom, bodyTo];
+}
+
 function applyTool(ta, tool) {
   const start = ta.selectionStart;
   const end = ta.selectionEnd;
@@ -195,7 +215,9 @@ function applyTool(ta, tool) {
   if (tool.wrap) {
     const [open, close] = tool.wrap;
     const inner = selected || tool.sample;
-    insertAtCaret(ta, open + inner + close, open.length, open.length + inner.length);
+    const text = open + inner + close;
+    const [from, to] = selectionFor(tool, text, open.length, open.length + inner.length);
+    insertAtCaret(ta, text, from, to);
     return;
   }
 
@@ -205,7 +227,8 @@ function applyTool(ta, tool) {
   const lead = atLineStart ? "" : (before.endsWith("\n\n") ? "" : "\n\n");
   const body = tool.block ? tool.block + (selected || tool.sample) : (selected || tool.sample);
   const text = lead + body;
-  insertAtCaret(ta, text, lead.length + tool.block.length, text.length);
+  const [from, to] = selectionFor(tool, text, lead.length + tool.block.length, text.length);
+  insertAtCaret(ta, text, from, to);
 }
 
 function refreshPreview(id) {
