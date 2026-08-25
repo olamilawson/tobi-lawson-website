@@ -30,7 +30,7 @@ export const GROUPS = [
     blurb: "The site name and the six navigation labels, shared by every page.",
     fields: [
       { key: "siteTitle", label: "Site / Brand Name", type: "text", default: "Tobi Lawson" },
-      { key: "contactEmail", label: "Contact Email", type: "email", default: "olamilawson@gmail.com",
+      { key: "contactEmail", label: "Contact Email", type: "email", default: "me@tobilawson.com",
         help: "Used by every mailto: link across the site." },
       { key: "navHome", label: "Nav — Home", type: "text", default: "Home" },
       { key: "navBooks", label: "Nav — Books", type: "text", default: "Books" },
