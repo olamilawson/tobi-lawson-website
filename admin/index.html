@@ -91,6 +91,10 @@
       gap: 0.25rem;
       padding: 0.5rem;
       border-bottom: 1px solid var(--line);
+      position: sticky;
+      top: 0;
+      background-color: var(--bg);
+      z-index: 2;
     }
 
     .prose-toolbar-gap { flex: 1 1 auto; }
@@ -114,29 +118,55 @@
     .prose-tool.active { border-color: var(--text); background-color: rgba(17, 17, 17, 0.06); }
     .prose-tool-file { display: inline-flex; align-items: center; margin: 0; }
 
-    .prose-editor .prose-input {
-      border: 0;
-      width: 100%;
-      display: block;
-      resize: vertical;
-    }
-
-    .prose-editor .prose-input:focus { outline: none; }
-
-    .prose-preview {
-      border-top: 1px solid var(--line);
-      padding: 1.75rem;
-      font-size: 1rem;
-      max-height: 460px;
+    /* The editable surface. It carries .article-body too, so what you type is
+       set in the same faces the published page uses. */
+    .prose-surface {
+      min-height: 15rem;
+      max-height: 40rem;
       overflow-y: auto;
+      padding: 1.75rem;
+      font-size: 1.05rem;
+      line-height: 1.7;
+      outline: none;
     }
 
-    .prose-preview > :first-child { margin-top: 0; }
-    .prose-preview h2 { margin-top: 2rem; font-size: 1.4rem; }
-    .prose-preview h3 { margin-top: 1.5rem; font-size: 1.15rem; }
-    .prose-preview p { margin-bottom: 1rem; }
-    .prose-preview .prose-figure,
-    .prose-preview .prose-embed { margin: 1.5rem 0; }
+    .prose-surface:focus { background-color: #fff; }
+    .prose-surface > :first-child { margin-top: 0; }
+    .prose-surface > :last-child { margin-bottom: 0; }
+    .prose-surface h2 { margin-top: 2rem; font-size: 1.6rem; }
+    .prose-surface h3 { margin-top: 1.5rem; font-size: 1.25rem; }
+    .prose-surface p { margin-bottom: 1.1rem; }
+    .prose-surface a { color: var(--accent); text-decoration: underline; }
+    .prose-surface img { max-width: 100%; height: auto; }
+    .prose-surface .prose-figure,
+    .prose-surface .prose-embed { margin: 1.5rem 0; }
+    .prose-surface .prose-embed { pointer-events: none; }
+
+    .prose-source-input {
+      width: 100%;
+      border: 0;
+      border-top: 1px solid var(--line);
+      padding: 1.25rem;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.85rem;
+      line-height: 1.6;
+      resize: vertical;
+      background-color: rgba(17, 17, 17, 0.02);
+    }
+
+    .prose-source-input:focus { outline: none; }
+
+    .prose-linkbar {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+      padding: 0.75rem;
+      border-top: 1px solid var(--line);
+      background-color: rgba(17, 17, 17, 0.03);
+    }
+
+    .prose-linkbar .prose-linkinput { flex: 1; margin: 0; }
+    .prose-linkbar .admin-btn { margin: 0; flex-shrink: 0; }
 
     .admin-help {
       color: var(--text-muted);
@@ -313,8 +343,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/base.css?v=3.3.1" />
-  <link rel="stylesheet" href="/style.css?v=3.3.1" />
+  <link rel="stylesheet" href="/base.css?v=3.4.0" />
+  <link rel="stylesheet" href="/style.css?v=3.4.0" />
 </head>
 <body>
 
@@ -379,6 +409,6 @@
 
   <div id="toastNotification" class="toast-notification"></div>
 
-  <script type="module" src="/admin.js?v=3.3.1"></script>
+  <script type="module" src="/admin.js?v=3.4.0"></script>
 </body>
 </html>

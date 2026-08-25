@@ -5,8 +5,8 @@
  * Owns: local cache, cloud merge, defaults, escaping, and passcode hashing.
  */
 
-import { GROUPS, COLLECTIONS, SEED_COLLECTIONS, SCHEMA_VERSION, BOOTSTRAP_PASSCODE_HASH, defaultSettings } from "/content-schema.js?v=3.3.1";
-import { fetchCloudDoc, saveCloudDoc, fetchLegacyDoc, isSupabaseConfigured } from "/supabase.js?v=3.3.1";
+import { GROUPS, COLLECTIONS, SEED_COLLECTIONS, SCHEMA_VERSION, BOOTSTRAP_PASSCODE_HASH, defaultSettings } from "/content-schema.js?v=3.4.0";
+import { fetchCloudDoc, saveCloudDoc, fetchLegacyDoc, isSupabaseConfigured } from "/supabase.js?v=3.4.0";
 
 const STORAGE_KEY = "tobi_site_content_v3";
 const LEGACY_KEYS = ["tobi_site_data_v2", "tobi_site_data_v1", "tobi_site_data"];
@@ -130,7 +130,7 @@ function renderEmbed(block) {
       ? '<p><a href="' + href + '" target="_blank" rel="noopener noreferrer">' + esc(m[1]) + "</a></p>"
       : "<p>" + esc(block) + "</p>";
   }
-  return '<div class="prose-embed"><iframe src="' + embed.src + '" title="' + esc(embed.title) +
+  return '<div class="prose-embed" data-video="' + esc(m[1]) + '"><iframe src="' + embed.src + '" title="' + esc(embed.title) +
          '" loading="lazy" frameborder="0" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>';
 }
 

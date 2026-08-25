@@ -85,50 +85,56 @@ URI), `select`.
 
 ### Writing in a prose field
 
-Prose fields carry a toolbar and a live preview. The preview runs the site's
-own `renderProse`, so what you see there is what the page renders.
+Prose fields are edited visually. You see headings, bold text, real links,
+pictures and players as you type. There is no markup on screen.
 
-**The stored value is always plain text.** The toolbar types markup for you;
-it never produces HTML. That is deliberate. The Supabase anonymous key ships
-in the page source and has to be able to write (see Known limits), so anyone
-who views source can rewrite the document. If prose fields stored HTML, that
-would be a script injection into every page. Because they store text and the
-renderer escapes everything before it builds markup, the worst a stranger can
-do is write bad copy.
+**To link:** select the words, then either press **Link** and type the address,
+or just paste a URL over them. Cmd/Ctrl+K does the same. **Unlink** removes one.
 
-| Type this | You get |
+**Toolbar:** H2, H3, bold, italic, link, unlink, pull quote, bulleted and
+numbered lists, picture, video, divider, and Clear to strip formatting off a
+selection. Cmd/Ctrl+B and Cmd/Ctrl+I work as expected.
+
+**Source** shows the plain text actually being stored, and you can edit there
+directly. Press it again to go back.
+
+**What gets stored is always plain text.** The editable surface is serialised
+back to markup on every keystroke, and that markup is what goes into the
+content document. This is not a detail to change casually: the Supabase
+anonymous key ships in the page source and has to be able to write (see Known
+limits), so anyone who views source can rewrite the document. If prose fields
+stored HTML, that would be a script injection into every page. Because they
+store text and the renderer escapes everything before building markup, the
+worst a stranger can do is write bad copy.
+
+The stored form, should you ever need to read or write it by hand:
+
+| Text | Renders as |
 |---|---|
 | blank line between blocks | a new paragraph |
-| `## Heading` | subheading |
-| `### Heading` | minor subheading |
+| `## Heading` / `### Heading` | subheading, minor subheading |
 | `> Quoted line` | pull quote |
-| `- item` on consecutive lines | bulleted list |
-| `1. item` on consecutive lines | numbered list |
+| `- item` / `1. item` on consecutive lines | list |
 | `---` alone on a line | divider |
 | `[label](https://example.com)` | link, opening in a new tab |
 | `[label](/about/)` | link, staying in the tab |
 | `**bold**`, `*italic*` | bold, italic |
 | backtick-wrapped text | inline code |
 | a triple-backtick fence | code block, nothing inside interpreted |
-| `![alt](/assets/pic.jpg)` | picture |
-| `![alt](/assets/pic.jpg "A caption")` | picture with a caption |
+| `![alt](/assets/pic.jpg "A caption")` | picture, caption optional |
 | `@video(https://youtu.be/ID)` | embedded player |
 
-**Pictures.** Prefer uploading the file to `/assets/` and writing the path.
-The **Upload** button inlines a picture as a data URI directly into the
-content document, which is convenient for one small image and a bad idea for
-several; the console rejects anything over 1.5 MB. Every picture in the
-document is carried in full on every page load.
+**Pictures.** Prefer putting the file in `/assets/` and giving the Image button
+that path. **Upload** inlines the picture as a data URI inside the content
+document, which is fine once and wasteful repeatedly, since the whole document
+loads on every page view. Anything over 1.5 MB is refused.
 
-**Video.** Only YouTube and Vimeo are framed, and the embed URL is rebuilt
-from an id extracted from what you typed, so nothing from the document reaches
-the `iframe` src directly. A link to any other host renders as a plain link
-rather than a frame.
+**Video.** Only YouTube and Vimeo are framed, and the embed URL is rebuilt from
+an id extracted from what you gave it, so nothing from the document reaches the
+`iframe` src directly. Any other host renders as a plain link.
 
-**Links.** Select the words you want to link, then press **Link**. The
-address is left selected so you can type it straight in. An address you never
-filled in stays visible as raw text on the page rather than becoming a link
-that goes nowhere, and a `javascript:` or `data:` URL is refused the same way.
+**Bad links.** A `javascript:` or `data:` URL is refused, and an address left
+unfilled stays visible as text rather than becoming a link that goes nowhere.
 
 ---
 
