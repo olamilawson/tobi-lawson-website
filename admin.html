@@ -78,6 +78,66 @@
       line-height: 1.6;
     }
 
+    /* Prose editor */
+    .prose-editor {
+      border: 1px solid var(--line);
+      background-color: var(--bg);
+    }
+
+    .prose-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.5rem;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .prose-toolbar-gap { flex: 1 1 auto; }
+
+    .prose-tool {
+      font-family: var(--font-sans);
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text);
+      background: none;
+      border: 1px solid transparent;
+      padding: 0.35rem 0.55rem;
+      cursor: pointer;
+      line-height: 1;
+      transition: border-color 0.2s ease, background-color 0.2s ease;
+    }
+
+    .prose-tool:hover { border-color: var(--line); background-color: rgba(17, 17, 17, 0.04); }
+    .prose-tool.active { border-color: var(--text); background-color: rgba(17, 17, 17, 0.06); }
+    .prose-tool-file { display: inline-flex; align-items: center; margin: 0; }
+
+    .prose-editor .prose-input {
+      border: 0;
+      width: 100%;
+      display: block;
+      resize: vertical;
+    }
+
+    .prose-editor .prose-input:focus { outline: none; }
+
+    .prose-preview {
+      border-top: 1px solid var(--line);
+      padding: 1.75rem;
+      font-size: 1rem;
+      max-height: 460px;
+      overflow-y: auto;
+    }
+
+    .prose-preview > :first-child { margin-top: 0; }
+    .prose-preview h2 { margin-top: 2rem; font-size: 1.4rem; }
+    .prose-preview h3 { margin-top: 1.5rem; font-size: 1.15rem; }
+    .prose-preview p { margin-bottom: 1rem; }
+    .prose-preview .prose-figure,
+    .prose-preview .prose-embed { margin: 1.5rem 0; }
+
     .admin-help {
       color: var(--text-muted);
       font-size: 0.75rem;
@@ -253,8 +313,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/base.css?v=3.2.0" />
-  <link rel="stylesheet" href="/style.css?v=3.2.0" />
+  <link rel="stylesheet" href="/base.css?v=3.3.0" />
+  <link rel="stylesheet" href="/style.css?v=3.3.0" />
 </head>
 <body>
 
@@ -319,6 +379,6 @@
 
   <div id="toastNotification" class="toast-notification"></div>
 
-  <script type="module" src="/admin.js?v=3.2.0"></script>
+  <script type="module" src="/admin.js?v=3.3.0"></script>
 </body>
 </html>

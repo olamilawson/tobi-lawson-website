@@ -79,9 +79,55 @@ fallback and is replaced on hydration.
 
 ### Field types
 
-`text`, `textarea` (line breaks preserved), `prose` (blank line = new
-paragraph), `url`, `email`, `image` (URL box plus file picker that inlines the
-image as a data URI), `select`.
+`text`, `textarea` (line breaks preserved), `prose` (see below), `url`,
+`email`, `image` (URL box plus file picker that inlines the image as a data
+URI), `select`.
+
+### Writing in a prose field
+
+Prose fields carry a toolbar and a live preview. The preview runs the site's
+own `renderProse`, so what you see there is what the page renders.
+
+**The stored value is always plain text.** The toolbar types markup for you;
+it never produces HTML. That is deliberate. The Supabase anonymous key ships
+in the page source and has to be able to write (see Known limits), so anyone
+who views source can rewrite the document. If prose fields stored HTML, that
+would be a script injection into every page. Because they store text and the
+renderer escapes everything before it builds markup, the worst a stranger can
+do is write bad copy.
+
+| Type this | You get |
+|---|---|
+| blank line between blocks | a new paragraph |
+| `## Heading` | subheading |
+| `### Heading` | minor subheading |
+| `> Quoted line` | pull quote |
+| `- item` on consecutive lines | bulleted list |
+| `1. item` on consecutive lines | numbered list |
+| `---` alone on a line | divider |
+| `[label](https://example.com)` | link, opening in a new tab |
+| `[label](/about/)` | link, staying in the tab |
+| `**bold**`, `*italic*` | bold, italic |
+| backtick-wrapped text | inline code |
+| a triple-backtick fence | code block, nothing inside interpreted |
+| `![alt](/assets/pic.jpg)` | picture |
+| `![alt](/assets/pic.jpg "A caption")` | picture with a caption |
+| `@video(https://youtu.be/ID)` | embedded player |
+
+**Pictures.** Prefer uploading the file to `/assets/` and writing the path.
+The **Upload** button inlines a picture as a data URI directly into the
+content document, which is convenient for one small image and a bad idea for
+several; the console rejects anything over 1.5 MB. Every picture in the
+document is carried in full on every page load.
+
+**Video.** Only YouTube and Vimeo are framed, and the embed URL is rebuilt
+from an id extracted from what you typed, so nothing from the document reaches
+the `iframe` src directly. A link to any other host renders as a plain link
+rather than a frame.
+
+**Unsafe links.** A `javascript:` or `data:` URL in link position is refused
+and the raw text is shown instead, so a broken link is visible rather than
+silently live.
 
 ---
 

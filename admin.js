@@ -9,12 +9,12 @@
 
 import {
   GROUPS, COLLECTIONS, blankItem
-} from "/content-schema.js?v=3.2.0";
+} from "/content-schema.js?v=3.3.0";
 import {
   loadContent, publish, seedDoc, normalize,
-  esc, slugify, hashPasscode, verifyPasscode, isSupabaseConfigured
-} from "/content-store.js?v=3.2.0";
-import { subscribeToCloud } from "/supabase.js?v=3.2.0";
+  esc, slugify, hashPasscode, verifyPasscode, isSupabaseConfigured, renderProse
+} from "/content-store.js?v=3.3.0";
+import { subscribeToCloud } from "/supabase.js?v=3.3.0";
 
 const AUTH_KEY = "tobi_admin_authenticated";
 
@@ -56,8 +56,11 @@ function fieldControl(field, value, idPrefix) {
 
   switch (field.type) {
     case "textarea":
-    case "prose":
       control = `<textarea id="${id}" class="admin-textarea" rows="${field.rows || 4}" data-field="${esc(field.key)}"${req}>${esc(v)}</textarea>`;
+      break;
+
+    case "prose":
+      control = proseEditor(id, field, v, req);
       break;
 
     case "select":
@@ -92,12 +95,168 @@ function fieldControl(field, value, idPrefix) {
       control = `<input type="text" id="${id}" class="admin-input" data-field="${esc(field.key)}" value="${esc(v)}"${req} />`;
   }
 
+  const proseNote = field.type === "prose"
+    ? `<div class="admin-help meta">Blank line starts a new paragraph. Use the toolbar, or type it: ## subheading, ### minor subheading, &gt; quote, - list, --- divider, [label](url), **bold**, *italic*. Pictures and video get their own line.</div>`
+    : "";
+
   const hidden = field.showIf ? ' data-show-if="' + esc(JSON.stringify(field.showIf)) + '"' : "";
   return `<div class="admin-form-group"${hidden}>
     <label for="${id}" class="meta">${esc(field.label)}</label>
     ${control}
     ${help}
+    ${proseNote}
   </div>`;
+}
+
+// ---------------------------------------------------------------------------
+// Prose editor
+//
+// The stored value stays plain text. The toolbar writes the same markup a
+// person could type by hand, and the preview runs the site's own renderProse,
+// so what shows here is exactly what the page will render. Nothing in this
+// editor produces HTML, which is what keeps a publicly writable database from
+// becoming a script injection surface.
+// ---------------------------------------------------------------------------
+
+const TICK = String.fromCharCode(96);
+
+/**
+ * Each tool is either a wrap (put markers either side of the selection) or a
+ * block (put the markup on its own line). `sample` is the placeholder dropped
+ * in when nothing is selected, and it is left selected so it can be typed over.
+ */
+const PROSE_TOOLS = [
+  { id: "h2",      label: "H2",      title: "Subheading",       block: "## ",  sample: "Subheading" },
+  { id: "h3",      label: "H3",      title: "Minor subheading", block: "### ", sample: "Subheading" },
+  { id: "bold",    label: "B",       title: "Bold",             wrap: ["**", "**"], sample: "bold text" },
+  { id: "italic",  label: "I",       title: "Italic",           wrap: ["*", "*"],   sample: "italic text" },
+  { id: "code",    label: "Code",    title: "Inline code",      wrap: [TICK, TICK], sample: "code" },
+  { id: "link",    label: "Link",    title: "Link",             wrap: ["[", "](https://)"], sample: "link text" },
+  { id: "quote",   label: "Quote",   title: "Pull quote",       block: "> ",   sample: "Quoted line" },
+  { id: "ul",      label: "List",    title: "Bulleted list",    block: "- ",   sample: "First item" },
+  { id: "ol",      label: "1.",      title: "Numbered list",    block: "1. ",  sample: "First item" },
+  { id: "image",   label: "Image",   title: "Image by path or URL",
+    block: "", sample: '![Describe the picture](/assets/your-image.jpg "Optional caption")' },
+  { id: "video",   label: "Video",   title: "YouTube or Vimeo",
+    block: "", sample: "@video(https://www.youtube.com/watch?v=...)" },
+  { id: "fence",   label: "Block",   title: "Code block",
+    block: "", sample: TICK + TICK + TICK + "\ncode\n" + TICK + TICK + TICK },
+  { id: "rule",    label: "Divider", title: "Divider",          block: "", sample: "---" }
+];
+
+function proseEditor(id, field, value, req) {
+  const tools = PROSE_TOOLS.map((t) =>
+    `<button type="button" class="prose-tool" data-tool="${t.id}" data-for="${id}" title="${esc(t.title)}">${esc(t.label)}</button>`
+  ).join("");
+
+  return `
+    <div class="prose-editor">
+      <div class="prose-toolbar">
+        ${tools}
+        <label class="prose-tool prose-tool-file" title="Upload a picture into this field">
+          Upload
+          <input type="file" accept="image/*" data-prose-upload="${id}" style="display: none;" />
+        </label>
+        <span class="prose-toolbar-gap"></span>
+        <button type="button" class="prose-tool prose-tool-preview" data-preview-for="${id}" aria-pressed="false">Preview</button>
+      </div>
+      <textarea id="${id}" class="admin-textarea prose-input" rows="${field.rows || 10}" data-field="${esc(field.key)}"${req}>${esc(value)}</textarea>
+      <div class="prose-preview article-body" data-preview-pane="${id}" style="display: none;"></div>
+    </div>`;
+}
+
+/** Put text into a textarea at the caret, keeping undo history intact. */
+function insertAtCaret(ta, text, selectFrom, selectTo) {
+  ta.focus();
+  const start = ta.selectionStart;
+  const end = ta.selectionEnd;
+  // execCommand is deprecated but is still the only way to write into a
+  // textarea without destroying the browser's native undo stack.
+  let inserted = false;
+  try {
+    inserted = document.execCommand("insertText", false, text);
+  } catch (err) {
+    inserted = false;
+  }
+  if (!inserted) {
+    ta.value = ta.value.slice(0, start) + text + ta.value.slice(end);
+  }
+  if (selectFrom !== undefined) {
+    ta.setSelectionRange(start + selectFrom, start + selectTo);
+  }
+  ta.dispatchEvent(new Event("input", { bubbles: true }));
+}
+
+function applyTool(ta, tool) {
+  const start = ta.selectionStart;
+  const end = ta.selectionEnd;
+  const selected = ta.value.slice(start, end);
+
+  if (tool.wrap) {
+    const [open, close] = tool.wrap;
+    const inner = selected || tool.sample;
+    insertAtCaret(ta, open + inner + close, open.length, open.length + inner.length);
+    return;
+  }
+
+  // Block tools start on their own line.
+  const before = ta.value.slice(0, start);
+  const atLineStart = before === "" || before.endsWith("\n");
+  const lead = atLineStart ? "" : (before.endsWith("\n\n") ? "" : "\n\n");
+  const body = tool.block ? tool.block + (selected || tool.sample) : (selected || tool.sample);
+  const text = lead + body;
+  insertAtCaret(ta, text, lead.length + tool.block.length, text.length);
+}
+
+function refreshPreview(id) {
+  const ta = document.getElementById(id);
+  const pane = document.querySelector(`[data-preview-pane="${id}"]`);
+  if (!ta || !pane || pane.style.display === "none") return;
+  pane.innerHTML = renderProse(ta.value) || '<p class="meta">Nothing to preview yet.</p>';
+}
+
+/** Wire toolbars, uploads, and preview toggles inside a container. */
+function bindProseEditors(container) {
+  container.querySelectorAll("[data-tool]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const ta = document.getElementById(btn.getAttribute("data-for"));
+      const tool = PROSE_TOOLS.find((t) => t.id === btn.getAttribute("data-tool"));
+      if (ta && tool) applyTool(ta, tool);
+    });
+  });
+
+  container.querySelectorAll("[data-preview-for]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const id = btn.getAttribute("data-preview-for");
+      const pane = container.querySelector(`[data-preview-pane="${id}"]`);
+      if (!pane) return;
+      const showing = pane.style.display !== "none";
+      pane.style.display = showing ? "none" : "block";
+      btn.setAttribute("aria-pressed", String(!showing));
+      btn.classList.toggle("active", !showing);
+      refreshPreview(id);
+    });
+  });
+
+  container.querySelectorAll("[data-prose-upload]").forEach((input) => {
+    input.addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      e.target.value = "";
+      if (file.size > 1.5 * 1024 * 1024) {
+        toast("That image is over 1.5 MB. Put it in /assets/ and use the Image button instead.");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        const ta = document.getElementById(input.getAttribute("data-prose-upload"));
+        if (!ta) return;
+        applyTool(ta, { block: "", sample: `![${file.name.replace(/\.[^.]+$/, "")}](${evt.target.result})` });
+        toast("Picture inserted. Large pictures are better placed in /assets/.");
+      };
+      reader.readAsDataURL(file);
+    });
+  });
 }
 
 /** Read every [data-field] control inside a container back into a plain object. */
@@ -148,10 +307,13 @@ function bindFieldBehaviour(container) {
       group.style.display = visible ? "" : "none";
     });
   };
+  bindProseEditors(container);
+
   container.querySelectorAll("[data-field]").forEach((el) => {
     el.addEventListener("change", applyConditionals);
     el.addEventListener("input", () => {
       state.dirty = true;
+      if (el.classList.contains("prose-input")) refreshPreview(el.id);
       // Settings panels are re-rendered from state.doc whenever a tab is
       // clicked, so an edit that lives only in the DOM is destroyed by the
       // next tab switch. Keep state.doc current on every keystroke; Save

@@ -5,8 +5,8 @@
  * Owns: local cache, cloud merge, defaults, escaping, and passcode hashing.
  */
 
-import { GROUPS, COLLECTIONS, SEED_COLLECTIONS, SCHEMA_VERSION, BOOTSTRAP_PASSCODE_HASH, defaultSettings } from "/content-schema.js?v=3.2.0";
-import { fetchCloudDoc, saveCloudDoc, fetchLegacyDoc, isSupabaseConfigured } from "/supabase.js?v=3.2.0";
+import { GROUPS, COLLECTIONS, SEED_COLLECTIONS, SCHEMA_VERSION, BOOTSTRAP_PASSCODE_HASH, defaultSettings } from "/content-schema.js?v=3.3.0";
+import { fetchCloudDoc, saveCloudDoc, fetchLegacyDoc, isSupabaseConfigured } from "/supabase.js?v=3.3.0";
 
 const STORAGE_KEY = "tobi_site_content_v3";
 const LEGACY_KEYS = ["tobi_site_data_v2", "tobi_site_data_v1", "tobi_site_data"];
@@ -36,9 +36,48 @@ export function escUrl(value) {
 }
 
 /**
- * Escape a run of prose text, turning `[label](url)` into a link on the way.
- * The URL goes through escUrl, so javascript: and data: are dropped; an
- * unsafe or empty URL leaves the label as plain text rather than a dead link.
+ * Media hosts we are willing to frame. The embed URL is rebuilt from an id we
+ * extract ourselves, so nothing out of the document reaches the iframe src
+ * verbatim. A host we do not recognise is rendered as a plain link instead.
+ */
+function embedFor(rawUrl) {
+  const url = String(rawUrl || "").trim();
+  let m;
+
+  m = url.match(/^https?:\/\/(?:www\.)?youtube\.com\/watch\?(?:.*&)?v=([A-Za-z0-9_-]{6,20})/i)
+   || url.match(/^https?:\/\/youtu\.be\/([A-Za-z0-9_-]{6,20})/i)
+   || url.match(/^https?:\/\/(?:www\.)?youtube\.com\/embed\/([A-Za-z0-9_-]{6,20})/i);
+  if (m) return { src: "https://www.youtube-nocookie.com/embed/" + m[1], title: "YouTube video" };
+
+  m = url.match(/^https?:\/\/(?:www\.)?vimeo\.com\/(?:video\/)?(\d{6,12})/i)
+   || url.match(/^https?:\/\/player\.vimeo\.com\/video\/(\d{6,12})/i);
+  if (m) return { src: "https://player.vimeo.com/video/" + m[1], title: "Vimeo video" };
+
+  return null;
+}
+
+const TICK = String.fromCharCode(96);
+const FENCE_RE = new RegExp(TICK + TICK + TICK + "([\\s\\S]*?)" + TICK + TICK + TICK, "g");
+const CODE_SPAN_RE = new RegExp("(" + TICK + "[^" + TICK + "\\n]+" + TICK + ")");
+
+/** Code spans, then bold and italic outside them. Input is already escaped. */
+function applyMarks(escaped) {
+  return String(escaped).split(CODE_SPAN_RE).map((part) => {
+    if (part.length > 2 && part.startsWith(TICK) && part.endsWith(TICK)) {
+      return "<code>" + part.slice(1, -1) + "</code>";
+    }
+    return part
+      .replace(/\*\*([^*\n]+)\*\*/g, "<strong>$1</strong>")
+      .replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g, "$1<em>$2</em>");
+  }).join("");
+}
+
+/**
+ * Escape a run of prose text, turning [label](url) into a link on the way,
+ * then applying inline marks to everything that is not a URL.
+ *
+ * The URL goes through escUrl, so javascript: and data: are refused; an unsafe
+ * URL leaves the source visible rather than producing a dead or hostile link.
  * External links get target/rel; internal ones (/, #, ./) stay in the tab.
  */
 export function renderInline(value) {
@@ -48,43 +87,119 @@ export function renderInline(value) {
   const pattern = /\[([^\]\n]+)\]\(([^)\s]+)\)/g;
   let m;
   while ((m = pattern.exec(text)) !== null) {
-    out += esc(text.slice(last, m.index));
+    out += applyMarks(esc(text.slice(last, m.index)));
     const href = escUrl(m[2]);
-    const label = esc(m[1]);
+    const label = applyMarks(esc(m[1]));
     if (!href) {
-      out += esc(m[0]); // unsafe scheme: leave the source visible rather than a mangled link
+      out += esc(m[0]); // unsafe scheme: show the source, do not link it
     } else if (/^https?:/i.test(m[2])) {
-      out += `<a href="${href}" target="_blank" rel="noopener noreferrer">${label}</a>`;
+      out += '<a href="' + href + '" target="_blank" rel="noopener noreferrer">' + label + "</a>";
     } else {
-      out += `<a href="${href}">${label}</a>`;
+      out += '<a href="' + href + '">' + label + "</a>";
     }
     last = m.index + m[0].length;
   }
-  out += esc(text.slice(last));
+  out += applyMarks(esc(text.slice(last)));
   return out;
 }
 
+/** An image block, with an optional quoted caption, becomes a figure. */
+function renderFigure(block) {
+  const m = block.match(/^!\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)$/);
+  if (!m) return null;
+  const raw = m[2].trim();
+  const src = escUrl(raw) || (/^data:image\//i.test(raw) ? esc(raw) : "");
+  if (!src) return "<p>" + esc(block) + "</p>";
+  const caption = m[3] ? "<figcaption>" + renderInline(m[3]) + "</figcaption>" : "";
+  return '<figure class="prose-figure"><img src="' + src + '" alt="' + esc(m[1]) +
+         '" loading="lazy" />' + caption + "</figure>";
+}
+
+/** A video block becomes a framed player, or a link when the host is not allowed. */
+function renderEmbed(block) {
+  const m = block.match(/^@video\(([^)\s]+)\)$/);
+  if (!m) return null;
+  const embed = embedFor(m[1]);
+  if (!embed) {
+    const href = escUrl(m[1]);
+    return href
+      ? '<p><a href="' + href + '" target="_blank" rel="noopener noreferrer">' + esc(m[1]) + "</a></p>"
+      : "<p>" + esc(block) + "</p>";
+  }
+  return '<div class="prose-embed"><iframe src="' + embed.src + '" title="' + esc(embed.title) +
+         '" loading="lazy" frameborder="0" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>';
+}
+
+/** A block whose every line is a bullet or a number becomes a list. */
+function renderList(block) {
+  const lines = block.split("\n").map((l) => l.trim()).filter(Boolean);
+  if (!lines.length) return null;
+  if (lines.every((l) => /^[-*]\s+/.test(l))) {
+    return "<ul>" + lines.map((l) => "<li>" + renderInline(l.replace(/^[-*]\s+/, "")) + "</li>").join("") + "</ul>";
+  }
+  if (lines.every((l) => /^\d+[.)]\s+/.test(l))) {
+    return "<ol>" + lines.map((l) => "<li>" + renderInline(l.replace(/^\d+[.)]\s+/, "")) + "</li>").join("") + "</ol>";
+  }
+  return null;
+}
+
+const FENCE_TOKEN = /^\[\[CODE(\d+)\]\]$/;
+
 /**
- * Render a `prose` field to HTML.
- *   blank line       -> new paragraph
- *   ## text          -> subheading
- *   > text           -> pull quote
- *   [label](url)     -> link, inside paragraphs and pull quotes
+ * Render a prose field to HTML. The stored document only ever holds plain
+ * text, so there is no author HTML to sanitise on the way out. Blocks:
+ *
+ *   blank line            new block
+ *   ## text               subheading
+ *   ### text              minor subheading
+ *   > text                pull quote
+ *   - item / 1. item      list
+ *   image block           picture, with an optional quoted caption
+ *   video block           YouTube or Vimeo player
+ *   fenced block          code, left uninterpreted
+ *   ---                   divider
+ *   [label](url)          link
+ *   bold, italic, code    inline marks
  */
 export function renderProse(value) {
   const text = String(value ?? "").trim();
   if (!text) return "";
-  return text
+
+  // Fenced code is lifted out first so nothing inside it is interpreted.
+  const fenced = [];
+  const guarded = text.replace(FENCE_RE, (_, body) => {
+    fenced.push(body.replace(/^\n/, "").replace(/\n$/, ""));
+    return "\n\n[[CODE" + (fenced.length - 1) + "]]\n\n";
+  });
+
+  return guarded
     .split(/\n\s*\n/)
     .map((block) => {
       const b = block.trim();
       if (!b) return "";
-      if (b.startsWith("##")) return `<h2>${esc(b.replace(/^##\s*/, ""))}</h2>`;
+
+      const token = b.match(FENCE_TOKEN);
+      if (token) return '<pre class="prose-code"><code>' + esc(fenced[Number(token[1])]) + "</code></pre>";
+
+      if (/^-{3,}$/.test(b)) return '<hr class="prose-rule" />';
+      if (b.startsWith("###")) return "<h3>" + renderInline(b.replace(/^###\s*/, "")) + "</h3>";
+      if (b.startsWith("##")) return "<h2>" + renderInline(b.replace(/^##\s*/, "")) + "</h2>";
+
+      const embed = renderEmbed(b);
+      if (embed) return embed;
+
+      const figure = renderFigure(b);
+      if (figure) return figure;
+
+      const list = renderList(b);
+      if (list) return list;
+
       if (b.startsWith(">")) {
         const quote = b.split("\n").map((l) => l.replace(/^>\s?/, "")).join(" ");
-        return `<blockquote>${renderInline(quote)}</blockquote>`;
+        return "<blockquote>" + renderInline(quote) + "</blockquote>";
       }
-      return `<p>${renderInline(b).replace(/\n/g, "<br>")}</p>`;
+
+      return "<p>" + renderInline(b).replace(/\n/g, "<br>") + "</p>";
     })
     .filter(Boolean)
     .join("\n");
