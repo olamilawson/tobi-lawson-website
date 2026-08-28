@@ -55,7 +55,7 @@ export const GROUPS = [
       { key: "homeHeroSubtitle", label: "Hero Lead Paragraph", type: "textarea", rows: 3,
         default: "Notes on capital, cities, and the slow work of building things that last. Based in Lagos, working across fintech, SME services, and education technology." },
       { key: "homeHeroImage", label: "Hero Portrait", type: "image",
-        default: "/assets/tobi-hero.jpg",
+        default: "/assets/tobi-cutout.webp",
         help: "Sits beside the headline on desktop, below it on mobile. Edges are feathered into the page background." },
       { key: "homeHeroImageAlt", label: "Hero Portrait Alt Text", type: "text",
         default: "Tobi Lawson — Investor and Builder based in Lagos",
