@@ -87,24 +87,36 @@ const empty = (message) =>
 const hostLabel = (link) => esc(String(link || "").replace(/^https?:\/\//, "").replace(/\/$/, ""));
 
 const RENDERERS = {
-  /** Homepage project cards, with cover plates. */
+  /**
+   * Homepage ventures, rendered as an editorial index rather than cards.
+   * Each venture is one full-width row; the row itself is the only link, so
+   * there is exactly one tab stop per destination. A venture with no link
+   * renders as a plain row instead of an anchor pointing nowhere.
+   */
   homeProjects(mount, doc) {
     const items = doc.collections.projects;
     if (!items.length) return empty("No active projects configured.");
-    return items.map((p, i) => `
-      <article class="grid-item fade-up delay-${(i % 3) + 1}">
-        <a href="${escUrl(p.link)}" target="_blank" rel="noopener noreferrer">
-          <div class="grid-item-header">
-            <h3>${esc(p.title)}</h3>
-            <div class="meta">${esc(p.roleTag)}</div>
-          </div>
-          <div class="grid-item-cover">
-            <span class="meta" style="font-size:1.1rem; text-align:center;">${esc(String(p.title).toUpperCase())}</span>
-          </div>
-        </a>
-        <p class="grid-item-desc">${esc(p.description)}</p>
-        ${p.link ? `<a class="grid-item-link" href="${escUrl(p.link)}" target="_blank" rel="noopener noreferrer">Visit ${hostLabel(p.link)} ↗</a>` : ""}
-      </article>`).join("");
+    return items.map((p, i) => {
+      const index = String(i + 1).padStart(2, "0");
+      const body = `
+        <span class="venture-index" aria-hidden="true">${index}</span>
+        <div class="venture-head">
+          <h3>${esc(p.title)}</h3>
+          <div class="meta venture-role">${esc(p.roleTag)}</div>
+        </div>
+        <div class="venture-body">
+          <p class="venture-desc">${esc(p.description)}</p>
+          ${p.link
+            ? `<span class="meta venture-host">${hostLabel(p.link)}</span>`
+            : `<span class="meta venture-host venture-host--pending">Not yet public</span>`}
+        </div>
+        ${p.link ? `<span class="venture-arrow" aria-hidden="true">\u2197</span>` : ""}`;
+
+      const anim = `fade-up delay-${(i % 3) + 1}`;
+      return p.link
+        ? `<a class="venture-row ${anim}" href="${escUrl(p.link)}" target="_blank" rel="noopener noreferrer">${body}</a>`
+        : `<div class="venture-row venture-row--pending ${anim}">${body}</div>`;
+    }).join("");
   },
 
   /** Now-page project cards, which lead with status instead of a cover plate. */

@@ -336,21 +336,112 @@ h3 {
   filter: grayscale(0%) contrast(1) brightness(1);
 }
 
-/* Card Placeholders & Covers */
-.grid-item-cover {
-  width: 100%;
-  aspect-ratio: 4/5;
-  background-color: #e5e5e2;
-  border: 1px solid var(--line);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem;
-  transition: background-color 0.3s ease;
+/* Selected Ventures — editorial index.
+   One full-width row per venture instead of a card with a cover plate. The
+   row is the link, so there is one tab stop per destination; the numeral and
+   arrow are decorative and hidden from assistive tech in the markup. */
+.venture-list {
+  border-top: 1px solid var(--line);
+  margin-bottom: 8rem;
 }
 
-.grid-item:hover .grid-item-cover {
-  background-color: #dadad6;
+.venture-row {
+  display: grid;
+  grid-template-columns: 3.25rem minmax(0, 1fr) minmax(0, 1.35fr) 1.75rem;
+  gap: 0 var(--grid-gap);
+  align-items: start;
+  padding: 2.25rem 1rem;
+  margin-inline: -1rem;
+  border-bottom: 1px solid var(--line);
+  color: inherit;
+  text-decoration: none;
+  transition: background-color 0.4s ease;
+}
+
+.venture-index {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  padding-top: 0.5rem;
+  transition: color 0.4s ease;
+}
+
+.venture-row h3 {
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 2.4vw, 2.125rem);
+  font-weight: 400;
+  line-height: 1.05;
+  margin-bottom: 0.6rem;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 5px;
+  transition: text-decoration-color 0.4s ease;
+}
+
+.venture-role {
+  color: var(--text-muted);
+}
+
+.venture-desc {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin-bottom: 0.85rem;
+}
+
+.venture-host {
+  color: var(--text-muted);
+  font-size: 0.6rem;
+}
+
+.venture-host--pending {
+  color: var(--text-muted);
+  opacity: 0.75;
+}
+
+.venture-arrow {
+  justify-self: end;
+  align-self: center;
+  font-size: 1.25rem;
+  line-height: 1;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Hover and keyboard focus resolve to the same state, so the row responds to
+   pointer, touch and tab alike. */
+a.venture-row:hover,
+a.venture-row:focus-visible {
+  background-color: rgba(17, 17, 17, 0.035);
+}
+
+a.venture-row:hover .venture-index,
+a.venture-row:focus-visible .venture-index {
+  color: var(--accent);
+}
+
+a.venture-row:hover h3,
+a.venture-row:focus-visible h3 {
+  text-decoration-color: currentColor;
+}
+
+a.venture-row:hover .venture-arrow,
+a.venture-row:focus-visible .venture-arrow {
+  transform: translate(4px, -4px);
+}
+
+/* A venture with no link is a row, not an anchor: nothing to press. */
+.venture-row--pending h3,
+.venture-row--pending .venture-index {
+  color: var(--text-muted);
+}
+
+/* Cards elsewhere on the site reveal on hover; mirror that on keyboard focus
+   so tabbing through a grid gets the same feedback as pointing at it. */
+.grid-item:focus-within img {
+  filter: grayscale(0%) contrast(1) brightness(1);
 }
 
 /* Long-Form Essay & Article Layout */
@@ -613,6 +704,13 @@ footer .meta-links a:hover::after {
   .grid-3 {
     grid-template-columns: repeat(2, 1fr);
   }
+  .venture-row {
+    grid-template-columns: 3rem minmax(0, 1fr) 1.75rem;
+  }
+  .venture-body {
+    grid-column: 2 / 4;
+    margin-top: 1rem;
+  }
 }
 
 @media (max-width: 768px) {
@@ -638,6 +736,16 @@ footer .meta-links a:hover::after {
   }
   .grid-3 {
     grid-template-columns: 1fr;
+  }
+  .venture-row {
+    grid-template-columns: 2.25rem minmax(0, 1fr) 1.5rem;
+    gap: 0 1rem;
+    padding: 1.75rem 0.75rem;
+    margin-inline: -0.75rem;
+  }
+  .venture-body {
+    grid-column: 2 / 4;
+    margin-top: 0.85rem;
   }
   .header-nav {
     flex-direction: column;
@@ -1032,6 +1140,10 @@ footer .meta-links a:hover::after {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  a.venture-row:hover .venture-arrow,
+  a.venture-row:focus-visible .venture-arrow {
+    transform: none;
+  }
   .book-cover-frame {
     transition: none !important;
   }
