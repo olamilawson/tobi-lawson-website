@@ -413,8 +413,4 @@ export const SEED_COLLECTIONS = {
   ]
 };
 
-/** Bootstrap passcode hash — sha256("tobi-cms:" + passcode). Never store plaintext. */
-export const BOOTSTRAP_PASSCODE_HASH =
-  "0d3512b56a15441a4a30ef96f99b12c899554a473e5aee2941444e67bf217ac7";
-
 export const SCHEMA_VERSION = 3;

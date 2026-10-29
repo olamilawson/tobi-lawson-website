@@ -11,3 +11,6 @@ tobi-lawson-site-backup-*.json
 
 # Claude Code local settings (machine-specific)
 .claude/settings.local.json
+
+# macOS metadata written when the folder is copied from a Mac or external drive
+._*

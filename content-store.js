@@ -2,11 +2,11 @@
  * Tobi Lawson — Content store.
  *
  * Shared by the public site (app.js) and the admin console (admin.js).
- * Owns: local cache, cloud merge, defaults, escaping, and passcode hashing.
+ * Owns: local cache, cloud merge, defaults, and escaping.
  */
 
-import { GROUPS, COLLECTIONS, SEED_COLLECTIONS, SCHEMA_VERSION, BOOTSTRAP_PASSCODE_HASH, defaultSettings } from "/content-schema.js?v=3.5.0";
-import { fetchCloudDoc, saveCloudDoc, fetchLegacyDoc, isSupabaseConfigured } from "/supabase.js?v=3.5.0";
+import { GROUPS, COLLECTIONS, SEED_COLLECTIONS, SCHEMA_VERSION, defaultSettings } from "/content-schema.js?v=3.6.0";
+import { fetchCloudDoc, saveCloudDoc, fetchLegacyDoc, isSupabaseConfigured } from "/supabase.js?v=3.6.0";
 
 const STORAGE_KEY = "tobi_site_content_v3";
 const LEGACY_KEYS = ["tobi_site_data_v2", "tobi_site_data_v1", "tobi_site_data"];
@@ -232,7 +232,6 @@ export function emptyDoc() {
     version: SCHEMA_VERSION,
     settings: defaultSettings(),
     collections: { projects: [], posts: [], books: [], lessons: [] },
-    security: { passcodeHash: BOOTSTRAP_PASSCODE_HASH },
     updatedAt: new Date(0).toISOString()
   };
 }
@@ -253,7 +252,6 @@ export function normalize(doc) {
     version: SCHEMA_VERSION,
     settings: { ...base.settings },
     collections: { ...base.collections },
-    security: { ...base.security },
     updatedAt: doc?.updatedAt || base.updatedAt
   };
 
@@ -264,7 +262,9 @@ export function normalize(doc) {
     }
   }
 
-  if (doc?.security?.passcodeHash) out.security.passcodeHash = doc.security.passcodeHash;
+  // Older documents carried a console passcode hash under `security`. The
+  // document is publicly readable and sign-in is Supabase Auth now, so the hash
+  // is deliberately dropped here; the next save removes it from the cloud.
 
   for (const col of COLLECTIONS) {
     const items = doc?.collections?.[col.id];
@@ -449,29 +449,6 @@ export async function publish(doc) {
 
 export function onContentUpdated(handler) {
   window.addEventListener(UPDATE_EVENT, handler);
-}
-
-// ---------------------------------------------------------------------------
-// Passcode
-// ---------------------------------------------------------------------------
-
-/** sha256("tobi-cms:" + passcode), hex. The plaintext is never stored anywhere. */
-export async function hashPasscode(passcode) {
-  const bytes = new TextEncoder().encode(`tobi-cms:${passcode}`);
-  const digest = await crypto.subtle.digest("SHA-256", bytes);
-  return Array.from(new Uint8Array(digest))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
-}
-
-export async function verifyPasscode(entered, doc) {
-  const expected = doc?.security?.passcodeHash || BOOTSTRAP_PASSCODE_HASH;
-  const actual = await hashPasscode(entered);
-  // Length-constant compare; both are fixed-length hex digests.
-  if (actual.length !== expected.length) return false;
-  let diff = 0;
-  for (let i = 0; i < actual.length; i++) diff |= actual.charCodeAt(i) ^ expected.charCodeAt(i);
-  return diff === 0;
 }
 
 export { GROUPS, COLLECTIONS, isSupabaseConfigured };

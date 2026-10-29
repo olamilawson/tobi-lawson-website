@@ -9,18 +9,20 @@
 
 import {
   GROUPS, COLLECTIONS, blankItem
-} from "/content-schema.js?v=3.5.0";
+} from "/content-schema.js?v=3.6.0";
 import {
   loadContent, publish, seedDoc, normalize,
-  esc, slugify, hashPasscode, verifyPasscode, isSupabaseConfigured
-} from "/content-store.js?v=3.5.0";
-import { subscribeToCloud } from "/supabase.js?v=3.5.0";
-import { proseEditorMarkup, bindProseEditors } from "/prose-editor.js?v=3.5.0";
-
-const AUTH_KEY = "tobi_admin_authenticated";
+  esc, slugify, isSupabaseConfigured
+} from "/content-store.js?v=3.6.0";
+import {
+  subscribeToCloud, currentUser, signIn, signOut, changePassword
+} from "/supabase.js?v=3.6.0";
+import { proseEditorMarkup, bindProseEditors } from "/prose-editor.js?v=3.6.0";
 
 const state = {
   doc: null,
+  user: null,
+  channel: null,
   dirty: false,
   activeTab: null,
   modal: null // { collectionId, index|null, draftSub: [] }
@@ -260,25 +262,24 @@ function renderCollectionRow(col, item, index, total) {
 function renderAccessPanel() {
   return `
     <div class="admin-card" style="max-width: 100%;">
-      <h2>Console Passcode</h2>
-      <p>Changing this takes effect on every device the next time it loads the console. The passcode itself is never stored — only a SHA-256 hash of it.</p>
-      <form data-passcode-form>
+      <h2>Console Account</h2>
+      <p>Signed in as <strong>${esc(state.user?.email || "unknown")}</strong>. A new password takes effect on every device the next time it signs in.</p>
+      <form data-password-form>
         <div class="admin-form-group">
-          <label for="newPasscode" class="meta">New Passcode</label>
-          <input type="password" id="newPasscode" class="admin-input" autocomplete="new-password" minlength="8" required />
-          <div class="admin-help meta">At least 8 characters.</div>
+          <label for="newPassword" class="meta">New Password</label>
+          <input type="password" id="newPassword" class="admin-input" autocomplete="new-password" minlength="12" required />
+          <div class="admin-help meta">At least 12 characters.</div>
         </div>
         <div class="admin-form-group">
-          <label for="confirmPasscode" class="meta">Confirm New Passcode</label>
-          <input type="password" id="confirmPasscode" class="admin-input" autocomplete="new-password" required />
+          <label for="confirmPassword" class="meta">Confirm New Password</label>
+          <input type="password" id="confirmPassword" class="admin-input" autocomplete="new-password" required />
         </div>
-        <button type="submit" class="admin-btn">Change Passcode</button>
+        <button type="submit" class="admin-btn">Change Password</button>
       </form>
       <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--line);">
         <div class="meta" style="color: var(--text-muted); line-height: 1.6;">
-          Note: the passcode gates this console, not the database. Because the site talks to Supabase
-          with a public key, anyone who reads the page source can still write to your content tables.
-          Locking that down needs Supabase Auth with a row-level-security policy on <code>site_content</code>.
+          The database only accepts saves from accounts listed in the <code>site_admins</code> table.
+          Visitors, and anyone reading the page source, can read the site but cannot change it.
         </div>
       </div>
     </div>`;
@@ -352,15 +353,17 @@ function bindPanels() {
       await save("Order updated.");
     }));
 
-  const passcodeForm = root.querySelector("[data-passcode-form]");
-  if (passcodeForm) {
-    passcodeForm.addEventListener("submit", async (e) => {
+  const passwordForm = root.querySelector("[data-password-form]");
+  if (passwordForm) {
+    passwordForm.addEventListener("submit", async (e) => {
       e.preventDefault();
-      const next = $("newPasscode").value;
-      if (next !== $("confirmPasscode").value) return toast("Those two passcodes don't match.");
-      if (next.length < 8) return toast("Use at least 8 characters.");
-      state.doc.security.passcodeHash = await hashPasscode(next);
-      await save("Passcode changed. Use the new one next time you sign in.");
+      const next = $("newPassword").value;
+      if (next !== $("confirmPassword").value) return toast("Those two passwords don't match.");
+      if (next.length < 12) return toast("Use at least 12 characters.");
+      const { error } = await changePassword(next);
+      if (error) return toast(`Password not changed: ${error.message}`);
+      passwordForm.reset();
+      toast("Password changed. Use the new one next time you sign in.");
     });
   }
 
@@ -379,9 +382,7 @@ function bindPanels() {
   const reset = root.querySelector("[data-reset]");
   if (reset) reset.addEventListener("click", async () => {
     if (!confirm("Reset ALL content to factory defaults? Download a backup first if you're unsure.")) return;
-    const hash = state.doc.security.passcodeHash; // don't lock yourself out
     state.doc = seedDoc();
-    state.doc.security.passcodeHash = hash;
     await save("Content reset to factory defaults.");
   });
 }
@@ -561,6 +562,8 @@ async function save(successMessage) {
 
   if (result.success) toast(successMessage);
   else if (result.offline) toast("Saved on this device. Cloud sync isn't configured.");
+  // 42501 is Postgres refusing the write under row-level security.
+  else if (result.error?.code === "42501") toast("Saved on this device, but this account isn't allowed to publish. Add it to site_admins.");
   else toast(`Saved on this device, but the cloud rejected it: ${result.error?.message || "check the site_content table exists"}`);
 }
 
@@ -593,9 +596,7 @@ function importBackup(e) {
     if (!parsed || !parsed.settings) return toast("That doesn't look like a site backup.");
     if (!confirm("Replace all current content with this backup?")) return;
 
-    const hash = state.doc.security.passcodeHash;
     state.doc = normalize(parsed);
-    if (!parsed.security?.passcodeHash) state.doc.security.passcodeHash = hash;
     await save("Backup restored.");
   };
   reader.readAsText(file);
@@ -618,7 +619,8 @@ async function openConsole() {
 
   renderConsole();
 
-  subscribeToCloud(async () => {
+  if (state.channel) return;
+  state.channel = subscribeToCloud(async () => {
     // Don't yank content out from under an open modal or a half-typed form.
     if (state.modal || state.dirty) return;
     state.doc = await loadContent() || state.doc;
@@ -631,32 +633,35 @@ async function init() {
   state.doc = (await loadContent()) || seedDoc();
 
   const authForm = $("authForm");
-  const input = $("passcodeInput");
+  const email = $("emailInput");
+  const password = $("passwordInput");
   const error = $("authError");
 
-  if (sessionStorage.getItem(AUTH_KEY) === "true") {
-    await openConsole();
-  }
+  // Supabase keeps the session in localStorage and refreshes it, so a signed-in
+  // device goes straight to the console.
+  state.user = await currentUser();
+  if (state.user) await openConsole();
 
   authForm.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const ok = await verifyPasscode(input.value, state.doc);
-    if (!ok) {
+    const { user } = await signIn(email.value.trim(), password.value);
+    if (!user) {
       error.style.display = "block";
-      input.value = "";
-      input.focus();
+      password.value = "";
+      password.focus();
       return;
     }
     error.style.display = "none";
-    sessionStorage.setItem(AUTH_KEY, "true");
+    password.value = "";
+    state.user = user;
     await openConsole();
   });
 
-  $("logoutBtn").addEventListener("click", () => {
-    sessionStorage.removeItem(AUTH_KEY);
+  $("logoutBtn").addEventListener("click", async () => {
+    await signOut();
+    state.user = null;
     $("adminConsole").style.display = "none";
     $("authOverlay").style.display = "flex";
-    $("passcodeInput").value = "";
   });
 
   $("itemForm").addEventListener("submit", submitItemModal);

@@ -1,86 +1,76 @@
-# Tobi Lawson — Personal Website & Design System Specification
+# Tobi Lawson — Personal Website
 
-Welcome! This repository contains the static personal website for **Tobi Lawson** — an investor and builder based in Lagos, Nigeria. The site hosts long-form essays, book reviews, project showcases, and personal background information.
+The personal site of Tobi Lawson, an investor and builder based in Lagos:
+essays, book reviews, books in progress, a course, and a "Now" page.
 
-This document serves as a comprehensive overview of the site structure, technical architecture, and the design system adopted across the codebase.
+**Live**: https://tobilawson.com · **Console**: https://tobilawson.com/admin
 
----
+Static HTML and vanilla ES modules, with no build step. Every piece of copy is
+editable from a browser console at `/admin`, which stores the whole site as one
+JSON document in Supabase. The pages render with their built-in HTML first,
+then `app.js` fills them from that document.
 
-## 📌 Project Overview & Brand Persona
+For how the content system works, how to add an editable field, the prose
+format, sync behaviour and deployment, read **[HANDOFF.md](HANDOFF.md)**.
 
-- **Subject / Owner:** Tobi Lawson
-- **Focus Areas:** Venture capital, fintech, edutech, urban development (*Lagos Urban Project*), economics & governance (*1914 Reader*, *Long Africa*).
-- **Brand Tone:** High-contrast editorial, minimal, bold serif display typography, institutional, long-form reading experience.
-- **Primary Goals:**
-  1. Highlight core initiatives and venture projects (*1914 Reader*, *Lagos Urban Project*, *Long Africa*).
-  2. Provide a clean, readable typographic layout for long-form essays and book reviews.
-  3. Offer an intuitive navigation experience across desktop and mobile devices.
+## Run it locally
 
----
-
-## 📁 Repository Structure
-
-```
-.
-├── index.html               # Home page (Hero with SVG scribble highlight, Projects, Recent Writing)
-├── books.html               # Books catalog showcase (Who Made This?, Monographs, Table of Contents)
-├── about.html               # Bio, venture summary, and contact CTA
-├── now.html                 # Current status page ("Now" page pattern)
-├── base.css                 # CSS reset, accessibility defaults, typography base
-├── style.css                # Primary design tokens, theme variables, component styles
-├── app.js                   # Client-side JS: Smooth scrolling and interactions
-├── assets/
-│   ├── favicon.svg          # Minimalist brand logo / SVG icon
-│   └── who-made-this-cover.jpg # High-resolution cover artwork for "Who Made This?"
-├── books/
-│   └── who-made-this-preview.html # Interactive Ordinary Abundance-inspired Preview Reader (Ch. 1)
-└── writing/
-    ├── index.html           # Writing hub catalog (all essays & reviews)
-    ├── patient-capital-impatient-markets.html  # Essay: Investment vs development timelines
-    ├── review-how-asia-works.html              # Book review: Joe Studwell's "How Asia Works"
-    └── the-shape-lagos-takes.html              # Essay: Informal urbanism in Lagos
+```bash
+npx serve . -p 3000
 ```
 
----
+Open http://localhost:3000. The local copy reads the live Supabase document,
+so you see real content. Publishing from the local console needs a signed-in
+admin account, the same as production.
 
-## 🎨 Design System Architecture (`style.css` & `base.css`)
+## Layout
 
-### 1. Typography Tokens
-- `--font-display`: `'Playfair Display', serif`
-- `--font-sans`: `'Inter', sans-serif`
+```
+index.html, about.html, books.html,     Public pages. about, books, now, course
+now.html, course.html                   and admin each also exist as x/index.html
+                                        so /x and /x/ both resolve. Keep each
+                                        pair identical.
+writing/                                Essay archive, three hand-built essays,
+                                        and post.html for essays written in the
+                                        console.
+books/                                  Book landing page, chapter reader, and
+                                        the "Who Made This?" preview.
+admin.html, admin.js                    Editorial console.
+prose-editor.js                         Visual editor for long-form fields.
+content-schema.js                       Every editable field. Start here.
+content-store.js                        Local cache, cloud merge, escaping,
+                                        prose rendering.
+supabase.js                             Cloud read/write and console sign-in.
+supabase_schema.sql                     Database table and access policies.
+base.css, style.css                     Reset and design system.
+assets/                                 Portraits, book cover, favicons.
+.htaccess                               Extensionless URLs, blocks docs and
+                                        config files, security headers.
+```
 
-Fluid type scale & typography rules:
-- Major headings (`h1`): `clamp(3.5rem, 8vw, 8.5rem)`
-- Section headers (`h2`): `clamp(2.25rem, 4vw, 3.75rem)`
-- Sub-headings (`h3`): `1.25rem` (semi-bold)
-- Metadata & Tags (`.meta`): Uppercase `Inter` font, `0.65rem` size, `700` weight, `0.15em` letter-spacing.
+## Design system
 
-### 2. Color Palette & Layout Tokens
-- **Background (`--bg`):** `#f4f4f2` (Soft warm bone white)
-- **Text (`--text`):** `#111111` (Stark off-black)
-- **Accent (`--accent`):** `#ff3d00` (Electric orange-red circle CTA)
-- **Line Dividers (`--line`):** `#d0d0ce` (Crisp 1px borders)
-- **Container Padding:** `--container-padding` (`4rem` desktop / `1.5rem` mobile)
-- **Grid Gap:** `--grid-gap` (`2rem`)
+Tokens live in `:root` in `style.css`.
 
----
+- **Type**: Playfair Display for headlines and prose, bold uppercase Inter for
+  labels and metadata (`.meta`).
+- **Colour**: warm bone background `#f4f4f2`, off-black text `#111111`, hairline
+  rules `#d0d0ce`, and one accent, electric orange `#ff3d00`, kept to a small
+  share of any page.
+- **Motion**: ease-out `cubic-bezier(0.16, 1, 0.3, 1)`, and every animation
+  respects `prefers-reduced-motion`.
 
-## 🧩 Key Component Classes
+The full design and copywriting rules are in
+[.agents/AGENTS.md](.agents/AGENTS.md).
 
-- `.header-nav`: Top navigation bar with bottom line border and animated link underline effect (`a::after`).
-- `.hero`: Impactful header with giant Playfair Display headline, handwritten SVG stroke scribble underline animation around key emphasis words, and floating circular orange CTA button (`.circle-cta`).
-- `.book-hero-showcase`: 3D tilting book frame showcase with metadata list, status badge, and dual CTA group.
-- `.ordinary-reader-grid`: Multi-column reader layout featuring chapter prose alongside side marginalia quotes (`.marginalia-card`) and object spotlights (`.object-spotlight`).
-- `.highlight-wrapper` & `.scribble`: Handwritten SVG stroke path animated with `@keyframes drawScribble`.
-- `.circle-cta`: Floating circular CTA badge with electric orange fill (`#ff3d00`), white uppercase text, and scale-up hover animation.
-- `.section-header`: Bottom-bordered divider header sectioning main areas of pages.
-- `.grid-3` & `.grid-item`: 3-column responsive card layout with top line border (`.grid-item-header`) and grayscale-to-color hover transition (`filter: grayscale(100%)`).
-- `.prose-container` & `.article-body`: Max-width 760px centered prose layout engineered for comfortable long-form reading.
-- `.fade-up`: Smooth page entry animation with stagger delays (`.delay-1`, `.delay-2`, `.delay-3`).
+## Deploying
 
----
+The site is served from a Hostinger VPS. From its web terminal:
 
-## 🚀 Guidance for Maintenance
+```bash
+cd /var/www/tobilawson.com && git fetch origin main && git reset --hard origin/main
+```
 
-1. **Tokens First:** All colors, line colors, typography choices, and spacing live as CSS variables in `:root` inside [style.css](file:///Users/praikitechnologies/Desktop/Personal/Mine/My%20Website/style.css).
-2. **Typography Consistency:** Body copy and article paragraphs use `Playfair Display` for a editorial reading feel, while metadata labels, navigation links, and badges strictly use uppercase bold `Inter` via the `.meta` utility class.
+When you change a CSS or JS file, bump the `?v=` query on every reference to
+it (all pages and the module imports use the same version), or browsers keep
+the old copy for up to a month.

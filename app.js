@@ -12,9 +12,9 @@
  * All author-supplied text is escaped before it reaches innerHTML.
  */
 
-import { loadContent, onContentUpdated, esc, escUrl, renderProse, renderLines } from "/content-store.js?v=3.5.0";
-import { subscribeToCloud } from "/supabase.js?v=3.5.0";
-import { FIELD_BY_KEY } from "/content-schema.js?v=3.5.0";
+import { loadContent, onContentUpdated, esc, escUrl, renderProse, renderLines } from "/content-store.js?v=3.6.0";
+import { subscribeToCloud } from "/supabase.js?v=3.6.0";
+import { FIELD_BY_KEY } from "/content-schema.js?v=3.6.0";
 
 // ---------------------------------------------------------------------------
 // Singleton fields

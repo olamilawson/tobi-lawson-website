@@ -70,6 +70,35 @@ export async function saveCloudDoc(doc) {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Console sign-in — Supabase Auth. Row-level security only lets a signed-in
+// user listed in site_admins write, so the public key in the page source can
+// read the site but cannot change it.
+// ---------------------------------------------------------------------------
+
+/** The signed-in console user, or null. */
+export async function currentUser() {
+  if (!supabase) return null;
+  const { data } = await supabase.auth.getSession();
+  return data?.session?.user || null;
+}
+
+export async function signIn(email, password) {
+  if (!supabase) return { user: null, error: { message: "Cloud sync is not configured." } };
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  return { user: data?.user || null, error };
+}
+
+export async function signOut() {
+  if (supabase) await supabase.auth.signOut();
+}
+
+export async function changePassword(password) {
+  if (!supabase) return { error: { message: "Cloud sync is not configured." } };
+  const { error } = await supabase.auth.updateUser({ password });
+  return { error };
+}
+
 /** Fire `callback` whenever the document changes in the cloud. */
 export function subscribeToCloud(callback) {
   if (!supabase) return null;

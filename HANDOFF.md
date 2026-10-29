@@ -3,32 +3,45 @@
 **Live**: https://tobilawson.com · **Console**: https://tobilawson.com/admin
 **Stack**: static HTML, vanilla ES modules, Supabase for storage. No build step.
 
-> This file is documentation, not a password store. The console passcode is not
-> written down here — it lives only as a SHA-256 hash inside the content
-> document, and you change it from the console's **Access** tab.
+> This file is documentation, not a password store. You sign in to the console
+> with a Supabase Auth account; its password lives in Supabase and you change
+> it from the console's **Access** tab.
 
 ---
 
 ## 1. Do this once, now
 
-The rebuild moved storage from seven tables to a single document table. Until
-you create it, the console will save your edits on the device you're using and
-show a message saying the cloud rejected the write.
+The console signs in with Supabase Auth, and the database only accepts saves
+from accounts listed in `site_admins`. Until you do the steps below, nobody,
+you included, can publish. The public site keeps rendering either way.
 
-1. Open the Supabase dashboard → **SQL Editor** → **New query**.
-2. Paste the contents of [`supabase_schema.sql`](supabase_schema.sql) and run it.
-3. Open https://tobilawson.com/admin, sign in, and press **Save** on any tab.
+1. Supabase dashboard → **SQL Editor** → **New query**. Paste the contents of
+   [`supabase_schema.sql`](supabase_schema.sql) and run it. It is safe to run
+   again.
+2. **Authentication → Users → Add user.** Use your own email and a strong
+   password, and tick "Auto Confirm User". Copy the new user's UID.
+3. Back in the SQL Editor, run:
 
-Your existing content migrates automatically: on first load the app reads the
-old `site_settings` / `posts` / `projects` / `now_page` / `books` /
-`course_settings` / `course_lessons` tables and folds them into the new
-document. The old tables are left untouched. Once you've confirmed the site
-looks right and downloaded a backup, the commented-out `DROP TABLE` lines at the
-bottom of the schema file will clean them up.
+   ```sql
+   INSERT INTO public.site_admins (user_id) VALUES ('<the UID>');
+   ```
 
-**Change the passcode.** The old one was committed to this repo in plaintext and
-published at `tobilawson.com/HANDOFF.md`, so treat it as public. Console →
-**Access** → new passcode → save.
+4. **Authentication → Sign In / Providers →** turn off "Allow new users to
+   sign up".
+5. Open https://tobilawson.com/admin, sign in, and press **Save** on any tab.
+   That save also removes the old passcode hash from the public document.
+
+Step 1 also makes the seven old tables (`site_settings`, `posts`, `projects`,
+`now_page`, `books`, `course_settings`, `course_lessons`) read-only and drops
+the `admin_passcode` column, which exposed the old passcode to anyone. The app
+still reads those tables once, to migrate them when `site_content` is empty.
+Once you've confirmed the site looks right and downloaded a backup, the
+commented-out `DROP TABLE` lines at the bottom of the schema file will clean
+them up.
+
+**The old passcode is public.** It appears in plaintext in this repo's commit
+history. Nothing uses it any more, but if you reuse it anywhere else, change it
+there.
 
 ---
 
@@ -100,12 +113,12 @@ directly. Press it again to go back.
 
 **What gets stored is always plain text.** The editable surface is serialised
 back to markup on every keystroke, and that markup is what goes into the
-content document. This is not a detail to change casually: the Supabase
-anonymous key ships in the page source and has to be able to write (see Known
-limits), so anyone who views source can rewrite the document. If prose fields
-stored HTML, that would be a script injection into every page. Because they
-store text and the renderer escapes everything before building markup, the
-worst a stranger can do is write bad copy.
+content document. This is not a detail to change casually. Only admins can
+write the document now, but escaping everything is a second line of defence:
+if an admin account were ever compromised, or the write policy loosened by
+mistake, stored HTML would become a script injection into every page. Because
+prose fields store text and the renderer escapes everything before building
+markup, the worst a bad write can do is change the copy.
 
 The stored form, should you ever need to read or write it by hand:
 
@@ -143,8 +156,8 @@ unfilled stays visible as text rather than becoming a link that goes nowhere.
 | File | Role |
 |---|---|
 | `content-schema.js` | Every editable field and list. Start here. |
-| `content-store.js` | Local cache, cloud merge, escaping, passcode hashing. |
-| `supabase.js` | Cloud read/write, realtime, legacy migration. |
+| `content-store.js` | Local cache, cloud merge, escaping, prose rendering. |
+| `supabase.js` | Cloud read/write, console sign-in, realtime, legacy migration. |
 | `app.js` | Public-site hydration. Generic — no per-page code. |
 | `admin.js` | Console. Generates all forms from the schema. |
 | `admin.html` | Console shell: auth screen, tab container, modal, toast. |
@@ -183,11 +196,9 @@ copy over the cloud, or reset to factory defaults.
 
 ## 5. Known limits
 
-- **The database is writable by anyone.** The console gates on a passcode in the
-  browser, so the Supabase anonymous key has to be able to write, and that key
-  ships in the page source. Anyone who views source can rewrite your content.
-  Closing this means switching to Supabase Auth; `supabase_schema.sql` has the
-  replacement policy commented out and ready.
+- **Adding another editor** means adding them in Authentication → Users and
+  inserting their UID into `site_admins`. Removing the row revokes their
+  ability to publish immediately.
 - **Uploaded images are stored as data URIs inside the document.** Fine for a
   portrait and a book cover; the console rejects files over 1.5 MB. For anything
   heavier, upload to `/assets/` and paste the path.

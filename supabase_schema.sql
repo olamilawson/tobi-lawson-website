@@ -23,26 +23,80 @@ ALTER TABLE public.site_content ENABLE ROW LEVEL SECURITY;
 -- ---------------------------------------------------------------------------
 -- Access policy
 -- ---------------------------------------------------------------------------
--- The console authenticates with a passcode in the browser, not with Supabase
--- Auth, so the anonymous key must be able to write. That means anyone who
--- reads the page source can also write to this table. This is a deliberate
--- trade-off for passcode-only access, not an oversight.
+-- Everyone can read. Only Supabase Auth users listed in site_admins can write.
 --
--- To close it later: create a user in Authentication -> Users, switch the
--- console to supabase.auth.signInWithPassword, then replace the policy below
--- with the two commented-out policies underneath it.
+-- "Any signed-in user" would not be enough: Supabase allows sign-ups by
+-- default, and the public key in the page source is all a stranger needs to
+-- create an account. Writes are therefore checked against an explicit list.
+--
+-- After running this file:
+--   1. Authentication -> Users -> Add user. Use your own email and a strong
+--      password. Copy the user's UID.
+--   2. Run:  INSERT INTO public.site_admins (user_id) VALUES ('<that UID>');
+--   3. Authentication -> Sign In / Providers -> turn off "Allow new users to
+--      sign up". Not required for safety, but there is no reason to leave it on.
+
+CREATE TABLE IF NOT EXISTS public.site_admins (
+  user_id  UUID PRIMARY KEY REFERENCES auth.users (id) ON DELETE CASCADE
+);
+
+-- No policies on site_admins: with RLS on, the API cannot read or change it at
+-- all. You manage it from the SQL Editor, which bypasses RLS.
+ALTER TABLE public.site_admins ENABLE ROW LEVEL SECURITY;
+
+-- SECURITY DEFINER so the write policy can consult site_admins even though the
+-- caller has no access to that table.
+CREATE OR REPLACE FUNCTION public.is_site_admin()
+RETURNS BOOLEAN
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = ''
+AS $$
+  SELECT EXISTS (SELECT 1 FROM public.site_admins WHERE user_id = auth.uid());
+$$;
 
 DROP POLICY IF EXISTS "site_content public read/write" ON public.site_content;
-CREATE POLICY "site_content public read/write"
-  ON public.site_content FOR ALL
-  USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "site_content read" ON public.site_content;
+DROP POLICY IF EXISTS "site_content write" ON public.site_content;
+DROP POLICY IF EXISTS "site_content admin insert" ON public.site_content;
+DROP POLICY IF EXISTS "site_content admin update" ON public.site_content;
 
--- -- Locked-down replacement, for when you move to Supabase Auth:
--- DROP POLICY IF EXISTS "site_content public read/write" ON public.site_content;
--- CREATE POLICY "site_content read" ON public.site_content
---   FOR SELECT USING (true);
--- CREATE POLICY "site_content write" ON public.site_content
---   FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "site_content read" ON public.site_content
+  FOR SELECT USING (true);
+CREATE POLICY "site_content admin insert" ON public.site_content
+  FOR INSERT TO authenticated WITH CHECK (public.is_site_admin());
+CREATE POLICY "site_content admin update" ON public.site_content
+  FOR UPDATE TO authenticated
+  USING (public.is_site_admin()) WITH CHECK (public.is_site_admin());
+-- No DELETE policy: nothing in the app deletes the row, so nobody can.
+
+-- ---------------------------------------------------------------------------
+-- Old seven-table layout — make it read-only
+-- ---------------------------------------------------------------------------
+-- These tables were writable by anyone with the public key, and the app still
+-- reads them once to migrate. Replace whatever policies they have with a
+-- read-only one, and drop the column that held the old passcode in plaintext,
+-- readable by any anonymous API caller.
+
+DO $$
+DECLARE
+  t   TEXT;
+  pol RECORD;
+BEGIN
+  FOREACH t IN ARRAY ARRAY['site_settings', 'posts', 'projects', 'now_page',
+                           'books', 'course_settings', 'course_lessons']
+  LOOP
+    IF to_regclass('public.' || t) IS NOT NULL THEN
+      FOR pol IN SELECT policyname FROM pg_policies
+                 WHERE schemaname = 'public' AND tablename = t
+      LOOP
+        EXECUTE format('DROP POLICY %I ON public.%I', pol.policyname, t);
+      END LOOP;
+      EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY', t);
+      EXECUTE format('CREATE POLICY "legacy read only" ON public.%I FOR SELECT USING (true)', t);
+    END IF;
+  END LOOP;
+END $$;
+
+ALTER TABLE IF EXISTS public.site_settings DROP COLUMN IF EXISTS admin_passcode;
 
 -- ---------------------------------------------------------------------------
 -- Realtime — so an edit on one device appears on the others without a reload
@@ -67,12 +121,6 @@ END $$;
 -- site_content automatically on first load, so do not drop them before that.
 -- ---------------------------------------------------------------------------
 
--- The old site_settings table stored the admin passcode in a column that any
--- anonymous API caller could SELECT. Nothing reads it any more; the console now
--- keeps only a SHA-256 hash inside the document. Drop the column when ready:
---
--- ALTER TABLE public.site_settings DROP COLUMN IF EXISTS admin_passcode;
---
 -- DROP TABLE IF EXISTS public.site_settings;
 -- DROP TABLE IF EXISTS public.posts;
 -- DROP TABLE IF EXISTS public.projects;
