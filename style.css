@@ -244,6 +244,12 @@ h3 {
   text-decoration-thickness: 1px;
 }
 
+/* The flex and border rules above would otherwise beat the hidden attribute. */
+.hero-currently[hidden],
+.currently-note[hidden] {
+  display: none;
+}
+
 /* "All projects →" under a shortened list. */
 .venture-list:has(+ .section-more) {
   margin-bottom: 0;

@@ -12,9 +12,9 @@
  * All author-supplied text is escaped before it reaches innerHTML.
  */
 
-import { loadContent, onContentUpdated, esc, escUrl, renderProse, renderLines } from "/content-store.js?v=3.9.0";
-import { subscribeToCloud } from "/supabase.js?v=3.9.0";
-import { FIELD_BY_KEY, PROJECT_GROUPS } from "/content-schema.js?v=3.9.0";
+import { loadContent, onContentUpdated, esc, escUrl, renderProse, renderLines } from "/content-store.js?v=3.10.0";
+import { subscribeToCloud } from "/supabase.js?v=3.10.0";
+import { FIELD_BY_KEY, PROJECT_GROUPS } from "/content-schema.js?v=3.10.0";
 
 // ---------------------------------------------------------------------------
 // Singleton fields
@@ -206,7 +206,9 @@ const RENDERERS = {
  */
 function ventureRow(p, i, { status = false } = {}) {
   const index = String(i + 1).padStart(2, "0");
-  const role = status && p.status ? `${p.status} · ${p.roleTag}` : p.roleTag;
+  // Skip the status when the role tag already says it ("Institution / Launching Soon").
+  const repeats = String(p.roleTag || "").toLowerCase().includes(String(p.status || "").toLowerCase());
+  const role = status && p.status && !repeats ? `${p.status} · ${p.roleTag}` : p.roleTag;
   const body = `
     <span class="venture-index" aria-hidden="true">${index}</span>
     <div class="venture-head">
@@ -421,6 +423,12 @@ function currentPost(doc) {
  * no address passes through this site. It stays hidden until a username is
  * set, and only a plain username can reach the form's action.
  */
+/** The Currently line shows only when the author has written one. */
+function applyCurrently(settings) {
+  const has = Boolean(String(settings.currentlyNote || "").trim());
+  document.querySelectorAll("[data-currently]").forEach((el) => { el.hidden = !has; });
+}
+
 function applyNewsletter(settings) {
   const user = String(settings.newsletterUsername || "").trim();
   const ok = /^[A-Za-z0-9_-]{1,64}$/.test(user);
@@ -503,6 +511,7 @@ export function applyAll(doc, { prerender = false } = {}) {
   if (!prerender || !document.querySelector("[data-cms-post-dynamic]")) applyPostPage(doc);
   if (!prerender) applyChapterPage(doc);
   applyNewsletter(doc.settings);
+  applyCurrently(doc.settings);
 }
 
 function initSmoothScroll() {

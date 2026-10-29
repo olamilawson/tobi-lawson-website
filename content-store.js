@@ -5,8 +5,8 @@
  * Owns: local cache, cloud merge, defaults, and escaping.
  */
 
-import { GROUPS, COLLECTIONS, SEED_COLLECTIONS, SCHEMA_VERSION, defaultSettings } from "/content-schema.js?v=3.9.0";
-import { fetchCloudDoc, saveCloudDoc, fetchLegacyDoc, isSupabaseConfigured } from "/supabase.js?v=3.9.0";
+import { GROUPS, COLLECTIONS, SEED_COLLECTIONS, SCHEMA_VERSION, defaultSettings } from "/content-schema.js?v=3.10.0";
+import { fetchCloudDoc, saveCloudDoc, fetchLegacyDoc, isSupabaseConfigured } from "/supabase.js?v=3.10.0";
 
 const STORAGE_KEY = "tobi_site_content_v3";
 const LEGACY_KEYS = ["tobi_site_data_v2", "tobi_site_data_v1", "tobi_site_data"];
@@ -337,6 +337,30 @@ const MIGRATIONS = [
       };
       const ordered = projects.map((p, i) => [p, i]).sort((a, b) => rank(a[0]) - rank(b[0]) || a[1] - b[1]);
       projects.splice(0, projects.length, ...ordered.map(([p]) => p));
+    }
+  },
+  {
+    // Plainer copy: one line per project, two groups, Miomir Labs off the
+    // Projects page (it lives on About), and no Currently note until the
+    // author writes one.
+    id: "2026-10-plain-copy",
+    run(doc) {
+      const defaults = defaultSettings();
+      for (const key of ["homeHeroSubtitle", "seoHomeDescription", "projectsHeroSubtitle", "seoProjectsDescription", "currentlyNote"]) {
+        doc.settings[key] = defaults[key];
+      }
+
+      const key = (p) => String(p.title || "").trim().toLowerCase();
+      const projects = doc.collections.projects.filter((p) => p.id !== "miomir-labs" && key(p) !== "miomir labs");
+      for (const p of projects) {
+        const seed = SEED_COLLECTIONS.projects.find((s) => s.id === p.id || key(s) === key(p));
+        p.group = seed ? seed.group : "software";
+        if (seed && ["briclair", "prai", "crapht", "fine-friction"].includes(seed.id)) {
+          p.roleTag = seed.roleTag;
+          p.description = seed.description;
+        }
+      }
+      doc.collections.projects = projects;
     }
   }
 ];

@@ -23,10 +23,8 @@
 // ---------------------------------------------------------------------------
 
 export const PROJECT_GROUPS = [
-  { id: "infrastructure", label: "Infrastructure" },
-  { id: "builders", label: "For Builders" },
-  { id: "products", label: "Products" },
-  { id: "cities", label: "Cities & Ideas" }
+  { id: "software", label: "Software" },
+  { id: "cities", label: "Cities and ideas" }
 ];
 
 // ---------------------------------------------------------------------------
@@ -64,7 +62,7 @@ export const GROUPS = [
       { key: "homeHeroScribbleWord", label: "Circled Word", type: "text", default: "foundations",
         help: "Must appear in the headline above, exactly, for the scribble to draw." },
       { key: "homeHeroSubtitle", label: "Hero Lead Paragraph", type: "textarea", rows: 3,
-        default: "I build infrastructure in Lagos: the identity checks, ledgers and operating tools African businesses run on. I also write about capital, cities and economic development." },
+        default: "I build the software African businesses run on, and write about capital, cities and how economies grow." },
       { key: "homeCurrentlyLabel", label: "Currently Line — Label", type: "text", default: "Currently",
         help: "The one-line strip under the lead paragraph. Its text is the Currently note in the Projects tab." },
       { key: "homeHeroImage", label: "Hero Portrait", type: "image",
@@ -114,10 +112,10 @@ export const GROUPS = [
     fields: [
       { key: "projectsHeroTitle", label: "Headline", type: "text", default: "Projects" },
       { key: "projectsHeroSubtitle", label: "Lead Paragraph", type: "textarea", rows: 3,
-        default: "Companies and institutions I founded or co-founded, in four groups by the work they do." },
+        default: "Companies and institutions I've started or co-founded." },
       { key: "currentlyNote", label: "Currently — Note", type: "textarea", rows: 2,
-        default: "Most of my week goes to Miomir Labs and the two products that run on its systems, Prager and Prai. Crapht is open to its first builders.",
-        help: "One or two sentences. Shown at the top of the Projects page and as a single line on the homepage." },
+        default: "",
+        help: "One or two sentences on what has your attention. Shown at the top of the Projects page and as a line on the homepage. Leave it empty to hide both." },
       { key: "currentlyUpdated", label: "Currently — Last Updated", type: "text", default: "October 2026",
         help: 'Free text, e.g. "October 2026". Change it whenever you change the note.' }
     ]
@@ -213,7 +211,7 @@ export const GROUPS = [
       { key: "seoOgImage", label: "Social Share Image URL", type: "url", default: "https://tobilawson.com/assets/tobi-lawson.jpg" },
       { key: "seoHomeTitle", label: "Home — Tab Title", type: "text", default: "Tobi Lawson" },
       { key: "seoHomeDescription", label: "Home — Description", type: "textarea", rows: 2,
-        default: "Tobi Lawson builds infrastructure in Lagos: the identity checks, ledgers and operating tools African businesses run on, and writes about capital, cities and economic development." },
+        default: "Tobi Lawson builds the software African businesses run on, and writes about capital, cities and how economies grow." },
       { key: "seoAboutTitle", label: "About — Tab Title", type: "text", default: "Tobi Lawson" },
       { key: "seoAboutDescription", label: "About — Description", type: "textarea", rows: 2,
         default: "Investor and builder based in Lagos, working across fintech, SME services, and education technology." },
@@ -222,7 +220,7 @@ export const GROUPS = [
         default: "Essays, book reviews, and field notes on capital, cities, and African development." },
       { key: "seoProjectsTitle", label: "Projects — Tab Title", type: "text", default: "Projects · Tobi Lawson" },
       { key: "seoProjectsDescription", label: "Projects — Description", type: "textarea", rows: 2,
-        default: "Companies and institutions Tobi Lawson founded or co-founded, in four groups by the work they do." },
+        default: "Companies and institutions Tobi Lawson has started or co-founded." },
       { key: "seoBooksTitle", label: "Books — Tab Title", type: "text", default: "Tobi Lawson" },
       { key: "seoBooksDescription", label: "Books — Description", type: "textarea", rows: 2,
         default: "Who Made This? — a microhistory of everyday things, and other volumes in progress." },
@@ -254,7 +252,7 @@ export const COLLECTIONS = [
         help: 'e.g. "Publication / Co-founder"' },
       { key: "status", label: "Status", type: "text", default: "Active",
         help: 'Shown on the Projects page, e.g. "Active" or "Launching Soon"' },
-      { key: "group", label: "Group", type: "select", default: "infrastructure",
+      { key: "group", label: "Group", type: "select", default: "software",
         options: PROJECT_GROUPS.map((g) => ({ value: g.id, label: g.label })),
         help: "Which heading it sits under on the Projects page." },
       { key: "featured", label: "Show on Homepage", type: "select", default: "no",
@@ -388,29 +386,25 @@ export function blankItem(fields) {
  */
 export const SEED_COLLECTIONS = {
   projects: [
-    { id: "miomir-labs", title: "Miomir Labs", roleTag: "Engineering & Research House / Founder", status: "Active",
-      group: "infrastructure", featured: "no",
-      description: "Correctness-first engineering for ledgers, identity, and money movement, for organisations where a wrong number costs real money.",
-      link: "https://miomirlabs.com/" },
-    { id: "briclair", title: "Briclair", roleTag: "Identity & Account Infrastructure / Founder", status: "Active",
-      group: "infrastructure", featured: "no",
-      description: "Identity checks, bank accounts and compliance for Nigerian products that move money. Briclair spreads the work across several banks and verification providers, so an outage at one of them leaves the product running.",
+    { id: "briclair", title: "Briclair", roleTag: "Fintech Infrastructure / Founder", status: "Active",
+      group: "software", featured: "no",
+      description: "Identity, accounts and compliance infrastructure for Nigerian fintechs.",
       link: "https://briclair.com" },
     { id: "praiki", title: "Praiki", roleTag: "Business Infrastructure / Founder", status: "Active",
-      group: "infrastructure", featured: "no",
+      group: "software", featured: "no",
       description: "Infrastructure for African founders and professionals: vetted help, an operating layer for the business, and escrow that releases when the work ships.",
       link: "https://praiki.com" },
     { id: "prai", title: "Prai", roleTag: "AI Workspace / Founder", status: "Active",
-      group: "infrastructure", featured: "no",
-      description: "A workspace where you chat, write code and work with AI agents in one thread, and review each file change before you approve it.",
+      group: "software", featured: "no",
+      description: "An AI workspace for chat, code and agents.",
       link: "https://prai.dev" },
-    { id: "crapht", title: "Crapht", roleTag: "Open Technical Commons / Founder", status: "Active",
-      group: "builders", featured: "yes",
-      description: "An open technical commons for people who build out of curiosity: learning paths through compilers, databases and AI systems, and a flagship build, Crapht OS, an operating system for old PCs and unreliable power.",
+    { id: "crapht", title: "Crapht", roleTag: "Engineering Commons / Founder", status: "Active",
+      group: "software", featured: "yes",
+      description: "An open commons for engineers who want to build hard things.",
       link: "https://crapht.cloud" },
     { id: "fine-friction", title: "Fine Friction", roleTag: "Holding Company / Co-founder", status: "Active",
-      group: "products", featured: "no",
-      description: "The holding company for Bombell, which helps brand and marketing teams make their next growth decision, and Gistbird, where a business chats with its customers and shows them its products. Fine Friction is adding a consulting practice.",
+      group: "software", featured: "no",
+      description: "Holding company for Bombell and Gistbird.",
       link: "https://finefriction.com" },
     { id: "lagos-urban", title: "Lagos Urban Project", roleTag: "Platform / Founder", status: "Active",
       group: "cities", featured: "yes",
