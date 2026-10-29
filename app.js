@@ -12,9 +12,9 @@
  * All author-supplied text is escaped before it reaches innerHTML.
  */
 
-import { loadContent, onContentUpdated, esc, escUrl, renderProse, renderLines } from "/content-store.js?v=3.15.0";
-import { subscribeToCloud } from "/supabase.js?v=3.15.0";
-import { FIELD_BY_KEY, PROJECT_GROUPS } from "/content-schema.js?v=3.15.0";
+import { loadContent, onContentUpdated, esc, escUrl, renderProse, renderLines } from "/content-store.js?v=3.16.0";
+import { subscribeToCloud } from "/supabase.js?v=3.16.0";
+import { FIELD_BY_KEY, PROJECT_GROUPS } from "/content-schema.js?v=3.16.0";
 
 // ---------------------------------------------------------------------------
 // Singleton fields
@@ -27,6 +27,18 @@ import { FIELD_BY_KEY, PROJECT_GROUPS } from "/content-schema.js?v=3.15.0";
  *                               writes href="mailto:<value>".
  * The two are independent, so one element can use either or both.
  */
+/**
+ * The value to hand setAttribute. setAttribute takes plain text and does its
+ * own escaping, so passing it HTML-escaped text stores "&amp;" literally and
+ * breaks any link with "&" in it. URLs still go through escUrl's check, which
+ * refuses javascript: and data:, but the original string is what gets set.
+ */
+function attrValue(attr, value) {
+  const text = String(value ?? "").trim();
+  if (attr === "href" || attr === "src") return escUrl(text) ? text : "";
+  return String(value ?? "");
+}
+
 function applyFields(settings) {
   document.querySelectorAll("[data-cms]").forEach((el) => {
     const key = el.getAttribute("data-cms");
@@ -51,8 +63,8 @@ function applyFields(settings) {
         continue;
       }
 
-      const safe = attr === "href" || attr === "src" ? escUrl(value) : esc(value);
-      if (safe) el.setAttribute(attr, safe);
+      const raw = attrValue(attr, value);
+      if (raw) el.setAttribute(attr, raw);
     }
   });
 }
@@ -300,8 +312,8 @@ function applyFeaturedBook(doc) {
     for (const spec of el.getAttribute("data-cms-book-attr").split(";")) {
       const [attr, sourceKey] = spec.split(":").map((s) => s.trim());
       if (!attr || !sourceKey || !(sourceKey in book)) continue;
-      const safe = attr === "href" || attr === "src" ? escUrl(book[sourceKey]) : esc(book[sourceKey]);
-      if (safe) el.setAttribute(attr, safe);
+      const raw = attrValue(attr, book[sourceKey]);
+      if (raw) el.setAttribute(attr, raw);
     }
   });
 

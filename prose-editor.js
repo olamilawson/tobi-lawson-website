@@ -12,7 +12,7 @@
  * escaped markup out, keeps that shut while the editing feels direct.
  */
 
-import { esc, renderProse, renderInline } from "/content-store.js?v=3.15.0";
+import { esc, renderProse, renderInline } from "/content-store.js?v=3.16.0";
 
 const TICK = String.fromCharCode(96);
 const FENCE = TICK + TICK + TICK;
