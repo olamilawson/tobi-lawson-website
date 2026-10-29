@@ -29,7 +29,14 @@ const { parseHTML } = await import("linkedom");
 const { normalize } = await import("/content-store.js");
 const { fetchCloudDoc } = await import("/supabase.js");
 const { applyAll } = await import("/app.js");
-const { shareImage } = await import("./share-image.mjs");
+// Share images need resvg's compiled binary. If it will not load on this
+// machine, log why and carry on: the pages matter more than the pictures.
+let shareImage = null;
+try {
+  ({ shareImage } = await import("./share-image.mjs"));
+} catch (err) {
+  console.error(`${new Date().toISOString()} share images off: ${err.message}`);
+}
 
 // Pages that are not part of the public site, or not rendered from content.
 const SKIP = new Set(["admin.html", "admin/index.html", "now.html", "now/index.html"]);
@@ -150,6 +157,7 @@ ${[...new Set(urls)].map((u) => `  <url>
  * The slug matches the one app.js puts in the essay's og:image tag.
  */
 function shareImages(doc) {
+  if (!shareImage) return [];
   const dir = path.join(out, "og");
   fs.mkdirSync(dir, { recursive: true });
   const slugOf = (p) => (String(p.url || "").match(ESSAY_URL) || [])[1] || p.id;
