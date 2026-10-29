@@ -3,8 +3,8 @@
   "configurations": [
     {
       "name": "site",
-      "runtimeExecutable": "npx",
-      "runtimeArgs": ["--yes", "serve", ".", "-p", "8899", "--no-clipboard"],
+      "runtimeExecutable": "C:\\Users\\tobi-\\AppData\\Local\\hermes\\node\\node.exe",
+      "runtimeArgs": [".claude/serve.mjs", "8899"],
       "port": 8899
     }
   ]

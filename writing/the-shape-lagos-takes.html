@@ -10,15 +10,16 @@
   <link rel="icon" href="/favicon.ico" sizes="any" />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="apple-touch-icon" href="/favicon.png" />
+  <link rel="alternate" type="application/rss+xml" title="Tobi Lawson" href="/feed.xml" />
   <meta name="description" content="On informal urbanism, and what the city's edges reveal about how Lagos works." />
 
   
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/base.css?v=3.6.0" />
-  <link rel="stylesheet" href="/style.css?v=3.6.0" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700&family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/base.css?v=3.9.0" />
+  <link rel="stylesheet" href="/style.css?v=3.9.0" />
 </head>
 <body>
 
@@ -28,7 +29,7 @@
       <a href="/" data-cms="navHome">Home</a>
       <a href="/books/" data-cms="navBooks">Books</a>
       <a href="/writing/" aria-current="page" data-cms="navWriting">Writing</a>
-      <a href="/now/" data-cms="navNow">Now</a>
+      <a href="/projects/" data-cms="navProjects">Projects</a>
       <a href="/course/" data-cms="navCourse">Course</a>
       <a href="/about/" data-cms="navAbout">About</a>
     </nav>
@@ -42,7 +43,7 @@
           <span>·</span>
           <span>June 2026</span>
           <span>·</span>
-          <span>7 min read</span>
+          <span data-cms-reading-time>2 min read</span>
         </div>
         <h1 data-cms-post-title>The Shape Lagos Takes When No One Is Planning It</h1>
         <p class="article-dek" data-cms-post-summary>On informal urbanism, and what the city's edges reveal about how Lagos works.</p>
@@ -72,6 +73,16 @@
 
         <p>Lagos builds itself every morning, one decision at a time. Useful work in the city starts by paying attention to how that building actually happens.</p>
       </div>
+
+      <form class="newsletter" data-newsletter hidden method="post" target="_blank" rel="noopener">
+        <div class="meta" data-cms="newsletterHeading">New essays by email</div>
+        <p class="newsletter-line" data-cms="newsletterBody">Get each new essay by email.</p>
+        <div class="newsletter-row">
+          <label for="newsletter-email" class="sr-only">Email address</label>
+          <input id="newsletter-email" class="newsletter-input" type="email" name="email" required autocomplete="email" placeholder="email@example.com" />
+          <button class="newsletter-button" type="submit" data-cms="newsletterButton">Send me new essays</button>
+        </div>
+      </form>
 
       <div style="margin-top: 4rem; padding-top: 2rem; border-top: 1px solid var(--line);">
         <div class="meta" style="margin-bottom: 1.5rem;" data-cms="writingMoreLabel">More Writing</div>
@@ -109,6 +120,6 @@
     </div>
   </footer>
 
-  <script type="module" src="/app.js?v=3.6.0"></script>
+  <script type="module" src="/app.js?v=3.9.0"></script>
 </body>
 </html>

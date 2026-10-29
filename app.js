@@ -12,9 +12,9 @@
  * All author-supplied text is escaped before it reaches innerHTML.
  */
 
-import { loadContent, onContentUpdated, esc, escUrl, renderProse, renderLines } from "/content-store.js?v=3.6.0";
-import { subscribeToCloud } from "/supabase.js?v=3.6.0";
-import { FIELD_BY_KEY } from "/content-schema.js?v=3.6.0";
+import { loadContent, onContentUpdated, esc, escUrl, renderProse, renderLines } from "/content-store.js?v=3.9.0";
+import { subscribeToCloud } from "/supabase.js?v=3.9.0";
+import { FIELD_BY_KEY, PROJECT_GROUPS } from "/content-schema.js?v=3.9.0";
 
 // ---------------------------------------------------------------------------
 // Singleton fields
@@ -64,7 +64,7 @@ function applyScribbleHeadline(settings) {
 
   const title = String(settings.homeHeroTitle ?? "");
   const word = String(settings.homeHeroScribbleWord ?? "").trim();
-  const scribble = `<svg class="scribble" viewBox="0 0 200 80" preserveAspectRatio="none" aria-hidden="true"><path d="M 15,40 C 20,15 50,5 100,5 C 160,5 190,20 185,50 C 180,75 140,78 90,75 C 40,72 5,55 10,35 C 15,20 40,12 80,15"></path></svg>`;
+  const scribble = `<svg class="scribble" viewBox="0 0 200 80" preserveAspectRatio="none" aria-hidden="true"><path d="M 10,40 C 9,14 50,5 102,5 C 158,5 193,12 192,40 C 191,68 152,76 100,76 C 46,76 8,68 7,42 C 6,22 28,9 72,8"></path></svg>`;
 
   if (!word || !title.includes(word)) {
     el.innerHTML = renderLines(title);
@@ -74,7 +74,7 @@ function applyScribbleHeadline(settings) {
   const idx = title.indexOf(word);
   const before = renderLines(title.slice(0, idx));
   const after = renderLines(title.slice(idx + word.length));
-  el.innerHTML = `${before}<span class="highlight-wrapper">${esc(word)} ${scribble}</span>${after}`;
+  el.innerHTML = `${before}<span class="highlight-wrapper">${esc(word)}${scribble}</span>${after}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -87,56 +87,56 @@ const empty = (message) =>
 const hostLabel = (link) => esc(String(link || "").replace(/^https?:\/\//, "").replace(/\/$/, ""));
 
 const RENDERERS = {
-  /**
-   * Homepage ventures, rendered as an editorial index rather than cards.
-   * Each venture is one full-width row; the row itself is the only link, so
-   * there is exactly one tab stop per destination. A venture with no link
-   * renders as a plain row instead of an anchor pointing nowhere.
-   */
+  /** Homepage ventures: only the projects switched on for the homepage. */
   homeProjects(mount, doc) {
-    const items = doc.collections.projects;
-    if (!items.length) return empty("No active projects configured.");
-    return items.map((p, i) => {
-      const index = String(i + 1).padStart(2, "0");
-      const body = `
-        <span class="venture-index" aria-hidden="true">${index}</span>
-        <div class="venture-head">
-          <h3>${esc(p.title)}</h3>
-          <div class="meta venture-role">${esc(p.roleTag)}</div>
-        </div>
-        <div class="venture-body">
-          <p class="venture-desc">${esc(p.description)}</p>
-          ${p.link
-            ? `<span class="meta venture-host">${hostLabel(p.link)}</span>`
-            : `<span class="meta venture-host venture-host--pending">Not yet public</span>`}
-        </div>
-        ${p.link ? `<span class="venture-arrow" aria-hidden="true">\u2197</span>` : ""}`;
+    const items = doc.collections.projects.filter((p) => p.featured === "yes");
+    if (!items.length) return empty("No projects set to show on the homepage.");
+    return items.map((p, i) => ventureRow(p, i)).join("");
+  },
 
-      const anim = `fade-up delay-${(i % 3) + 1}`;
-      return p.link
-        ? `<a class="venture-row ${anim}" href="${escUrl(p.link)}" target="_blank" rel="noopener noreferrer">${body}</a>`
-        : `<div class="venture-row venture-row--pending ${anim}">${body}</div>`;
+  /**
+   * Every project on the Projects page, under its group heading. Groups with
+   * nothing in them are skipped, and a project whose group no longer exists
+   * falls into the first group rather than disappearing.
+   */
+  projectGroups(mount, doc) {
+    const items = doc.collections.projects;
+    if (!items.length) return empty("No projects added yet.");
+    const known = new Set(PROJECT_GROUPS.map((g) => g.id));
+    const groupOf = (p) => (known.has(p.group) ? p.group : PROJECT_GROUPS[0].id);
+
+    return PROJECT_GROUPS.map((g) => {
+      const members = items.filter((p) => groupOf(p) === g.id);
+      if (!members.length) return "";
+      return `
+      <section class="project-group">
+        <div class="section-header">
+          <h2>${esc(g.label)}</h2>
+          <span class="meta">${String(members.length).padStart(2, "0")}</span>
+        </div>
+        <div class="venture-list">${members.map((p, i) => ventureRow(p, i, { status: true })).join("")}</div>
+      </section>`;
     }).join("");
   },
 
-  /** Now-page project cards, which lead with status instead of a cover plate. */
-  nowProjects(mount, doc) {
-    const items = doc.collections.projects;
-    if (!items.length) return empty("No active projects configured.");
-    return items.map((p) => `
-      <article class="grid-item">
-        <div class="grid-item-header">
-          <h3>${esc(p.title)}</h3>
-          <div class="meta">${esc(p.status || "Active")} · ${esc(p.roleTag)}</div>
-        </div>
-        <p class="grid-item-desc">${esc(p.description)}</p>
-        ${p.link ? `<a class="grid-item-link" href="${escUrl(p.link)}" target="_blank" rel="noopener noreferrer">Visit ${hostLabel(p.link)} ↗</a>` : ""}
-      </article>`).join("");
-  },
-
-  /** Three most recent essays on the homepage. */
+  /** Homepage: the newest essay as the lead, the next two beside it. */
   homePosts(mount, doc) {
-    return postCards(doc.collections.posts.slice(0, 3));
+    const [lead, ...rest] = doc.collections.posts.slice(0, 3);
+    if (!lead) return empty("No articles published yet.");
+    const meta = (p) => `${esc(p.category)}${p.date ? ` / ${esc(p.date)}` : ""}`;
+    return `
+      <a class="essay-lead" href="${escUrl(lead.url)}">
+        <div class="meta">${meta(lead)}</div>
+        <h3>${esc(lead.title)}</h3>
+        <p class="essay-lead-dek">${esc(lead.summary)}</p>
+        <span class="grid-item-link">Read ${esc(lead.category || "Essay")} →</span>
+      </a>
+      ${rest.length ? `<div class="essay-list">${rest.map((p) => `
+        <a class="essay-item" href="${escUrl(p.url)}">
+          <div class="meta">${meta(p)}</div>
+          <h3>${esc(p.title)}</h3>
+        </a>`).join("")}
+      </div>` : ""}`;
   },
 
   /** Full essay archive. */
@@ -198,6 +198,34 @@ const RENDERERS = {
       </a>`).join("");
   }
 };
+
+/**
+ * One venture as an editorial index row. The row itself is the only link, so
+ * there is exactly one tab stop per destination. A venture with no link
+ * renders as a plain row instead of an anchor pointing nowhere.
+ */
+function ventureRow(p, i, { status = false } = {}) {
+  const index = String(i + 1).padStart(2, "0");
+  const role = status && p.status ? `${p.status} · ${p.roleTag}` : p.roleTag;
+  const body = `
+    <span class="venture-index" aria-hidden="true">${index}</span>
+    <div class="venture-head">
+      <h3>${esc(p.title)}</h3>
+      <div class="meta venture-role">${esc(role)}</div>
+    </div>
+    <div class="venture-body">
+      <p class="venture-desc">${esc(p.description)}</p>
+      ${p.link
+        ? `<span class="meta venture-host">${hostLabel(p.link)}</span>`
+        : `<span class="meta venture-host venture-host--pending">Not yet public</span>`}
+    </div>
+    ${p.link ? `<span class="venture-arrow" aria-hidden="true">↗</span>` : ""}`;
+
+  const anim = `fade-up delay-${(i % 3) + 1}`;
+  return p.link
+    ? `<a class="venture-row ${anim}" href="${escUrl(p.link)}" target="_blank" rel="noopener noreferrer">${body}</a>`
+    : `<div class="venture-row venture-row--pending ${anim}">${body}</div>`;
+}
 
 function postCards(posts) {
   if (!posts.length) return empty("No articles published yet.");
@@ -388,6 +416,29 @@ function currentPost(doc) {
   return doc.collections.posts.find((p) => p.url && bare(p.url) === file) || null;
 }
 
+/**
+ * The signup box at the foot of each essay posts straight to Buttondown, so
+ * no address passes through this site. It stays hidden until a username is
+ * set, and only a plain username can reach the form's action.
+ */
+function applyNewsletter(settings) {
+  const user = String(settings.newsletterUsername || "").trim();
+  const ok = /^[A-Za-z0-9_-]{1,64}$/.test(user);
+  document.querySelectorAll("[data-newsletter]").forEach((form) => {
+    form.hidden = !ok;
+    if (ok) form.action = `https://buttondown.com/api/emails/embed-subscribe/${encodeURIComponent(user)}`;
+  });
+}
+
+/** "N min read" from the words actually on the page, at 230 words a minute. */
+function applyReadingTime(scope, body) {
+  const slots = scope.querySelectorAll("[data-cms-reading-time]");
+  if (!slots.length) return;
+  const words = body.textContent.split(/\s+/).filter(Boolean).length;
+  const label = `${Math.max(1, Math.ceil(words / 230))} min read`;
+  slots.forEach((el) => { el.textContent = label; });
+}
+
 function applyPostPage(doc) {
   const mount = document.querySelector("[data-cms-post]");
   if (!mount) return;
@@ -414,6 +465,7 @@ function applyPostPage(doc) {
   if (body && String(post.bodyProse || "").trim()) {
     body.innerHTML = renderProse(post.bodyProse);
   }
+  if (body) applyReadingTime(mount, body);
 
   // Tab titles are deliberately just the site name across the whole site.
   // To show essay names instead, use: `${post.title} — ${doc.settings.siteTitle}`.
@@ -433,13 +485,24 @@ async function hydrate() {
     return;
   }
   if (!doc) return;
+  applyAll(doc);
+}
 
+/**
+ * Write the content document into the current page. The browser runs this on
+ * every load; scripts/render.mjs runs it on the server so the HTML already
+ * holds the published content. Pages that choose their content from the URL
+ * fragment (console essays, book chapters) are left for the browser, since the
+ * server never sees the fragment.
+ */
+export function applyAll(doc, { prerender = false } = {}) {
   applyFields(doc.settings);
   applyScribbleHeadline(doc.settings);
   applyFeaturedBook(doc);
   applyLists(doc);
-  applyPostPage(doc);
-  applyChapterPage(doc);
+  if (!prerender || !document.querySelector("[data-cms-post-dynamic]")) applyPostPage(doc);
+  if (!prerender) applyChapterPage(doc);
+  applyNewsletter(doc.settings);
 }
 
 function initSmoothScroll() {
@@ -466,8 +529,11 @@ function init() {
   window.addEventListener("hashchange", hydrate);
 }
 
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", init);
-} else {
-  init();
+// The pre-renderer imports this module for applyAll and must not boot it.
+if (!globalThis.__TL_PRERENDER__) {
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
 }

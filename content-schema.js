@@ -19,6 +19,17 @@
  */
 
 // ---------------------------------------------------------------------------
+// The headings projects sit under on the Projects page, in page order.
+// ---------------------------------------------------------------------------
+
+export const PROJECT_GROUPS = [
+  { id: "infrastructure", label: "Infrastructure" },
+  { id: "builders", label: "For Builders" },
+  { id: "products", label: "Products" },
+  { id: "cities", label: "Cities & Ideas" }
+];
+
+// ---------------------------------------------------------------------------
 // Singleton content — one value per key, grouped into admin console tabs.
 // ---------------------------------------------------------------------------
 
@@ -35,7 +46,7 @@ export const GROUPS = [
       { key: "navHome", label: "Nav — Home", type: "text", default: "Home" },
       { key: "navBooks", label: "Nav — Books", type: "text", default: "Books" },
       { key: "navWriting", label: "Nav — Writing", type: "text", default: "Writing" },
-      { key: "navNow", label: "Nav — Now", type: "text", default: "Now" },
+      { key: "navProjects", label: "Nav — Projects", type: "text", default: "Projects" },
       { key: "navCourse", label: "Nav — Course", type: "text", default: "Course" },
       { key: "navAbout", label: "Nav — About", type: "text", default: "About" }
     ]
@@ -48,22 +59,30 @@ export const GROUPS = [
     blurb: "Hero headline and the two section headers. Project and essay cards are managed in their own tabs.",
     fields: [
       { key: "homeHeroTitle", label: "Hero Headline", type: "textarea", rows: 3,
-        default: "Building\nand investing\nwith purpose.",
+        default: "Building\nthe foundations\nothers build on.",
         help: "Line breaks are preserved. The scribble word below is circled wherever it appears." },
-      { key: "homeHeroScribbleWord", label: "Circled Word", type: "text", default: "purpose.",
+      { key: "homeHeroScribbleWord", label: "Circled Word", type: "text", default: "foundations",
         help: "Must appear in the headline above, exactly, for the scribble to draw." },
       { key: "homeHeroSubtitle", label: "Hero Lead Paragraph", type: "textarea", rows: 3,
-        default: "Notes on capital, cities, and the slow work of building things that last. Based in Lagos, working across fintech, SME services, and education technology." },
+        default: "I build infrastructure in Lagos: the identity checks, ledgers and operating tools African businesses run on. I also write about capital, cities and economic development." },
+      { key: "homeCurrentlyLabel", label: "Currently Line — Label", type: "text", default: "Currently",
+        help: "The one-line strip under the lead paragraph. Its text is the Currently note in the Projects tab." },
       { key: "homeHeroImage", label: "Hero Portrait", type: "image",
-        default: "/assets/tobi-cutout.webp",
-        help: "Sits beside the headline on desktop, below it on mobile. Edges are feathered into the page background." },
+        default: "/assets/tobi-portrait.jpg",
+        help: "A framed 4:5 photograph beside the headline on desktop, below it on mobile. The page crops other shapes to 4:5 and keeps the top of the frame." },
       { key: "homeHeroImageAlt", label: "Hero Portrait Alt Text", type: "text",
         default: "Tobi Lawson — Investor and Builder based in Lagos",
         help: "Describes the photo for screen readers and when the image fails to load." },
+      { key: "homeHeroCaption", label: "Hero Portrait Caption", type: "text", default: "Tobi Lawson",
+        help: "Left side of the line under the portrait." },
+      { key: "homeHeroCaptionNote", label: "Hero Portrait Caption — Right", type: "text", default: "Lagos",
+        help: "Right side of the line under the portrait. A place, a year, or leave it empty." },
       { key: "homeProjectsHeading", label: "Projects Section — Heading", type: "text", default: "Selected Ventures & Projects" },
-      { key: "homeProjectsEyebrow", label: "Projects Section — Eyebrow", type: "text", default: "01 / CORE INITIATIVES" },
+      { key: "homeProjectsEyebrow", label: "Projects Section — Eyebrow", type: "text", default: "02 / CORE INITIATIVES" },
+      { key: "homeProjectsMore", label: "Projects Section — Link to All", type: "text", default: "All projects →" },
       { key: "homeWritingHeading", label: "Writing Section — Heading", type: "text", default: "Recent Essays & Notes" },
-      { key: "homeWritingEyebrow", label: "Writing Section — Eyebrow", type: "text", default: "02 / WRITING" }
+      { key: "homeWritingEyebrow", label: "Writing Section — Eyebrow", type: "text", default: "01 / WRITING" },
+      { key: "homeWritingMore", label: "Writing Section — Link to All", type: "text", default: "All writing →" }
     ]
   },
 
@@ -88,18 +107,19 @@ export const GROUPS = [
   },
 
   {
-    id: "now",
-    label: "Now",
-    heading: "Now Page",
-    blurb: "The running account of what you're working on. The project cards themselves live in the Projects tab.",
+    id: "projects",
+    label: "Projects",
+    heading: "Projects Page",
+    blurb: "Everything you're building, grouped. The Currently note also runs as a one-line strip on the homepage. The projects themselves are in the list below.",
     fields: [
-      { key: "nowHeroTitle", label: "Headline", type: "text", default: "What I'm spending time on" },
-      { key: "nowHeroSubtitle", label: "Lead Paragraph", type: "textarea", rows: 3,
-        default: "A running account of what I am building, updated as things move. Last updated August 2026." },
-      { key: "nowProjectsHeading", label: "Projects Section — Heading", type: "text", default: "Active Initiatives & Portfolio" },
-      { key: "nowProjectsEyebrow", label: "Projects Section — Eyebrow", type: "text", default: "01 / CURRENT FOCUS" },
-      { key: "nowOngoingProse", label: "Ongoing Focus Prose", type: "prose", rows: 12,
-        default: "Most of my week goes to [Miomir Labs](https://miomirlabs.com/), an engineering and research house in Lagos. We build ledgers, identity systems, and settlement pipelines for organisations where a wrong number costs real money. Generating code is the cheap part of that work now. The expensive part is deciding whether the code is right, and proving it stays right as the system changes.\n\nTwo products run on those foundations. Prager is the app a small business runs on, where an owner invoices a customer, takes the payment, watches stock, and pays a supplier without leaving the thread the sale started in. Prai is a productivity assistant that reads Nigerian Pidgin alongside English, in the register customers actually write in.\n\n[Praiki](https://praiki.com) is the wider platform, and its premise is continuity. Most African businesses die with their founder because the structure never existed outside one person\u2019s head. Connect finds vetted professionals, Workplace gives an owner a command centre, Studio runs a professional practice, Agency carries a services firm, and PraikiPay holds the money in escrow until the work is approved.\n\nCrapht launches shortly. It is a platform for developers, and I will say more about it when it ships.\n\nAlongside the engineering, I co-founded 1914 Reader with Feyi Fawehinmi, where we read Nigeria and Africa\u2019s biggest stories through global economic and political change. Lagos Urban Project works on the city. Long Africa takes the longest horizon of the three." }
+      { key: "projectsHeroTitle", label: "Headline", type: "text", default: "Projects" },
+      { key: "projectsHeroSubtitle", label: "Lead Paragraph", type: "textarea", rows: 3,
+        default: "Companies and institutions I founded or co-founded, in four groups by the work they do." },
+      { key: "currentlyNote", label: "Currently — Note", type: "textarea", rows: 2,
+        default: "Most of my week goes to Miomir Labs and the two products that run on its systems, Prager and Prai. Crapht is open to its first builders.",
+        help: "One or two sentences. Shown at the top of the Projects page and as a single line on the homepage." },
+      { key: "currentlyUpdated", label: "Currently — Last Updated", type: "text", default: "October 2026",
+        help: 'Free text, e.g. "October 2026". Change it whenever you change the note.' }
     ]
   },
 
@@ -115,7 +135,12 @@ export const GROUPS = [
       { key: "writingCatalogHeading", label: "Archive Section — Heading", type: "text", default: "All Articles & Monographs" },
       { key: "writingCatalogEyebrow", label: "Archive Section — Eyebrow", type: "text", default: "ARCHIVE" },
       { key: "writingMoreLabel", label: '"More Writing" Label', type: "text", default: "More Writing",
-        help: "Shown at the foot of each individual essay." }
+        help: "Shown at the foot of each individual essay." },
+      { key: "newsletterUsername", label: "Newsletter — Buttondown Username", type: "text", default: "",
+        help: "Your username from buttondown.com. While this is empty the signup box stays hidden." },
+      { key: "newsletterHeading", label: "Newsletter — Heading", type: "text", default: "New essays by email" },
+      { key: "newsletterBody", label: "Newsletter — Line", type: "text", default: "Get each new essay by email." },
+      { key: "newsletterButton", label: "Newsletter — Button", type: "text", default: "Send me new essays" }
     ]
   },
 
@@ -188,16 +213,16 @@ export const GROUPS = [
       { key: "seoOgImage", label: "Social Share Image URL", type: "url", default: "https://tobilawson.com/assets/tobi-lawson.jpg" },
       { key: "seoHomeTitle", label: "Home — Tab Title", type: "text", default: "Tobi Lawson" },
       { key: "seoHomeDescription", label: "Home — Description", type: "textarea", rows: 2,
-        default: "Notes on capital, cities, and the slow work of building things that last. Based in Lagos, working across fintech, SME services, and education technology." },
+        default: "Tobi Lawson builds infrastructure in Lagos: the identity checks, ledgers and operating tools African businesses run on, and writes about capital, cities and economic development." },
       { key: "seoAboutTitle", label: "About — Tab Title", type: "text", default: "Tobi Lawson" },
       { key: "seoAboutDescription", label: "About — Description", type: "textarea", rows: 2,
         default: "Investor and builder based in Lagos, working across fintech, SME services, and education technology." },
       { key: "seoWritingTitle", label: "Writing — Tab Title", type: "text", default: "Tobi Lawson" },
       { key: "seoWritingDescription", label: "Writing — Description", type: "textarea", rows: 2,
         default: "Essays, book reviews, and field notes on capital, cities, and African development." },
-      { key: "seoNowTitle", label: "Now — Tab Title", type: "text", default: "Tobi Lawson" },
-      { key: "seoNowDescription", label: "Now — Description", type: "textarea", rows: 2,
-        default: "A running account of the projects and companies I'm currently building." },
+      { key: "seoProjectsTitle", label: "Projects — Tab Title", type: "text", default: "Projects · Tobi Lawson" },
+      { key: "seoProjectsDescription", label: "Projects — Description", type: "textarea", rows: 2,
+        default: "Companies and institutions Tobi Lawson founded or co-founded, in four groups by the work they do." },
       { key: "seoBooksTitle", label: "Books — Tab Title", type: "text", default: "Tobi Lawson" },
       { key: "seoBooksDescription", label: "Books — Description", type: "textarea", rows: 2,
         default: "Who Made This? — a microhistory of everyday things, and other volumes in progress." },
@@ -217,9 +242,9 @@ export const COLLECTIONS = [
     id: "projects",
     label: "Projects",
     singular: "Project",
-    tab: "now",
+    tab: "projects",
     heading: "Ventures & Projects",
-    blurb: "Shown on both the homepage and the Now page.",
+    blurb: "Every project appears on the Projects page under its group. Projects with Show on Homepage at Yes also appear on the homepage.",
     titleField: "title",
     subtitleField: "roleTag",
     bodyField: "description",
@@ -228,7 +253,12 @@ export const COLLECTIONS = [
       { key: "roleTag", label: "Role Tag", type: "text", default: "Project / Founder",
         help: 'e.g. "Publication / Co-founder"' },
       { key: "status", label: "Status", type: "text", default: "Active",
-        help: 'Shown on the Now page, e.g. "Active" or "Launching Soon"' },
+        help: 'Shown on the Projects page, e.g. "Active" or "Launching Soon"' },
+      { key: "group", label: "Group", type: "select", default: "infrastructure",
+        options: PROJECT_GROUPS.map((g) => ({ value: g.id, label: g.label })),
+        help: "Which heading it sits under on the Projects page." },
+      { key: "featured", label: "Show on Homepage", type: "select", default: "no",
+        options: [{ value: "yes", label: "Yes" }, { value: "no", label: "No" }] },
       { key: "description", label: "Description", type: "textarea", rows: 3 },
       { key: "link", label: "Link URL", type: "url" }
     ]
@@ -359,23 +389,41 @@ export function blankItem(fields) {
 export const SEED_COLLECTIONS = {
   projects: [
     { id: "miomir-labs", title: "Miomir Labs", roleTag: "Engineering & Research House / Founder", status: "Active",
+      group: "infrastructure", featured: "no",
       description: "Correctness-first engineering for ledgers, identity, and money movement, for organisations where a wrong number costs real money.",
       link: "https://miomirlabs.com/" },
+    { id: "briclair", title: "Briclair", roleTag: "Identity & Account Infrastructure / Founder", status: "Active",
+      group: "infrastructure", featured: "no",
+      description: "Identity checks, bank accounts and compliance for Nigerian products that move money. Briclair spreads the work across several banks and verification providers, so an outage at one of them leaves the product running.",
+      link: "https://briclair.com" },
     { id: "praiki", title: "Praiki", roleTag: "Business Infrastructure / Founder", status: "Active",
+      group: "infrastructure", featured: "no",
       description: "Infrastructure for African founders and professionals: vetted help, an operating layer for the business, and escrow that releases when the work ships.",
       link: "https://praiki.com" },
-    { id: "crapht", title: "Crapht", roleTag: "Developer Platform / Founder", status: "Launching Soon",
-      description: "A platform for developers. More to say when it ships.",
-      link: "" },
-    { id: "1914-reader", title: "1914 Reader", roleTag: "Publication / Co-founder", status: "Active",
-      description: "A publication co-founded with Feyi Fawehinmi reading African stories through the lens of global economic change.",
-      link: "https://www.1914reader.com/" },
+    { id: "prai", title: "Prai", roleTag: "AI Workspace / Founder", status: "Active",
+      group: "infrastructure", featured: "no",
+      description: "A workspace where you chat, write code and work with AI agents in one thread, and review each file change before you approve it.",
+      link: "https://prai.dev" },
+    { id: "crapht", title: "Crapht", roleTag: "Open Technical Commons / Founder", status: "Active",
+      group: "builders", featured: "yes",
+      description: "An open technical commons for people who build out of curiosity: learning paths through compilers, databases and AI systems, and a flagship build, Crapht OS, an operating system for old PCs and unreliable power.",
+      link: "https://crapht.cloud" },
+    { id: "fine-friction", title: "Fine Friction", roleTag: "Holding Company / Co-founder", status: "Active",
+      group: "products", featured: "no",
+      description: "The holding company for Bombell, which helps brand and marketing teams make their next growth decision, and Gistbird, where a business chats with its customers and shows them its products. Fine Friction is adding a consulting practice.",
+      link: "https://finefriction.com" },
     { id: "lagos-urban", title: "Lagos Urban Project", roleTag: "Platform / Founder", status: "Active",
+      group: "cities", featured: "yes",
       description: "Reimagining Lagos as a more inclusive, livable, and productive city, built from how people live in it.",
       link: "http://lagosurban.com" },
     { id: "long-africa", title: "Long Africa", roleTag: "Institution / Launching Soon", status: "Launching Soon",
+      group: "cities", featured: "yes",
       description: "An institution dedicated to the civilisational foundations of African prosperity across multi-decade horizons.",
-      link: "http://longafrica.org" }
+      link: "http://longafrica.org" },
+    { id: "1914-reader", title: "1914 Reader", roleTag: "Publication / Co-founder", status: "Active",
+      group: "cities", featured: "no",
+      description: "A publication co-founded with Feyi Fawehinmi reading African stories through the lens of global economic change.",
+      link: "https://www.1914reader.com/" }
   ],
   posts: [
     { id: "shape-lagos-takes", title: "The Shape Lagos Takes When No One Is Planning It", category: "Essay",

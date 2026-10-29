@@ -1,4 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <rect width="32" height="32" rx="6" fill="#2E5A52"/>
-  <path d="M7 10H25M16 10V24M16 24H25" stroke="#F7F3EA" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <!-- The hand-drawn loop from the homepage headline, in bone on ink. -->
+  <rect width="32" height="32" rx="6" fill="#111111"/>
+  <path d="M7.5 17.5C7 10 12.5 6.5 17 6.5C23 6.5 26 10.5 25.5 16.5C25 22.5 20.5 25.5 15.5 25.5C10 25.5 6.5 22 7 17C7.4 12.8 10.5 9.6 15.5 9.2" fill="none" stroke="#F4F4F2" stroke-width="2.6" stroke-linecap="round"/>
 </svg>

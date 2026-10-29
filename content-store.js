@@ -5,8 +5,8 @@
  * Owns: local cache, cloud merge, defaults, and escaping.
  */
 
-import { GROUPS, COLLECTIONS, SEED_COLLECTIONS, SCHEMA_VERSION, defaultSettings } from "/content-schema.js?v=3.6.0";
-import { fetchCloudDoc, saveCloudDoc, fetchLegacyDoc, isSupabaseConfigured } from "/supabase.js?v=3.6.0";
+import { GROUPS, COLLECTIONS, SEED_COLLECTIONS, SCHEMA_VERSION, defaultSettings } from "/content-schema.js?v=3.9.0";
+import { fetchCloudDoc, saveCloudDoc, fetchLegacyDoc, isSupabaseConfigured } from "/supabase.js?v=3.9.0";
 
 const STORAGE_KEY = "tobi_site_content_v3";
 const LEGACY_KEYS = ["tobi_site_data_v2", "tobi_site_data_v1", "tobi_site_data"];
@@ -262,6 +262,13 @@ export function normalize(doc) {
     }
   }
 
+  // The cutout portrait was retired for the framed library photo. Documents
+  // saved while it was the default store its path explicitly, so swap that one
+  // value; any other picture chosen in the console is left alone.
+  if (out.settings.homeHeroImage === "/assets/tobi-cutout.webp") {
+    out.settings.homeHeroImage = "/assets/tobi-portrait.jpg";
+  }
+
   // Older documents carried a console passcode hash under `security`. The
   // document is publicly readable and sign-in is Supabase Auth now, so the hash
   // is deliberately dropped here; the next save removes it from the cloud.
@@ -272,8 +279,67 @@ export function normalize(doc) {
     out.collections[col.id] = Array.isArray(items) ? items.map((item) => normalizeItem(col, item)) : [];
   }
 
+  // Content migrations run once per document. Until the next save they rerun on
+  // every load, so each must give the same result when applied again.
+  out.migrations = Array.isArray(doc?.migrations) ? [...doc.migrations] : [];
+  for (const m of MIGRATIONS) {
+    if (out.migrations.includes(m.id)) continue;
+    m.run(out);
+    out.migrations.push(m.id);
+  }
+
   return out;
 }
+
+/**
+ * One-time edits to content that lives in the cloud document, for changes
+ * the code ships with but the author would otherwise have to retype.
+ */
+const MIGRATIONS = [
+  {
+    // The Now page became the Projects page, the homepage shows only chosen
+    // projects below the writing, and the hero took the "foundations" positioning.
+    id: "2026-10-projects-page",
+    run(doc) {
+      const defaults = defaultSettings();
+      for (const key of ["homeHeroTitle", "homeHeroScribbleWord", "homeHeroSubtitle", "seoHomeDescription"]) {
+        doc.settings[key] = defaults[key];
+      }
+
+      // Writing moved above projects, so the section numbers swap. A label the
+      // author has rewritten is left alone.
+      if (doc.settings.homeWritingEyebrow === "02 / WRITING") doc.settings.homeWritingEyebrow = defaults.homeWritingEyebrow;
+      if (doc.settings.homeProjectsEyebrow === "01 / CORE INITIATIVES") doc.settings.homeProjectsEyebrow = defaults.homeProjectsEyebrow;
+
+      const projects = doc.collections.projects;
+      const key = (p) => String(p.title || "").trim().toLowerCase();
+      for (const seed of SEED_COLLECTIONS.projects) {
+        const existing = projects.find((p) => p.id === seed.id || key(p) === key(seed));
+        if (!existing) {
+          projects.push({ ...seed });
+          continue;
+        }
+        existing.group = seed.group;
+        existing.featured = seed.featured;
+        // Crapht's old copy said it hadn't launched; it has.
+        if (seed.id === "crapht") {
+          Object.assign(existing, {
+            roleTag: seed.roleTag, status: seed.status, description: seed.description, link: seed.link
+          });
+        }
+      }
+
+      // Put the known projects in the planned order. Anything else the author
+      // added keeps its place relative to the others, after them.
+      const rank = (p) => {
+        const i = SEED_COLLECTIONS.projects.findIndex((s) => s.id === p.id || key(s) === key(p));
+        return i < 0 ? Infinity : i;
+      };
+      const ordered = projects.map((p, i) => [p, i]).sort((a, b) => rank(a[0]) - rank(b[0]) || a[1] - b[1]);
+      projects.splice(0, projects.length, ...ordered.map(([p]) => p));
+    }
+  }
+];
 
 function normalizeItem(col, item) {
   const out = { ...item };

@@ -8,7 +8,7 @@ This project strictly enforces the **Hallmark Design System** (Anti-AI-UI Slop) 
 
 1. **Typographic Hierarchy & Roles**
    - **Distinct Display & Body Pairing**: Never use a single font family (e.g. Inter) for both display headlines and body copy.
-   - **Role Assignment**: Use `Playfair Display` for display headlines and editorial prose body, and bold `Inter` for metadata/labels (`.meta`).
+   - **Role Assignment**: Use `Playfair Display` for display headlines, short leads and pull quotes; `Newsreader` (`--font-text`) for long-form running text inside `.article-body`; and bold `Inter` for metadata/labels (`.meta`).
    - **Hierarchy**: Maintain a sharp weight ladder: Display > Body > Label.
 
 2. **Color Palette & Restraint**

@@ -5,9 +5,9 @@
   "description": "Tobi Lawson — Personal Website & Editorial Admin Console",
   "type": "module",
   "scripts": {
-    "dev": "npx serve . -p 3000",
-    "serve": "npx serve . -p 3000",
-    "build": "echo 'Static build complete. Serving directly from root directory.'"
+    "dev": "node .claude/serve.mjs 3000",
+    "render": "node scripts/render.mjs",
+    "render:preview": "node scripts/render.mjs --out .render-preview"
   },
   "keywords": [
     "tobi-lawson",
@@ -18,5 +18,11 @@
     "lagos-urban-project"
   ],
   "author": "Tobi Lawson",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "linkedom": "0.18.13"
+  },
+  "engines": {
+    "node": ">=18.19"
+  }
 }

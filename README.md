@@ -1,7 +1,7 @@
 # Tobi Lawson — Personal Website
 
 The personal site of Tobi Lawson, an investor and builder based in Lagos:
-essays, book reviews, books in progress, a course, and a "Now" page.
+essays, book reviews, books in progress, a course, and a page of projects.
 
 **Live**: https://tobilawson.com · **Console**: https://tobilawson.com/admin
 
@@ -16,7 +16,7 @@ format, sync behaviour and deployment, read **[HANDOFF.md](HANDOFF.md)**.
 ## Run it locally
 
 ```bash
-npx serve . -p 3000
+npm run dev
 ```
 
 Open http://localhost:3000. The local copy reads the live Supabase document,
@@ -26,8 +26,8 @@ admin account, the same as production.
 ## Layout
 
 ```
-index.html, about.html, books.html,     Public pages. about, books, now, course
-now.html, course.html                   and admin each also exist as x/index.html
+index.html, about.html, books.html,     Public pages. about, books, projects,
+projects.html, course.html              course and admin each also exist as x/index.html
                                         so /x and /x/ both resolve. Keep each
                                         pair identical.
 writing/                                Essay archive, three hand-built essays,
@@ -65,10 +65,10 @@ The full design and copywriting rules are in
 
 ## Deploying
 
-The site is served from a Hostinger VPS. From its web terminal:
+The site is served by nginx from a Hostinger VPS, with a cron job that pre-renders the published content into the HTML every minute (HANDOFF.md, section 6). From its web terminal:
 
 ```bash
-cd /var/www/tobilawson.com && git fetch origin main && git reset --hard origin/main
+cd /var/www/tobilawson.com && git fetch origin main && git reset --hard origin/main && npm ci --omit=dev && node scripts/render.mjs
 ```
 
 When you change a CSS or JS file, bump the `?v=` query on every reference to

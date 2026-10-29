@@ -7,6 +7,16 @@
   status = 200
 
 [[redirects]]
+  from = "/now/*"
+  to = "/projects"
+  status = 301
+
+[[redirects]]
+  from = "/now"
+  to = "/projects"
+  status = 301
+
+[[redirects]]
   from = "/writing"
   to = "/writing/index.html"
   status = 200

@@ -162,19 +162,21 @@ unfilled stays visible as text rather than becoming a link that goes nowhere.
 | `admin.js` | Console. Generates all forms from the schema. |
 | `admin.html` | Console shell: auth screen, tab container, modal, toast. |
 | `supabase_schema.sql` | Database setup. Idempotent. |
+| `scripts/render.mjs` | Server-side pre-render, RSS feed and sitemap. See section 6. |
+| `deploy/nginx.conf` | nginx rules the server needs. See section 6. |
 | `base.css`, `style.css` | Design system (Playfair Display + Inter). |
 
-Public pages: `index`, `about`, `books`, `now`, `course`, `writing/index`, plus
+Public pages: `index`, `about`, `books`, `projects`, `course`, `writing/index`, plus
 `writing/post.html`, which renders any essay created in the console.
 
 ### The duplicated page files
 
 `about.html` and `about/index.html` are byte-identical copies, as are `books`,
-`now`, `course`, and `admin`. They exist so both `/about` and `/about/` resolve.
+`projects`, `course`, and `admin`. They exist so both `/about` and `/about/` resolve.
 **If you edit one, copy it over the other**, or they will drift:
 
 ```bash
-for p in about books now course admin; do cp $p.html $p/index.html; done
+for p in about books projects course admin; do cp $p.html $p/index.html; done
 ```
 
 ---
@@ -236,11 +238,53 @@ chapter does not break a link you have already shared.
 
 ## 6. Deploying
 
-Hostinger VPS, from the web terminal:
+Hostinger VPS (Ubuntu, nginx), from the web terminal. The web root is the git
+checkout itself.
+
+### One-time setup
+
+1. **Close the public repository.** nginx ignores `.htaccess`, so the server
+   currently serves `/.git/` (the whole history), the `.md` and `.sql` files
+   and `package.json`. Paste the rules in [`deploy/nginx.conf`](deploy/nginx.conf)
+   inside the site's `server { }` block, above its other `location` blocks,
+   then run `sudo nginx -t && sudo systemctl reload nginx`. The same file adds
+   the permanent `/now` → `/projects/` redirect. Until then, `now.html` sends
+   visitors on with a meta refresh.
+2. **Install Node** if `node --version` fails or shows a version below 18.19:
+   `sudo apt install nodejs npm`.
+3. **Schedule the pre-render.** Run `crontab -e` and add:
+
+   ```
+   * * * * * cd /var/www/tobilawson.com && node scripts/render.mjs >> $HOME/tobilawson-render.log 2>&1
+   ```
+
+### Every deploy
 
 ```bash
-cd /var/www/tobilawson.com && git fetch origin main && git reset --hard origin/main
+cd /var/www/tobilawson.com && git fetch origin main && git reset --hard origin/main && npm ci --omit=dev && node scripts/render.mjs
 ```
 
-Serving is static. `.htaccess` handles extensionless URLs, blocks `.md`/`.sql`
-from being served, and marks the console `noindex`.
+### Pre-rendering
+
+[`scripts/render.mjs`](scripts/render.mjs) reads the published document from
+Supabase and runs the same `applyAll()` the browser runs, against every page,
+then writes the result over the HTML in place. It also writes `feed.xml` (RSS)
+and `sitemap.xml`. Search engines and link previews therefore see the real
+copy, and readers no longer see the template text flash before the content
+arrives. A console save reaches the HTML within a minute.
+
+The templates keep their `data-cms` attributes, so rendering a rendered page
+changes nothing, and a deploy that resets the files is corrected on the next
+run. Console essays and book chapters choose their content from the URL
+fragment, which a server never sees, so those two pages still fill in the
+browser.
+
+To see the output locally without touching the working tree:
+`npm run render:preview` writes the rendered site to `.render-preview/`.
+
+### Newsletter
+
+Each essay ends with a Buttondown signup box. It stays hidden until you put
+your Buttondown username in the console: Writing tab → "Newsletter —
+Buttondown Username". The form posts straight to Buttondown.
+

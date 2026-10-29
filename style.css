@@ -11,10 +11,37 @@
   --text-muted: #555555;
   
   --font-display: 'Playfair Display', serif;
+  /* Long-form reading. Playfair's high contrast tires the eye over a few
+     thousand words; Newsreader is drawn for text sizes. */
+  --font-text: 'Newsreader', Georgia, serif;
   --font-sans: 'Inter', sans-serif;
   
+  /* Faint fills for hover rows, code and embeds, and the one raised card. */
+  --wash: rgba(17, 17, 17, 0.04);
+  --surface: #eaeae7;
+  --card: #ffffff;
+
   --grid-gap: 2rem;
   --container-padding: 4rem;
+
+  color-scheme: light;
+}
+
+/* Dark mode follows the reader's system setting. Same warm neutrals, inverted;
+   the accent lifts a step so it keeps contrast on the dark ground (6.5:1).
+   The console opts out with data-theme="light": its forms use fixed colors. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #131312;
+    --text: #ecebe6;
+    --text-muted: #a8a69f;
+    --line: #3a3935;
+    --accent: #ff6a3d;
+    --wash: rgba(255, 255, 255, 0.05);
+    --surface: #1d1d1b;
+    --card: #1d1d1b;
+    color-scheme: dark;
+  }
 }
 
 * {
@@ -142,58 +169,286 @@ h3 {
   color: var(--text-muted);
 }
 
-/* Hero: the portrait is a cutout, so it layers with the type instead of
-   sitting beside it in a frame. The headline crosses the body, and the
-   scribbled word lands over the shoulder. */
+/* Hero: headline on the left, a framed portrait on the right, the way a
+   magazine runs a profile. The two share a baseline: the bottom of the
+   caption lines up with the bottom of the lead paragraph. */
 .hero-layout {
-  position: relative;
-  min-height: min(80vh, 680px);
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) clamp(260px, 30vw, 420px);
+  gap: clamp(2rem, 5vw, 5rem);
+  align-items: end;
+  padding-top: clamp(1rem, 3vw, 2.5rem);
 }
 
 .hero-copy {
-  position: relative;
-  z-index: 2;
-  max-width: 100%;
-}
-
-/* Past this width the headline has hit its size cap while the portrait would
-   keep tracking the right edge, so the two drift apart. Capping the band and
-   centring it keeps the crossing intact on large screens. */
-@media (min-width: 1400px) {
-  .hero-layout {
-    max-width: 1200px;
-    margin-left: auto;
-    margin-right: auto;
-  }
+  min-width: 0;
 }
 
 .hero-layout h1 {
-  font-size: clamp(3rem, 9.4vw, 8.5rem);
+  font-size: clamp(3rem, 7.2vw, 7.5rem);
   max-width: 100%;
 }
 
 .hero-portrait {
-  position: absolute;
-  z-index: 1;
-  right: 3rem;
-  bottom: 0;
-  /* Sized by height so the whole band is filled and his head stays clear of
-     the header. No filter here: a filter on this element makes the browser
-     promote it to its own layer, and the cutout stops compositing. */
-  height: min(80vh, 680px);
-  width: auto;
   margin: 0;
-  pointer-events: none;
 }
 
 .hero-portrait img {
-  height: 100%;
-  width: auto;
-  max-width: none;
-  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+  /* Keep the face in frame if a differently shaped photo is set in the console. */
+  object-position: 50% 20%;
+  background: var(--line);
+}
+
+.hero-portrait figcaption {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 0.85rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--line);
+  color: var(--text-muted);
+}
+
+/* One line under the lead paragraph saying what has my attention now. The
+   whole line links to the Projects page, where the same note sits on top. */
+.hero-currently {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  max-width: 48ch;
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
+  color: var(--text);
+  text-decoration: none;
+}
+
+.hero-currently .meta {
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+
+.hero-currently-note {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  line-height: 1.5;
+}
+
+.hero-currently:hover .hero-currently-note,
+.hero-currently:focus-visible .hero-currently-note {
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  text-decoration-thickness: 1px;
+}
+
+/* "All projects →" under a shortened list. */
+.venture-list:has(+ .section-more) {
+  margin-bottom: 0;
+}
+
+.section-more {
+  display: inline-block;
+  margin-top: 2rem;
+  margin-bottom: 8rem;
+  color: var(--text);
+  text-decoration: none;
+  border-bottom: 1px solid var(--text);
+  padding-bottom: 0.2rem;
+}
+
+.section-more:hover,
+.section-more:focus-visible {
+  color: var(--text-muted);
+  border-color: var(--text-muted);
+}
+
+/* Homepage writing: the newest essay leads at headline size, the next two
+   sit in a narrow column beside it. */
+.writing-feature {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
+  gap: clamp(2rem, 5vw, 5rem);
+  border-top: 1px solid var(--line);
+  padding-top: 2.25rem;
+}
+
+.essay-lead,
+.essay-item {
+  color: inherit;
+  text-decoration: none;
+}
+
+.essay-lead h3 {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4vw, 3.5rem);
+  font-weight: 400;
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  margin: 1rem 0 1.25rem;
+  max-width: 18ch;
+}
+
+.essay-lead-dek {
+  font-size: clamp(1.1rem, 1.6vw, 1.35rem);
+  line-height: 1.5;
+  color: var(--text-muted);
+  max-width: 46ch;
+}
+
+.essay-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.essay-item {
+  padding: 1.5rem 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.essay-item:first-child {
+  padding-top: 0;
+}
+
+.essay-item h3 {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 400;
+  line-height: 1.25;
+  margin: 0.6rem 0 0;
+}
+
+.essay-lead h3,
+.essay-item h3 {
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.15em;
+  transition: text-decoration-color 0.4s ease;
+}
+
+.essay-lead:hover h3,
+.essay-lead:focus-visible h3,
+.essay-item:hover h3,
+.essay-item:focus-visible h3 {
+  text-decoration-color: currentColor;
+}
+
+.writing-feature + .section-more {
+  margin-top: 3rem;
+}
+
+@media (max-width: 768px) {
+  .writing-feature {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .essay-item:first-child {
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--line);
+  }
+}
+
+/* Newsletter signup at the foot of an essay. */
+.newsletter {
+  margin-top: 4rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--text);
+}
+
+/* The display rule below would otherwise beat the hidden attribute. */
+.newsletter[hidden] {
+  display: none;
+}
+
+.newsletter-line {
+  font-size: 1.35rem;
+  line-height: 1.4;
+  margin: 0.75rem 0 1.25rem;
+}
+
+.newsletter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.newsletter-input {
+  flex: 1 1 16rem;
+  min-height: 48px;
+  padding: 0 1rem;
+  /* 16px or more, or iOS zooms the page on focus. */
+  font: 400 1rem var(--font-sans);
+  color: var(--text);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+}
+
+.newsletter-input:focus-visible,
+.newsletter-button:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 2px;
+}
+
+.newsletter-button {
+  min-height: 48px;
+  padding: 0 1.5rem;
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--bg);
+  background: var(--text);
+  border: 0;
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+/* White on the accent orange is about 3.4:1; ink on it clears 4.5:1. */
+.newsletter-button:hover {
+  background: var(--accent);
+  color: #111111;
+}
+
+/* Projects page */
+.currently-note {
+  max-width: 760px;
+  margin-bottom: clamp(3.5rem, 7vw, 5.5rem);
+  padding: 1.5rem 0;
+  border-top: 1px solid var(--text);
+  border-bottom: 1px solid var(--line);
+}
+
+.currently-label {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.85rem;
+}
+
+.currently-updated {
+  color: var(--text-muted);
+}
+
+.currently-note p {
+  font-family: var(--font-display);
+  font-size: clamp(1.25rem, 2.2vw, 1.75rem);
+  line-height: 1.45;
+}
+
+.project-group .venture-list {
+  margin-bottom: 0;
+}
+
+.project-group + .project-group {
+  margin-top: clamp(3.5rem, 7vw, 5.5rem);
+}
+
+.project-groups {
+  margin-bottom: 8rem;
 }
 
 /* Scribble SVG Highlight */
@@ -201,15 +456,21 @@ h3 {
   position: relative;
   display: inline-block;
   white-space: nowrap;
+  /* Room for the loop, so it doesn't touch the word before it. */
+  margin-left: 0.32em;
 }
 
+/* base.css caps every svg at max-width: 100%, which squeezed the loop down to
+   the word's own width so the stroke cut through the letters. The padding is
+   in em so it is the same however long the circled word is. */
 .scribble {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 130%;
-  height: 150%;
+  width: calc(100% + 1.1em);
+  max-width: none;
+  height: 132%;
   pointer-events: none;
   z-index: -1;
 }
@@ -414,7 +675,7 @@ h3 {
    pointer, touch and tab alike. */
 a.venture-row:hover,
 a.venture-row:focus-visible {
-  background-color: rgba(17, 17, 17, 0.035);
+  background-color: var(--wash);
 }
 
 a.venture-row:hover .venture-index,
@@ -478,8 +739,17 @@ a.venture-row:focus-visible .venture-arrow {
 }
 
 .article-body {
-  font-size: 1.2rem;
-  line-height: 1.7;
+  font-family: var(--font-text);
+  font-size: 1.25rem;
+  line-height: 1.65;
+}
+
+/* Headings and pull quotes stay in the display face; only running text
+   changes to the reading face. */
+.article-body h2,
+.article-body h3,
+.article-body blockquote {
+  font-family: var(--font-display);
 }
 
 .article-body p {
@@ -545,7 +815,7 @@ a.venture-row:focus-visible .venture-arrow {
 .article-body code {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 0.88em;
-  background-color: rgba(17, 17, 17, 0.05);
+  background-color: var(--wash);
   padding: 0.12em 0.35em;
   border-radius: 2px;
 }
@@ -554,7 +824,7 @@ a.venture-row:focus-visible .venture-arrow {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 0.95rem;
   line-height: 1.6;
-  background-color: rgba(17, 17, 17, 0.04);
+  background-color: var(--wash);
   border-left: 2px solid var(--line);
   padding: 1.25rem 1.5rem;
   margin: 2.5rem 0;
@@ -600,7 +870,7 @@ a.venture-row:focus-visible .venture-arrow {
   aspect-ratio: 16 / 9;
   margin: 3rem 0;
   border: 1px solid var(--line);
-  background-color: rgba(17, 17, 17, 0.04);
+  background-color: var(--wash);
 }
 
 .prose-embed iframe {
@@ -679,20 +949,8 @@ footer .meta-links a:hover::after {
 
 /* Responsive Styles */
 @media (max-width: 1024px) {
-  .hero-copy {
-    max-width: 100%;
-  }
-  .hero-layout h1 {
-    font-size: clamp(3rem, 8vw, 8.5rem);
-    max-width: 14ch;
-  }
   .hero-copy .hero-subtitle {
     max-width: 46ch;
-  }
-  .hero-portrait {
-    height: min(66vh, 520px);
-    width: auto;
-    right: 0;
   }
   .circle-cta {
     position: relative;
@@ -709,7 +967,16 @@ footer .meta-links a:hover::after {
   }
   .venture-body {
     grid-column: 2 / 4;
+    grid-row: 2;
     margin-top: 1rem;
+  }
+  /* Without an explicit place the arrow wrapped onto a third row, under
+     the number at the bottom left. Keep it level with the title. */
+  .venture-arrow {
+    grid-column: 3;
+    grid-row: 1;
+    align-self: start;
+    padding-top: 0.5rem;
   }
 }
 
@@ -718,21 +985,15 @@ footer .meta-links a:hover::after {
     --container-padding: 1.5rem;
   }
   .hero-layout {
-    min-height: auto;
-    display: block;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2.5rem;
+  }
+  .hero-layout h1 {
+    /* Sized so "the foundations" holds one line on a 320px phone. */
+    font-size: clamp(2.25rem, 11vw, 4.5rem);
   }
   .hero-portrait {
-    position: relative;
-    right: auto;
-    bottom: auto;
-    height: auto;
-    width: 86%;
-    max-width: 340px;
-    margin: 2rem auto 0;
-  }
-  .hero-portrait img {
-    width: 100%;
-    height: auto;
+    max-width: 420px;
   }
   .grid-3 {
     grid-template-columns: 1fr;
@@ -893,9 +1154,10 @@ footer .meta-links a:hover::after {
   transition: background-color 0.3s ease, transform 0.3s ease;
 }
 
+/* Ink, not white, on the accent: white measures about 3.2:1 there. */
 .btn-primary:hover {
   background-color: var(--accent);
-  color: #ffffff;
+  color: #111111;
   transform: translateY(-2px);
 }
 
@@ -925,7 +1187,7 @@ footer .meta-links a:hover::after {
 .reader-header {
   position: sticky;
   top: 0;
-  background-color: rgba(244, 244, 242, 0.94);
+  background-color: color-mix(in srgb, var(--bg) 94%, transparent);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   z-index: 100;
@@ -1041,7 +1303,7 @@ footer .meta-links a:hover::after {
 
 /* Object Spotlight Card */
 .object-spotlight {
-  background-color: #eaeae7;
+  background-color: var(--surface);
   border: 1px solid var(--line);
   padding: 1.5rem;
   border-radius: 2px;

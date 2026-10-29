@@ -14,3 +14,6 @@ tobi-lawson-site-backup-*.json
 
 # macOS metadata written when the folder is copied from a Mac or external drive
 ._*
+
+# Output of npm run render:preview
+.render-preview/
