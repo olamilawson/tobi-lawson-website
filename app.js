@@ -12,9 +12,9 @@
  * All author-supplied text is escaped before it reaches innerHTML.
  */
 
-import { loadContent, onContentUpdated, esc, escUrl, renderProse, renderLines } from "/content-store.js?v=3.10.0";
-import { subscribeToCloud } from "/supabase.js?v=3.10.0";
-import { FIELD_BY_KEY, PROJECT_GROUPS } from "/content-schema.js?v=3.10.0";
+import { loadContent, onContentUpdated, esc, escUrl, renderProse, renderLines } from "/content-store.js?v=3.11.0";
+import { subscribeToCloud } from "/supabase.js?v=3.11.0";
+import { FIELD_BY_KEY, PROJECT_GROUPS } from "/content-schema.js?v=3.11.0";
 
 // ---------------------------------------------------------------------------
 // Singleton fields
@@ -475,9 +475,16 @@ function applyPostPage(doc) {
   }
   if (body) applyReadingTime(mount, body);
 
-  // Tab titles are deliberately just the site name across the whole site.
-  // To show essay names instead, use: `${post.title} — ${doc.settings.siteTitle}`.
-  if (doc.settings.siteTitle) document.title = doc.settings.siteTitle;
+  // An essay's tab, search result and shared link carry its own title and
+  // summary. Hand-built pages without these tags are left as they are.
+  const site = doc.settings.siteTitle || "";
+  document.title = site ? `${post.title} · ${site}` : post.title;
+  const setAttr = (sel, attr, value) => document.querySelectorAll(sel).forEach((el) => el.setAttribute(attr, value));
+  const url = new URL(String(post.url || "").replace(/\.html$/, ""), "https://tobilawson.com").href;
+  setAttr('meta[name="description"], [data-post-og-description]', "content", post.summary || "");
+  setAttr("[data-post-og-title]", "content", post.title);
+  setAttr("[data-post-og-url]", "content", url);
+  setAttr("[data-post-canonical]", "href", url);
 }
 
 // ---------------------------------------------------------------------------

@@ -281,6 +281,11 @@ h3 {
   padding-top: 2.25rem;
 }
 
+/* With a single essay there is no side column to fill. */
+.writing-feature:not(:has(.essay-list)) {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .essay-lead,
 .essay-item {
   color: inherit;

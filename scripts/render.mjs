@@ -48,9 +48,41 @@ const urlPath = (rel) => "/" + rel.replace(/(^|\/)index\.html$/, "$1").replace(/
 const xml = (s) => String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 const absolute = (url) => new URL(String(url).replace(/\.html(?=$|#)/, ""), SITE).href;
 
-function renderPage(rel, doc) {
-  const file = path.join(root, rel);
-  const before = fs.readFileSync(file, "utf8");
+// Each essay gets its own page, built from writing/post.html, so it has a
+// real address (/writing/<slug>) instead of a fragment a crawler never sees.
+// The marker lets a later run tell its own pages from hand-built ones.
+const GENERATED = '<meta name="generator" content="scripts/render.mjs">';
+const ESSAY_URL = /^\/writing\/([a-z0-9-]+)\.html$/;
+
+function essayPages(doc) {
+  return doc.collections.posts
+    .map((p) => (String(p.url || "").match(ESSAY_URL) || [])[1])
+    .filter(Boolean)
+    .map((slug) => `writing/${slug}.html`)
+    .filter((rel) => {
+      const file = path.join(root, rel);
+      return !fs.existsSync(file) || fs.readFileSync(file, "utf8").includes(GENERATED);
+    });
+}
+
+/** Remove pages this script generated for essays that no longer exist. */
+function removeStaleEssays(keep) {
+  const dir = path.join(out, "writing");
+  if (!fs.existsSync(dir)) return [];
+  return fs.readdirSync(dir)
+    .map((name) => `writing/${name}`)
+    .filter((rel) => rel.endsWith(".html") && !keep.includes(rel))
+    .filter((rel) => fs.readFileSync(path.join(out, rel), "utf8").includes(GENERATED))
+    .map((rel) => { fs.unlinkSync(path.join(out, rel)); return `-${rel}`; });
+}
+
+function renderPage(rel, doc, { essay = false } = {}) {
+  let before = fs.readFileSync(path.join(root, essay ? "writing/post.html" : rel), "utf8");
+  if (essay) {
+    before = before
+      .replace(" data-cms-post-dynamic", "")
+      .replace("<head>", `<head>\n  ${GENERATED}`);
+  }
   const { document } = parseHTML(before);
   const location = new URL(urlPath(rel), SITE);
 
@@ -124,7 +156,12 @@ if (!cloud) {
 }
 const doc = normalize(cloud);
 
-const changed = pages().filter((rel) => renderPage(rel, doc));
+const essays = essayPages(doc);
+const changed = [
+  ...pages().filter((rel) => !essays.includes(rel)).filter((rel) => renderPage(rel, doc)),
+  ...essays.filter((rel) => renderPage(rel, doc, { essay: true })),
+  ...removeStaleEssays(essays)
+];
 if (writeIfChanged("feed.xml", feed(doc))) changed.push("feed.xml");
 if (writeIfChanged("sitemap.xml", sitemap(doc))) changed.push("sitemap.xml");
 

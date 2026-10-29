@@ -5,8 +5,8 @@
  * Owns: local cache, cloud merge, defaults, and escaping.
  */
 
-import { GROUPS, COLLECTIONS, SEED_COLLECTIONS, SCHEMA_VERSION, defaultSettings } from "/content-schema.js?v=3.10.0";
-import { fetchCloudDoc, saveCloudDoc, fetchLegacyDoc, isSupabaseConfigured } from "/supabase.js?v=3.10.0";
+import { GROUPS, COLLECTIONS, SEED_COLLECTIONS, SCHEMA_VERSION, defaultSettings } from "/content-schema.js?v=3.11.0";
+import { fetchCloudDoc, saveCloudDoc, fetchLegacyDoc, isSupabaseConfigured } from "/supabase.js?v=3.11.0";
 
 const STORAGE_KEY = "tobi_site_content_v3";
 const LEGACY_KEYS = ["tobi_site_data_v2", "tobi_site_data_v1", "tobi_site_data"];
@@ -361,6 +361,27 @@ const MIGRATIONS = [
         }
       }
       doc.collections.projects = projects;
+    }
+  },
+  {
+    // The three launch essays were placeholders. Product Rules is the first
+    // real post, and every essay gets its own page instead of a #id address.
+    id: "2026-10-first-essay",
+    run(doc) {
+      const placeholders = ["shape-lagos-takes", "patient-capital", "how-asia-works-review"];
+      const placeholderUrls = /the-shape-lagos-takes|patient-capital-impatient-markets|review-how-asia-works/;
+      let posts = doc.collections.posts.filter((p) => !placeholders.includes(p.id) && !placeholderUrls.test(String(p.url || "")));
+
+      for (const p of posts) {
+        const m = String(p.url || "").match(/^\/writing\/post#id=(.+)$/);
+        if (m) p.url = `/writing/${decodeURIComponent(m[1])}.html`;
+      }
+
+      if (!posts.some((p) => p.id === "product-rules")) {
+        const seed = SEED_COLLECTIONS.posts.find((p) => p.id === "product-rules");
+        if (seed) posts = [{ ...seed }, ...posts];
+      }
+      doc.collections.posts = posts;
     }
   }
 ];

@@ -9,15 +9,15 @@
 
 import {
   GROUPS, COLLECTIONS, blankItem
-} from "/content-schema.js?v=3.10.0";
+} from "/content-schema.js?v=3.11.0";
 import {
   loadContent, publish, seedDoc, normalize,
   esc, slugify, isSupabaseConfigured
-} from "/content-store.js?v=3.10.0";
+} from "/content-store.js?v=3.11.0";
 import {
   subscribeToCloud, currentUser, signIn, signOut, changePassword
-} from "/supabase.js?v=3.10.0";
-import { proseEditorMarkup, bindProseEditors } from "/prose-editor.js?v=3.10.0";
+} from "/supabase.js?v=3.11.0";
+import { proseEditorMarkup, bindProseEditors } from "/prose-editor.js?v=3.11.0";
 
 const state = {
   doc: null,
@@ -532,9 +532,10 @@ async function submitItemModal(e) {
 
   if (col.subCollection) item[col.subCollection.id] = captureSub(col.subCollection);
 
-  // Give new essays a working URL if one wasn't supplied.
+  // Give new essays their own page if no URL was supplied. The server's render
+  // job builds /writing/<id>.html from writing/post.html within a minute.
   if (col.id === "posts" && !String(item.url || "").trim()) {
-    item.url = `/writing/post#id=${encodeURIComponent(item.id)}`;
+    item.url = `/writing/${item.id}.html`;
   }
 
   if (existing) items[index] = item;

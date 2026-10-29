@@ -204,10 +204,11 @@ copy over the cloud, or reset to factory defaults.
 - **Uploaded images are stored as data URIs inside the document.** Fine for a
   portrait and a book cover; the console rejects files over 1.5 MB. For anything
   heavier, upload to `/assets/` and paste the path.
-- **Essay bodies written in the console** render at `/writing/post#id=<slug>`.
-  The three hand-built essays under `/writing/` keep their own URLs and their
-  existing HTML unless you type a body for them in the console, which then
-  takes over.
+- **Each essay gets its own page** at `/writing/<slug>`. The render job builds
+  it from `writing/post.html` within a minute of a save, with the essay's own
+  title, description and share tags, and removes the page if you delete the
+  essay. Locally there is no such file until you run `npm run render:preview`;
+  `/writing/post#id=<slug>` still shows any essay in the browser.
 - **Deep links use the fragment, not a query string.** `.htaccess`
   301-redirects `/foo.html` to `/foo`, and a query string does not reliably
   survive that hop. A fragment never leaves the browser, so it always does.
