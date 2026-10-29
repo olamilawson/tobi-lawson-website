@@ -12,7 +12,7 @@
  * escaped markup out, keeps that shut while the editing feels direct.
  */
 
-import { esc, renderProse } from "/content-store.js?v=3.13.0";
+import { esc, renderProse, renderInline } from "/content-store.js?v=3.14.0";
 
 const TICK = String.fromCharCode(96);
 const FENCE = TICK + TICK + TICK;
@@ -32,6 +32,16 @@ function inlineOf(node) {
     if (child.nodeType !== Node.ELEMENT_NODE) return;
 
     const tag = child.tagName;
+
+    // A margin note: its number and button are display only; the note's own
+    // text goes back as ^[…].
+    if (child.classList.contains("sidenote-mark") || child.classList.contains("sidenote-num")) return;
+    if (child.classList.contains("sidenote")) {
+      const note = inlineOf(child).trim();
+      if (note) out += "^[" + note + "]";
+      return;
+    }
+
     const inner = inlineOf(child);
 
     if (tag === "BR") { out += "\n"; return; }
@@ -137,6 +147,7 @@ const TOOLS = [
   { id: "link",    label: "Link",    title: "Link (Cmd/Ctrl+K)" },
   { id: "unlink",  label: "Unlink",  title: "Remove link" },
   { id: "quote",   label: "Quote",   title: "Pull quote" },
+  { id: "note",    label: "Note",    title: "Margin note after the cursor" },
   { id: "ul",      label: "List",    title: "Bulleted list" },
   { id: "ol",      label: "1.",      title: "Numbered list" },
   { id: "image",   label: "Image",   title: "Insert a picture by path or URL" },
@@ -341,6 +352,14 @@ function bindOne(root) {
           const url = prompt("YouTube or Vimeo URL:", "https://");
           if (!url || url === "https://") return;
           insertRendered("@video(" + url + ")");
+          break;
+        }
+        case "note": {
+          const text = (prompt("Margin note (it appears beside the word before the cursor):", "") || "").trim();
+          if (!text) return;
+          // Unmatched brackets would end the note early, so keep them balanced.
+          const balanced = text.split("[").length === text.split("]").length ? text : text.replace(/[[\]]/g, "");
+          exec("insertHTML", renderInline("^[" + balanced + "]"));
           break;
         }
         default: break;

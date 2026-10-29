@@ -104,9 +104,14 @@ pictures and players as you type. There is no markup on screen.
 **To link:** select the words, then either press **Link** and type the address,
 or just paste a URL over them. Cmd/Ctrl+K does the same. **Unlink** removes one.
 
-**Toolbar:** H2, H3, bold, italic, link, unlink, pull quote, bulleted and
-numbered lists, picture, video, divider, and Clear to strip formatting off a
-selection. Cmd/Ctrl+B and Cmd/Ctrl+I work as expected.
+**Toolbar:** H2, H3, bold, italic, link, unlink, pull quote, margin note,
+bulleted and numbered lists, picture, video, divider, and Clear to strip
+formatting off a selection. Cmd/Ctrl+B and Cmd/Ctrl+I work as expected.
+
+**Margin notes.** Put the cursor after a word and press **Note**. On screens
+1400px and wider the note sits in the right margin beside its number; on
+narrower screens the number opens it under the line. Notes number themselves
+down the essay.
 
 **Source** shows the plain text actually being stored, and you can edit there
 directly. Press it again to go back.
@@ -136,6 +141,7 @@ The stored form, should you ever need to read or write it by hand:
 | a triple-backtick fence | code block, nothing inside interpreted |
 | `![alt](/assets/pic.jpg "A caption")` | picture, caption optional |
 | `@video(https://youtu.be/ID)` | embedded player |
+| `word^[A margin note, links allowed.]` | numbered margin note |
 
 **Pictures.** Prefer putting the file in `/assets/` and giving the Image button
 that path. **Upload** inlines the picture as a data URI inside the content
@@ -285,7 +291,16 @@ To see the output locally without touching the working tree:
 
 ### Newsletter
 
-Each essay ends with a Buttondown signup box. It stays hidden until you put
-your Buttondown username in the console: Writing tab → "Newsletter —
-Buttondown Username". The form posts straight to Buttondown.
+Each essay ends with a signup box, and the course page has a waitlist. Both
+post straight to Buttondown (account `tobilaw`); the course form tags its
+signups `course-waitlist` so you can write to them alone. Clearing the
+username in the console (Writing tab) hides both.
+
+### Share images
+
+The render job draws a 1200 × 630 picture for each essay at `/og/<slug>.png`
+(`scripts/share-image.mjs`): title, date, summary and your name on the site's
+background. The essay page names it as its link-preview image, so a shared
+link shows the essay rather than a generic photo. It is redrawn when the
+title or summary changes.
 

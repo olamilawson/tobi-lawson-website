@@ -10,6 +10,7 @@
 //   node scripts/render.mjs              render in place (the server's web root)
 //   node scripts/render.mjs --out DIR    write the rendered site into DIR instead
 //
+// Also draws a share image per essay into og/ (share-image.mjs).
 // Needs Node 18.19 or newer (module.register) and `npm ci --omit=dev` for linkedom.
 import { register } from "node:module";
 import fs from "node:fs";
@@ -28,6 +29,7 @@ const { parseHTML } = await import("linkedom");
 const { normalize } = await import("/content-store.js");
 const { fetchCloudDoc } = await import("/supabase.js");
 const { applyAll } = await import("/app.js");
+const { shareImage } = await import("./share-image.mjs");
 
 // Pages that are not part of the public site, or not rendered from content.
 const SKIP = new Set(["admin.html", "admin/index.html", "now.html", "now/index.html"]);
@@ -142,6 +144,35 @@ ${[...new Set(urls)].map((u) => `  <url>
 `;
 }
 
+/**
+ * A share image per essay at /og/<slug>.png (see share-image.mjs), written
+ * only when the picture changes, and removed when its essay is deleted.
+ * The slug matches the one app.js puts in the essay's og:image tag.
+ */
+function shareImages(doc) {
+  const dir = path.join(out, "og");
+  fs.mkdirSync(dir, { recursive: true });
+  const slugOf = (p) => (String(p.url || "").match(ESSAY_URL) || [])[1] || p.id;
+  const keep = new Set();
+  const changed = [];
+  for (const post of doc.collections.posts) {
+    const name = `${slugOf(post)}.png`;
+    keep.add(name);
+    const png = shareImage(post, doc.settings);
+    const target = path.join(dir, name);
+    if (fs.existsSync(target) && Buffer.compare(fs.readFileSync(target), png) === 0) continue;
+    fs.writeFileSync(target, png);
+    changed.push(`og/${name}`);
+  }
+  for (const name of fs.readdirSync(dir)) {
+    if (name.endsWith(".png") && !keep.has(name)) {
+      fs.unlinkSync(path.join(dir, name));
+      changed.push(`-og/${name}`);
+    }
+  }
+  return changed;
+}
+
 function writeIfChanged(name, text) {
   const target = path.join(out, name);
   if (fs.existsSync(target) && fs.readFileSync(target, "utf8") === text) return false;
@@ -160,7 +191,8 @@ const essays = essayPages(doc);
 const changed = [
   ...pages().filter((rel) => !essays.includes(rel)).filter((rel) => renderPage(rel, doc)),
   ...essays.filter((rel) => renderPage(rel, doc, { essay: true })),
-  ...removeStaleEssays(essays)
+  ...removeStaleEssays(essays),
+  ...shareImages(doc)
 ];
 if (writeIfChanged("feed.xml", feed(doc))) changed.push("feed.xml");
 if (writeIfChanged("sitemap.xml", sitemap(doc))) changed.push("sitemap.xml");

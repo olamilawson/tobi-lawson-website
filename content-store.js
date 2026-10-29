@@ -5,8 +5,8 @@
  * Owns: local cache, cloud merge, defaults, and escaping.
  */
 
-import { GROUPS, COLLECTIONS, SEED_COLLECTIONS, SCHEMA_VERSION, defaultSettings } from "/content-schema.js?v=3.13.0";
-import { fetchCloudDoc, saveCloudDoc, fetchLegacyDoc, isSupabaseConfigured } from "/supabase.js?v=3.13.0";
+import { GROUPS, COLLECTIONS, SEED_COLLECTIONS, SCHEMA_VERSION, defaultSettings } from "/content-schema.js?v=3.14.0";
+import { fetchCloudDoc, saveCloudDoc, fetchLegacyDoc, isSupabaseConfigured } from "/supabase.js?v=3.14.0";
 
 const STORAGE_KEY = "tobi_site_content_v3";
 const LEGACY_KEYS = ["tobi_site_data_v2", "tobi_site_data_v1", "tobi_site_data"];
@@ -84,7 +84,56 @@ function applyMarks(escaped) {
  * URL leaves the source visible rather than producing a dead or hostile link.
  * External links get target/rel; internal ones (/, #, ./) stay in the tab.
  */
-export function renderInline(value) {
+export function renderInline(value, notes = newNotes(value)) {
+  // Margin notes, written ^[like this] after a word, are lifted out first so
+  // links and marks inside them render normally and nothing nests.
+  return splitNotes(String(value ?? "")).map((part) =>
+    part.note === undefined ? renderRun(part.text) : renderNote(part.note, notes)
+  ).join("");
+}
+
+/** Numbering for the margin notes in one block of prose. */
+function newNotes(seed) {
+  let h = 5381;
+  for (const ch of String(seed ?? "")) h = ((h * 33) ^ ch.charCodeAt(0)) >>> 0;
+  return { n: 0, prefix: "sn-" + h.toString(36) };
+}
+
+/** Split text into plain runs and ^[note] runs, matching brackets so a link inside a note survives. */
+function splitNotes(text) {
+  const parts = [];
+  let i = 0;
+  let start = 0;
+  while ((i = text.indexOf("^[", i)) !== -1) {
+    let depth = 0;
+    let j = i + 1;
+    for (; j < text.length; j++) {
+      if (text[j] === "[") depth++;
+      else if (text[j] === "]" && --depth === 0) break;
+    }
+    if (j >= text.length) break; // unclosed: leave it as text
+    parts.push({ text: text.slice(start, i) });
+    parts.push({ note: text.slice(i + 2, j) });
+    start = i = j + 1;
+  }
+  parts.push({ text: text.slice(start) });
+  return parts;
+}
+
+/**
+ * A margin note: a numbered button in the text and the note beside it. Wide
+ * screens set the note in the margin; narrow ones open it under the line
+ * when the number is pressed (app.js).
+ */
+function renderNote(body, notes) {
+  notes.n += 1;
+  const id = `${notes.prefix}-${notes.n}`;
+  return `<button type="button" class="sidenote-mark" aria-expanded="false" aria-controls="${id}" aria-label="Note ${notes.n}">${notes.n}</button>` +
+         `<span class="sidenote" id="${id}" role="note"><span class="sidenote-num" aria-hidden="true">${notes.n}</span> ${renderRun(body)}</span>`;
+}
+
+/** Links and inline marks in a run of plain text. */
+function renderRun(value) {
   const text = String(value ?? "");
   let out = "";
   let last = 0;
@@ -135,14 +184,14 @@ function renderEmbed(block) {
 }
 
 /** A block whose every line is a bullet or a number becomes a list. */
-function renderList(block) {
+function renderList(block, notes) {
   const lines = block.split("\n").map((l) => l.trim()).filter(Boolean);
   if (!lines.length) return null;
   if (lines.every((l) => /^[-*]\s+/.test(l))) {
-    return "<ul>" + lines.map((l) => "<li>" + renderInline(l.replace(/^[-*]\s+/, "")) + "</li>").join("") + "</ul>";
+    return "<ul>" + lines.map((l) => "<li>" + renderInline(l.replace(/^[-*]\s+/, ""), notes) + "</li>").join("") + "</ul>";
   }
   if (lines.every((l) => /^\d+[.)]\s+/.test(l))) {
-    return "<ol>" + lines.map((l) => "<li>" + renderInline(l.replace(/^\d+[.)]\s+/, "")) + "</li>").join("") + "</ol>";
+    return "<ol>" + lines.map((l) => "<li>" + renderInline(l.replace(/^\d+[.)]\s+/, ""), notes) + "</li>").join("") + "</ol>";
   }
   return null;
 }
@@ -163,11 +212,15 @@ const FENCE_TOKEN = /^\[\[CODE(\d+)\]\]$/;
  *   fenced block          code, left uninterpreted
  *   ---                   divider
  *   [label](url)          link
+ *   word^[note]           margin note
  *   bold, italic, code    inline marks
  */
 export function renderProse(value) {
   const text = String(value ?? "").trim();
   if (!text) return "";
+
+  // One counter for the whole field, so margin notes number 1, 2, 3 down the page.
+  const notes = newNotes(text);
 
   // Fenced code is lifted out first so nothing inside it is interpreted.
   const fenced = [];
@@ -186,8 +239,8 @@ export function renderProse(value) {
       if (token) return '<pre class="prose-code"><code>' + esc(fenced[Number(token[1])]) + "</code></pre>";
 
       if (/^-{3,}$/.test(b)) return '<hr class="prose-rule" />';
-      if (b.startsWith("###")) return "<h3>" + renderInline(b.replace(/^###\s*/, "")) + "</h3>";
-      if (b.startsWith("##")) return "<h2>" + renderInline(b.replace(/^##\s*/, "")) + "</h2>";
+      if (b.startsWith("###")) return "<h3>" + renderInline(b.replace(/^###\s*/, ""), notes) + "</h3>";
+      if (b.startsWith("##")) return "<h2>" + renderInline(b.replace(/^##\s*/, ""), notes) + "</h2>";
 
       const embed = renderEmbed(b);
       if (embed) return embed;
@@ -195,15 +248,15 @@ export function renderProse(value) {
       const figure = renderFigure(b);
       if (figure) return figure;
 
-      const list = renderList(b);
+      const list = renderList(b, notes);
       if (list) return list;
 
       if (b.startsWith(">")) {
         const quote = b.split("\n").map((l) => l.replace(/^>\s?/, "")).join(" ");
-        return "<blockquote>" + renderInline(quote) + "</blockquote>";
+        return "<blockquote>" + renderInline(quote, notes) + "</blockquote>";
       }
 
-      return "<p>" + renderInline(b).replace(/\n/g, "<br>") + "</p>";
+      return "<p>" + renderInline(b, notes).replace(/\n/g, "<br>") + "</p>";
     })
     .filter(Boolean)
     .join("\n");
@@ -428,6 +481,14 @@ const MIGRATIONS = [
       if (lessons.every((l) => placeholderLessons.includes(l.id))) {
         doc.collections.lessons = JSON.parse(JSON.stringify(SEED_COLLECTIONS.lessons));
       }
+    }
+  },
+  {
+    // Switch on the essay signup and the course waitlist with the author's
+    // Buttondown account, unless a username has already been set.
+    id: "2026-10-buttondown",
+    run(doc) {
+      if (!String(doc.settings.newsletterUsername || "").trim()) doc.settings.newsletterUsername = "tobilaw";
     }
   }
 ];

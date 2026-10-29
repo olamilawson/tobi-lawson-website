@@ -12,9 +12,9 @@
  * All author-supplied text is escaped before it reaches innerHTML.
  */
 
-import { loadContent, onContentUpdated, esc, escUrl, renderProse, renderLines } from "/content-store.js?v=3.13.0";
-import { subscribeToCloud } from "/supabase.js?v=3.13.0";
-import { FIELD_BY_KEY, PROJECT_GROUPS } from "/content-schema.js?v=3.13.0";
+import { loadContent, onContentUpdated, esc, escUrl, renderProse, renderLines } from "/content-store.js?v=3.14.0";
+import { subscribeToCloud } from "/supabase.js?v=3.14.0";
+import { FIELD_BY_KEY, PROJECT_GROUPS } from "/content-schema.js?v=3.14.0";
 
 // ---------------------------------------------------------------------------
 // Singleton fields
@@ -446,7 +446,8 @@ function applyNewsletter(settings) {
   document.querySelectorAll("[data-newsletter]").forEach((el) => {
     el.hidden = !ok;
     const form = el.matches("form") ? el : el.querySelector("form");
-    if (ok && form) form.action = `https://buttondown.com/api/emails/embed-subscribe/${encodeURIComponent(user)}`;
+    // setAttribute, not the .action property, so the pre-rendered HTML carries it too.
+    if (ok && form) form.setAttribute("action", `https://buttondown.com/api/emails/embed-subscribe/${encodeURIComponent(user)}`);
   });
 }
 
@@ -497,6 +498,9 @@ function applyPostPage(doc) {
   setAttr("[data-post-og-title]", "content", post.title);
   setAttr("[data-post-og-url]", "content", url);
   setAttr("[data-post-canonical]", "href", url);
+  // The share image the server's render job draws for this essay.
+  const slug = (String(post.url || "").match(/^\/writing\/([a-z0-9-]+)\.html$/) || [])[1] || post.id;
+  setAttr("[data-post-og-image]", "content", `https://tobilawson.com/og/${slug}.png`);
 }
 
 // ---------------------------------------------------------------------------
@@ -533,6 +537,19 @@ export function applyAll(doc, { prerender = false } = {}) {
   applyCurrently(doc.settings);
 }
 
+/** On narrow screens a margin note opens under its line when its number is pressed. */
+function initSidenotes() {
+  document.addEventListener("click", (e) => {
+    const mark = e.target.closest(".sidenote-mark");
+    if (!mark) return;
+    const note = document.getElementById(mark.getAttribute("aria-controls"));
+    if (!note) return;
+    const open = !note.classList.contains("is-open");
+    note.classList.toggle("is-open", open);
+    mark.setAttribute("aria-expanded", String(open));
+  });
+}
+
 function initSmoothScroll() {
   // Deep-link fragments (#book=…&chapter=…) are data, not scroll targets.
   document.querySelectorAll('a[href^="#"]:not([href*="="])').forEach((anchor) => {
@@ -550,6 +567,7 @@ function initSmoothScroll() {
 
 function init() {
   initSmoothScroll();
+  initSidenotes();
   hydrate();
   onContentUpdated(hydrate);
   subscribeToCloud(hydrate);

@@ -134,7 +134,7 @@ export const GROUPS = [
       { key: "writingCatalogEyebrow", label: "Archive Section — Eyebrow", type: "text", default: "ARCHIVE" },
       { key: "writingMoreLabel", label: '"More Writing" Label', type: "text", default: "More Writing",
         help: "Shown at the foot of each individual essay." },
-      { key: "newsletterUsername", label: "Newsletter — Buttondown Username", type: "text", default: "",
+      { key: "newsletterUsername", label: "Newsletter — Buttondown Username", type: "text", default: "tobilaw",
         help: "Your username from buttondown.com. While this is empty the signup box stays hidden." },
       { key: "newsletterHeading", label: "Newsletter — Heading", type: "text", default: "New essays by email" },
       { key: "newsletterBody", label: "Newsletter — Line", type: "text", default: "Get each new essay by email." },

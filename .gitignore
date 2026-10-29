@@ -17,3 +17,6 @@ tobi-lawson-site-backup-*.json
 
 # Output of npm run render:preview
 .render-preview/
+
+# Share images drawn by the render job on the server
+/og/

@@ -1461,3 +1461,78 @@ footer .meta-links a:hover::after {
 .book-cta-wrapper[hidden] {
   display: none;
 }
+
+/* Margin notes, written word^[note] in a prose field.
+   Narrow screens: the note opens under its line when the number is pressed.
+   Wide screens (1400px and up, where an essay column has room beside it):
+   every note sits in the right margin, level with its number. */
+.sidenote-mark {
+  font: 600 0.62em var(--font-sans);
+  vertical-align: super;
+  line-height: 0;
+  margin-left: 0;
+  padding: 0.15em 0.2em 0.15em 0.05em;
+  color: var(--accent);
+  background: none;
+  border: 0;
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.sidenote-mark:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.sidenote {
+  display: none;
+  font-family: var(--font-text);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.sidenote.is-open {
+  display: block;
+  margin: 0.75rem 0 1rem;
+  padding-left: 0.9rem;
+  border-left: 2px solid var(--line);
+}
+
+.sidenote-num {
+  font: 600 0.75em var(--font-sans);
+  color: var(--accent);
+  vertical-align: super;
+  line-height: 0;
+}
+
+@media (min-width: 1400px) {
+  .prose-container .sidenote,
+  .prose-container .sidenote.is-open {
+    display: block;
+    float: right;
+    clear: right;
+    position: relative;
+    width: 13rem;
+    margin: 0.3rem -15.5rem 1rem 0;
+    padding: 0;
+    border: 0;
+  }
+  .prose-container .sidenote-mark {
+    cursor: default;
+  }
+}
+
+/* In the console's editor every note shows inline, tinted, so it can be edited. */
+.prose-surface .sidenote {
+  display: inline;
+  float: none;
+  margin: 0;
+  padding: 0 0.25em;
+  background: var(--wash);
+  border-bottom: 1px dashed var(--line);
+}
+
+.prose-surface .sidenote-mark {
+  display: none;
+}
