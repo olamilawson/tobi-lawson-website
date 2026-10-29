@@ -12,9 +12,9 @@
  * All author-supplied text is escaped before it reaches innerHTML.
  */
 
-import { loadContent, onContentUpdated, esc, escUrl, renderProse, renderLines } from "/content-store.js?v=3.12.0";
-import { subscribeToCloud } from "/supabase.js?v=3.12.0";
-import { FIELD_BY_KEY, PROJECT_GROUPS } from "/content-schema.js?v=3.12.0";
+import { loadContent, onContentUpdated, esc, escUrl, renderProse, renderLines } from "/content-store.js?v=3.13.0";
+import { subscribeToCloud } from "/supabase.js?v=3.13.0";
+import { FIELD_BY_KEY, PROJECT_GROUPS } from "/content-schema.js?v=3.13.0";
 
 // ---------------------------------------------------------------------------
 // Singleton fields
@@ -302,6 +302,15 @@ function applyFeaturedBook(doc) {
       const safe = attr === "href" || attr === "src" ? escUrl(book[sourceKey]) : esc(book[sourceKey]);
       if (safe) el.setAttribute(attr, safe);
     }
+  });
+
+  // A detail with no value (no format or release date yet) drops its row, and
+  // the preview button goes when there is no preview to read.
+  document.querySelectorAll(".book-detail-item [data-cms-book]").forEach((el) => {
+    el.closest(".book-detail-item").hidden = !String(book[el.getAttribute("data-cms-book")] || "").trim();
+  });
+  document.querySelectorAll(".book-cta-wrapper").forEach((el) => {
+    el.hidden = !String(book.previewUrl || "").trim();
   });
 }
 

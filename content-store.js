@@ -5,8 +5,8 @@
  * Owns: local cache, cloud merge, defaults, and escaping.
  */
 
-import { GROUPS, COLLECTIONS, SEED_COLLECTIONS, SCHEMA_VERSION, defaultSettings } from "/content-schema.js?v=3.12.0";
-import { fetchCloudDoc, saveCloudDoc, fetchLegacyDoc, isSupabaseConfigured } from "/supabase.js?v=3.12.0";
+import { GROUPS, COLLECTIONS, SEED_COLLECTIONS, SCHEMA_VERSION, defaultSettings } from "/content-schema.js?v=3.13.0";
+import { fetchCloudDoc, saveCloudDoc, fetchLegacyDoc, isSupabaseConfigured } from "/supabase.js?v=3.13.0";
 
 const STORAGE_KEY = "tobi_site_content_v3";
 const LEGACY_KEYS = ["tobi_site_data_v2", "tobi_site_data_v1", "tobi_site_data"];
@@ -393,6 +393,40 @@ const MIGRATIONS = [
         if (l.id !== "module-01-compute-constraints") continue;
         if (l.status === "Published") l.status = "Coming soon";
         if (/^In this lecture, we examine compute constraints/.test(String(l.textContent || ""))) l.textContent = "";
+      }
+    }
+  },
+  {
+    // The book and course pages still carried launch placeholders: a moka-pot
+    // chapter list and a "frontier markets" course. They take the real table
+    // of contents and the real course outline. Anything the author has
+    // already changed is left alone.
+    id: "2026-10-book-and-course",
+    run(doc) {
+      const defaults = defaultSettings();
+      const placeholder = {
+        "courseStatusTag": "FREE COURSE • COMING SOON",
+        "courseSubtitle": "A free masterclass series exploring how compute, data pipelines, and foundation models are reshaped by the physical realities of emerging economies.",
+        "courseOverviewProse": "Artificial Intelligence is often analyzed through the lens of Silicon Valley capital and hyperscaler data centers. But the real friction—and the highest-leverage opportunities—happen at the edges of global networks: in Lagos, Nairobi, Jakarta, and São Paulo.\n\nThis free course examines compute constraints, local dataset curation, offline-first inference architectures, and real-world deployment across fintech, SME logistics, and public institutions in frontier markets.",
+        "courseWaitlistHeading": "Join the Priority Waitlist",
+        "courseCtaText": "Enrollment is completely free. Leave your email to receive early lesson drops, video modules, and lecture notes as modules go live.",
+        "courseCtaButton": "Get Early Access →",
+        "seoCourseDescription": "A free masterclass on how compute, data, and foundation models behave in emerging economies."
+      };
+      for (const [key, value] of Object.entries(placeholder)) {
+        if (doc.settings[key] === value) doc.settings[key] = defaults[key];
+      }
+
+      const seedBook = SEED_COLLECTIONS.books[0];
+      const book = doc.collections.books[0];
+      if (book && book.chapters?.[0]?.title === "The Eight Sides of Aluminum") {
+        doc.collections.books[0] = { ...JSON.parse(JSON.stringify(seedBook)), id: book.id };
+      }
+
+      const placeholderLessons = ["module-01-compute-constraints"];
+      const lessons = doc.collections.lessons;
+      if (lessons.every((l) => placeholderLessons.includes(l.id))) {
+        doc.collections.lessons = JSON.parse(JSON.stringify(SEED_COLLECTIONS.lessons));
       }
     }
   }

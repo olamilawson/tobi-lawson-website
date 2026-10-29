@@ -1455,3 +1455,9 @@ footer .meta-links a:hover::after {
 }
 
 
+
+/* Book details and the preview button hide when empty (see applyFeaturedBook). */
+.book-detail-item[hidden],
+.book-cta-wrapper[hidden] {
+  display: none;
+}
