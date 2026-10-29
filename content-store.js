@@ -5,8 +5,8 @@
  * Owns: local cache, cloud merge, defaults, and escaping.
  */
 
-import { GROUPS, COLLECTIONS, SEED_COLLECTIONS, SCHEMA_VERSION, defaultSettings } from "/content-schema.js?v=3.14.0";
-import { fetchCloudDoc, saveCloudDoc, fetchLegacyDoc, isSupabaseConfigured } from "/supabase.js?v=3.14.0";
+import { GROUPS, COLLECTIONS, SEED_COLLECTIONS, SCHEMA_VERSION, defaultSettings } from "/content-schema.js?v=3.15.0";
+import { fetchCloudDoc, saveCloudDoc, fetchLegacyDoc, isSupabaseConfigured } from "/supabase.js?v=3.15.0";
 
 const STORAGE_KEY = "tobi_site_content_v3";
 const LEGACY_KEYS = ["tobi_site_data_v2", "tobi_site_data_v1", "tobi_site_data"];
@@ -489,6 +489,23 @@ const MIGRATIONS = [
     id: "2026-10-buttondown",
     run(doc) {
       if (!String(doc.settings.newsletterUsername || "").trim()) doc.settings.newsletterUsername = "tobilaw";
+    }
+  },
+  {
+    // Chapter One of Who Made This? (The Okada, draft v1), free to read. Only
+    // fills the chapter if it has no text yet; the button points at it.
+    id: "2026-10-chapter-one",
+    run(doc) {
+      const seedBook = SEED_COLLECTIONS.books[0];
+      const seedChapter = seedBook.chapters[0];
+      const book = doc.collections.books.find((b) => b.id === seedBook.id);
+      const chapter = book?.chapters?.find((c) => c.id === seedChapter.id);
+      if (!book || !chapter) return;
+      if (!String(chapter.bodyProse || "").trim()) chapter.bodyProse = seedChapter.bodyProse;
+      if (!String(book.previewUrl || "").trim()) book.previewUrl = seedBook.previewUrl;
+      if (doc.settings.booksPreviewCta === "Read Chapter 01 Preview →") {
+        doc.settings.booksPreviewCta = defaultSettings().booksPreviewCta;
+      }
     }
   }
 ];

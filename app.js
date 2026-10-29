@@ -12,9 +12,9 @@
  * All author-supplied text is escaped before it reaches innerHTML.
  */
 
-import { loadContent, onContentUpdated, esc, escUrl, renderProse, renderLines } from "/content-store.js?v=3.14.0";
-import { subscribeToCloud } from "/supabase.js?v=3.14.0";
-import { FIELD_BY_KEY, PROJECT_GROUPS } from "/content-schema.js?v=3.14.0";
+import { loadContent, onContentUpdated, esc, escUrl, renderProse, renderLines } from "/content-store.js?v=3.15.0";
+import { subscribeToCloud } from "/supabase.js?v=3.15.0";
+import { FIELD_BY_KEY, PROJECT_GROUPS } from "/content-schema.js?v=3.15.0";
 
 // ---------------------------------------------------------------------------
 // Singleton fields
@@ -146,16 +146,17 @@ const RENDERERS = {
 
   /**
    * Chapter cards on the books page. A chapter that has text of its own links
-   * to the reader; one that doesn't falls back to the book's preview page.
+   * to the reader; one that doesn't is listed without a link.
    */
   bookChapters(mount, doc) {
     const book = doc.collections.books[0];
     if (!book || !book.chapters.length) return empty("No chapters added yet.");
 
     return book.chapters.map((c) => {
+      // Only chapters with text link anywhere; the rest are the outline.
       const readable = String(c.bodyProse || "").trim();
-      const href = readable ? chapterUrl(book, c) : book.previewUrl;
-      const label = readable ? doc.settings.booksReadChapterCta : doc.settings.booksChapterCta;
+      const href = readable ? chapterUrl(book, c) : "";
+      const label = doc.settings.booksReadChapterCta;
       return `
       <article class="grid-item">
         <div class="grid-item-header">
@@ -375,6 +376,8 @@ function applyChapterPage(doc) {
 
   const body = mount.querySelector("[data-cms-chapter-body]");
   if (body) body.innerHTML = renderProse(chapter.bodyProse);
+  const bookTitle = String(book.title || "").replace(/\b([A-Z])([A-Z]+)\b/g, (_, a, b) => a + b.toLowerCase());
+  document.title = `${chapter.title} · ${bookTitle}`;
 
   const backLink = mount.querySelector("[data-cms-chapter-back]");
   if (backLink) backLink.setAttribute("href", "/books/");

@@ -9,15 +9,15 @@
 
 import {
   GROUPS, COLLECTIONS, blankItem
-} from "/content-schema.js?v=3.14.0";
+} from "/content-schema.js?v=3.15.0";
 import {
   loadContent, publish, seedDoc, normalize,
   esc, slugify, isSupabaseConfigured
-} from "/content-store.js?v=3.14.0";
+} from "/content-store.js?v=3.15.0";
 import {
   subscribeToCloud, currentUser, signIn, signOut, changePassword
-} from "/supabase.js?v=3.14.0";
-import { proseEditorMarkup, bindProseEditors } from "/prose-editor.js?v=3.14.0";
+} from "/supabase.js?v=3.15.0";
+import { proseEditorMarkup, bindProseEditors } from "/prose-editor.js?v=3.15.0";
 
 const state = {
   doc: null,
