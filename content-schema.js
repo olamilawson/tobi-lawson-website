@@ -443,9 +443,9 @@ export const SEED_COLLECTIONS = {
   ],
   lessons: [
     { id: "module-01-compute-constraints", moduleNumber: "MODULE 01",
-      title: "Compute Constraints & Edge Deployment", status: "Published",
+      title: "Compute Constraints & Edge Deployment", status: "Coming soon",
       summary: "Designing low-latency model inference under intermittent power, bandwidth limits, and local infrastructure reality.",
-      textContent: "In this lecture, we examine compute constraints across frontier market server environments. We analyze model quantization (4-bit / 8-bit), edge caching strategies, and local fallback routines.",
+      textContent: "",
       videoType: "none", videoUrl: "" }
   ]
 };

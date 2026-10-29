@@ -5,8 +5,8 @@
  * Owns: local cache, cloud merge, defaults, and escaping.
  */
 
-import { GROUPS, COLLECTIONS, SEED_COLLECTIONS, SCHEMA_VERSION, defaultSettings } from "/content-schema.js?v=3.11.0";
-import { fetchCloudDoc, saveCloudDoc, fetchLegacyDoc, isSupabaseConfigured } from "/supabase.js?v=3.11.0";
+import { GROUPS, COLLECTIONS, SEED_COLLECTIONS, SCHEMA_VERSION, defaultSettings } from "/content-schema.js?v=3.12.0";
+import { fetchCloudDoc, saveCloudDoc, fetchLegacyDoc, isSupabaseConfigured } from "/supabase.js?v=3.12.0";
 
 const STORAGE_KEY = "tobi_site_content_v3";
 const LEGACY_KEYS = ["tobi_site_data_v2", "tobi_site_data_v1", "tobi_site_data"];
@@ -382,6 +382,18 @@ const MIGRATIONS = [
         if (seed) posts = [{ ...seed }, ...posts];
       }
       doc.collections.posts = posts;
+    }
+  },
+  {
+    // The course has not started. The launch content marked Module 01 as
+    // published with a sample lecture; it goes back to coming soon.
+    id: "2026-10-course-not-yet",
+    run(doc) {
+      for (const l of doc.collections.lessons) {
+        if (l.id !== "module-01-compute-constraints") continue;
+        if (l.status === "Published") l.status = "Coming soon";
+        if (/^In this lecture, we examine compute constraints/.test(String(l.textContent || ""))) l.textContent = "";
+      }
     }
   }
 ];

@@ -12,9 +12,9 @@
  * All author-supplied text is escaped before it reaches innerHTML.
  */
 
-import { loadContent, onContentUpdated, esc, escUrl, renderProse, renderLines } from "/content-store.js?v=3.11.0";
-import { subscribeToCloud } from "/supabase.js?v=3.11.0";
-import { FIELD_BY_KEY, PROJECT_GROUPS } from "/content-schema.js?v=3.11.0";
+import { loadContent, onContentUpdated, esc, escUrl, renderProse, renderLines } from "/content-store.js?v=3.12.0";
+import { subscribeToCloud } from "/supabase.js?v=3.12.0";
+import { FIELD_BY_KEY, PROJECT_GROUPS } from "/content-schema.js?v=3.12.0";
 
 // ---------------------------------------------------------------------------
 // Singleton fields
@@ -432,9 +432,12 @@ function applyCurrently(settings) {
 function applyNewsletter(settings) {
   const user = String(settings.newsletterUsername || "").trim();
   const ok = /^[A-Za-z0-9_-]{1,64}$/.test(user);
-  document.querySelectorAll("[data-newsletter]").forEach((form) => {
-    form.hidden = !ok;
-    if (ok) form.action = `https://buttondown.com/api/emails/embed-subscribe/${encodeURIComponent(user)}`;
+  // [data-newsletter] is the form itself (essays) or a block around it (the
+  // course waitlist), so the heading and copy hide with the form.
+  document.querySelectorAll("[data-newsletter]").forEach((el) => {
+    el.hidden = !ok;
+    const form = el.matches("form") ? el : el.querySelector("form");
+    if (ok && form) form.action = `https://buttondown.com/api/emails/embed-subscribe/${encodeURIComponent(user)}`;
   });
 }
 
