@@ -20,3 +20,6 @@ tobi-lawson-site-backup-*.json
 
 # Share images drawn by the render job on the server
 /og/
+
+# Drafts for review, not part of the site
+/drafts/

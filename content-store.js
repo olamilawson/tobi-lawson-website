@@ -5,8 +5,8 @@
  * Owns: local cache, cloud merge, defaults, and escaping.
  */
 
-import { GROUPS, COLLECTIONS, SEED_COLLECTIONS, SCHEMA_VERSION, defaultSettings } from "/content-schema.js?v=3.18.0";
-import { fetchCloudDoc, saveCloudDoc, fetchLegacyDoc, isSupabaseConfigured } from "/supabase.js?v=3.18.0";
+import { GROUPS, COLLECTIONS, SEED_COLLECTIONS, SCHEMA_VERSION, defaultSettings } from "/content-schema.js?v=3.19.0";
+import { fetchCloudDoc, saveCloudDoc, fetchLegacyDoc, isSupabaseConfigured } from "/supabase.js?v=3.19.0";
 
 const STORAGE_KEY = "tobi_site_content_v3";
 const LEGACY_KEYS = ["tobi_site_data_v2", "tobi_site_data_v1", "tobi_site_data"];
@@ -90,6 +90,13 @@ export function renderInline(value, notes = newNotes(value)) {
   return splitNotes(String(value ?? "")).map((part) =>
     part.note === undefined ? renderRun(part.text) : renderNote(part.note, notes)
   ).join("");
+}
+
+/** A short, stable fingerprint of a piece of text. */
+function textHash(text) {
+  let h = 5381;
+  for (const ch of String(text)) h = ((h * 33) ^ ch.charCodeAt(0)) >>> 0;
+  return h.toString(36);
 }
 
 /** Numbering for the margin notes in one block of prose. */
@@ -526,6 +533,17 @@ const MIGRATIONS = [
     run(doc) {
       const seed = SEED_COLLECTIONS.posts.find((p) => p.id === "why-some-things-are-harder-than-others");
       if (seed && !doc.collections.posts.some((p) => p.id === seed.id)) doc.collections.posts.unshift({ ...seed });
+    }
+  },
+  {
+    // The Colophon edit of the second essay, with Warren's two studies as
+    // margin notes. Replaces the text only if it is still the original, word
+    // for word (checked by hash), so a later edit in the console survives.
+    id: "2026-10-second-essay-edit",
+    run(doc) {
+      const seed = SEED_COLLECTIONS.posts.find((p) => p.id === "why-some-things-are-harder-than-others");
+      const post = doc.collections.posts.find((p) => p.id === seed?.id);
+      if (post && textHash(String(post.bodyProse || "").trim()) === "vv0yl1") post.bodyProse = seed.bodyProse;
     }
   }
 ];
