@@ -5,8 +5,8 @@
  * Owns: local cache, cloud merge, defaults, and escaping.
  */
 
-import { GROUPS, COLLECTIONS, SEED_COLLECTIONS, SCHEMA_VERSION, defaultSettings } from "/content-schema.js?v=3.17.0";
-import { fetchCloudDoc, saveCloudDoc, fetchLegacyDoc, isSupabaseConfigured } from "/supabase.js?v=3.17.0";
+import { GROUPS, COLLECTIONS, SEED_COLLECTIONS, SCHEMA_VERSION, defaultSettings } from "/content-schema.js?v=3.18.0";
+import { fetchCloudDoc, saveCloudDoc, fetchLegacyDoc, isSupabaseConfigured } from "/supabase.js?v=3.18.0";
 
 const STORAGE_KEY = "tobi_site_content_v3";
 const LEGACY_KEYS = ["tobi_site_data_v2", "tobi_site_data_v1", "tobi_site_data"];
@@ -517,6 +517,15 @@ const MIGRATIONS = [
       if (doc.settings.aboutHeroSubtitle === "Technology does not only create economic value and prosperity, it also a positive force for public good.") {
         doc.settings.aboutHeroSubtitle = "Technology does not only create economic value and prosperity, it is also a positive force for public good.";
       }
+    }
+  },
+  {
+    // Second essay, newest first so it leads the homepage. Added once; if the
+    // author deletes it later, it stays deleted.
+    id: "2026-10-second-essay",
+    run(doc) {
+      const seed = SEED_COLLECTIONS.posts.find((p) => p.id === "why-some-things-are-harder-than-others");
+      if (seed && !doc.collections.posts.some((p) => p.id === seed.id)) doc.collections.posts.unshift({ ...seed });
     }
   }
 ];
