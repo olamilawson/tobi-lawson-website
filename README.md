@@ -71,6 +71,6 @@ The site is served by nginx from a Hostinger VPS, with a cron job that pre-rende
 cd /var/www/tobilawson.com && git fetch origin main && git reset --hard origin/main && npm ci --omit=dev && node scripts/render.mjs
 ```
 
-When you change a CSS or JS file, bump the `?v=` query on every reference to
+When you change a CSS, JS or favicon file, bump the `?v=` query on every reference to
 it (all pages and the module imports use the same version), or browsers keep
 the old copy for up to a month.
