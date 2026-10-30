@@ -12,9 +12,9 @@
  * All author-supplied text is escaped before it reaches innerHTML.
  */
 
-import { loadContent, onContentUpdated, esc, escUrl, renderProse, renderLines } from "/content-store.js?v=3.16.0";
-import { subscribeToCloud } from "/supabase.js?v=3.16.0";
-import { FIELD_BY_KEY, PROJECT_GROUPS } from "/content-schema.js?v=3.16.0";
+import { loadContent, onContentUpdated, esc, escUrl, renderProse, renderLines } from "/content-store.js?v=3.17.0";
+import { subscribeToCloud } from "/supabase.js?v=3.17.0";
+import { FIELD_BY_KEY, PROJECT_GROUPS } from "/content-schema.js?v=3.17.0";
 
 // ---------------------------------------------------------------------------
 // Singleton fields
@@ -40,6 +40,11 @@ function attrValue(attr, value) {
 }
 
 function applyFields(settings) {
+  // data-cms-hide-empty="key" hides a block (the About photo) while its field is empty.
+  document.querySelectorAll("[data-cms-hide-empty]").forEach((el) => {
+    el.hidden = !String(settings[el.getAttribute("data-cms-hide-empty")] || "").trim();
+  });
+
   document.querySelectorAll("[data-cms]").forEach((el) => {
     const key = el.getAttribute("data-cms");
     if (!(key in settings)) return;

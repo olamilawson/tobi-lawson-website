@@ -1536,3 +1536,8 @@ footer .meta-links a:hover::after {
 .prose-surface .sidenote-mark {
   display: none;
 }
+
+/* The About photo shows only when the console has one set. */
+.about-portrait-wrapper[hidden] {
+  display: none;
+}
