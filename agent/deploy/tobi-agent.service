@@ -1,0 +1,30 @@
+# systemd unit for the personal agent's API. Install (as root, once):
+#   cp /var/www/tobilawson.com/agent/deploy/tobi-agent.service /etc/systemd/system/
+#   systemctl daemon-reload && systemctl enable --now tobi-agent
+# Logs:   journalctl -u tobi-agent -n 50
+
+[Unit]
+Description=Personal agent API (tobilawson.com/api/agent)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=tobi-agent
+Group=tobi-agent
+WorkingDirectory=/var/lib/tobi-agent
+# Keys and sign-in settings; readable by root and this service only (chmod 600).
+EnvironmentFile=/etc/tobi-agent.env
+# Libraries that cache to a home folder write here, inside the one writable path.
+Environment=HOME=/var/lib/tobi-agent
+ExecStart=/opt/tobi-agent/venv/bin/uvicorn personal_agent.api.app:app --host 127.0.0.1 --port 8200 --proxy-headers
+Restart=on-failure
+RestartSec=3
+# The service writes only its own data folder.
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/tobi-agent
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

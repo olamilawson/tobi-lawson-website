@@ -1,0 +1,8 @@
+# Your standard: sent to the model with every step the agent takes
+# (engine/runner.py: Harness.standing). Write these yourself; the agent never
+# changes them. Empty lists are fine: the agent then works without them.
+#
+# principles: how you think and decide, one line each.
+# lens: questions every answer is checked against before it comes back to you.
+principles: []
+lens: []

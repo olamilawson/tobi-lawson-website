@@ -44,6 +44,9 @@ supabase.js                             Cloud read/write and console sign-in.
 supabase_schema.sql                     Database table and access policies.
 base.css, style.css                     Reset and design system.
 assets/                                 Portraits, book cover, favicons.
+agent/                                  The personal agent: a Python service behind
+                                        /api/agent/, never served as files. Read
+                                        agent/README.md and agent/PRD.md.
 .htaccess                               Extensionless URLs, blocks docs and
                                         config files, security headers.
 ```
