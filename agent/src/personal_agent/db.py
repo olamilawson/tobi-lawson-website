@@ -12,6 +12,7 @@ from datetime import datetime, timezone
 
 from sqlalchemy import (
     Boolean,
+    and_,
     Column,
     Float,
     Integer,
@@ -132,6 +133,11 @@ tasks = Table(
     Column("owner", String),
     Column("due", String),  # the owner's local time, YYYY-MM-DDTHH:MM
     Column("decision", String),  # approved | changes | declined
+    # A reminder fires once: reminded_at is set when it is delivered, and only a
+    # snooze (snoozed_until, owner's local time) lets it come round again.
+    Column("reminded_at", String),
+    Column("snoozed_until", String),
+    Column("chat_id", String, index=True),  # the conversation it came from, if any
     Column("created_at", String),
     Column("updated_at", String),
 )
@@ -146,7 +152,25 @@ memory_items = Table(
     Column("kind", String, index=True),  # priority | brand_rule | preference | lesson | draft
     Column("title", String),
     Column("text", String),
+    Column("source_chat_id", String),  # the conversation a kept proposal came from
     Column("created_at", String),
+)
+
+# A fact the agent noticed in a conversation and proposes to remember. Nothing
+# enters memory without the owner's yes:
+#   open --keep--> kept (a memory_items row is written)    open --dismiss--> dismissed
+memory_proposals = Table(
+    "memory_proposals",
+    metadata,
+    Column("id", String, primary_key=True),
+    Column("workstream", String, index=True),
+    Column("text", String, nullable=False),
+    Column("status", String, nullable=False, index=True),  # open | kept | dismissed
+    Column("chat_id", String, index=True),
+    Column("run_id", String),
+    Column("memory_id", String),
+    Column("created_at", String),
+    Column("decided_at", String),
 )
 
 
@@ -421,8 +445,60 @@ class Database:
         self._remove(tasks, task_id)
 
 
-    def add_memory(self, workstream: str, kind: str, title: str, text: str) -> str:
-        return self._insert(memory_items, workstream=workstream, kind=kind, title=title, text=text)
+    def tasks_for_chat(self, chat_id: str) -> list[dict]:
+        return self._rows(tasks, chat_id=chat_id)
+
+    @staticmethod
+    def _reminder_due(at: str):
+        """The one rule for "this reminder is due at local time at": not done, its
+        due time has come, and either never delivered (and not snoozed past at) or
+        snoozed until a time that has come."""
+        return and_(
+            tasks.c.status != "done", tasks.c.due.is_not(None), tasks.c.due <= at,
+            or_(and_(tasks.c.reminded_at.is_(None),
+                     or_(tasks.c.snoozed_until.is_(None), tasks.c.snoozed_until <= at)),
+                tasks.c.snoozed_until <= at),
+        )
+
+    def due_reminders(self, at: str) -> list[dict]:
+        with self.engine.connect() as cx:
+            rows = cx.execute(select(tasks).where(self._reminder_due(at)).order_by(tasks.c.due)).mappings()
+            return [dict(r) for r in rows]
+
+    def mark_reminded(self, task_id: str, at: str) -> bool:
+        """Deliver a reminder once. True only for the call that delivered it."""
+        with self.engine.begin() as cx:
+            result = cx.execute(
+                update(tasks).where(tasks.c.id == task_id, self._reminder_due(at))
+                .values(reminded_at=now(), snoozed_until=None, updated_at=now())
+            )
+        return result.rowcount == 1
+
+    def add_memory(self, workstream: str, kind: str, title: str, text: str,
+                   source_chat_id: str | None = None) -> str:
+        return self._insert(memory_items, workstream=workstream, kind=kind, title=title, text=text,
+                            source_chat_id=source_chat_id)
+
+    def propose_memory(self, workstream: str, text: str, chat_id: str | None, run_id: str | None) -> str:
+        return self._insert(memory_proposals, workstream=workstream, text=text, status="open",
+                            chat_id=chat_id, run_id=run_id)
+
+    def get_proposal(self, proposal_id: str) -> dict | None:
+        return next(iter(self._rows(memory_proposals, id=proposal_id)), None)
+
+    def list_proposals(self, status: str | None = None, chat_id: str | None = None) -> list[dict]:
+        where = {k: v for k, v in (("status", status), ("chat_id", chat_id)) if v}
+        return self._rows(memory_proposals, **where)
+
+    def decide_proposal(self, proposal_id: str, status: str, memory_id: str | None = None) -> bool:
+        """open -> kept | dismissed, once. False if it was already decided."""
+        with self.engine.begin() as cx:
+            result = cx.execute(
+                update(memory_proposals)
+                .where(memory_proposals.c.id == proposal_id, memory_proposals.c.status == "open")
+                .values(status=status, memory_id=memory_id, decided_at=now())
+            )
+        return result.rowcount == 1
 
     def list_memory(self, workstream: str | None = None) -> list[dict]:
         return self._rows(memory_items, **({"workstream": workstream} if workstream else {}))

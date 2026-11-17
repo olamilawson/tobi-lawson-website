@@ -1,12 +1,15 @@
 """Think: a conversation between the owner and the agent.
 
-    answer (model, at the depth the owner chose) -> done
+    answer (model, at the depth the owner chose) -> follow (cheap tier) -> done
 
 Each message is one run. Runs whose inputs carry the same chat_id are one
 conversation: every turn reads the earlier turns and the files attached to the
 conversation, both as marked data.
 
-Nothing leaves the system, so there is no approval step. The question is the
+Nothing leaves the system from this run, so there is no approval step here. The
+follow step only notes what the message asks for (tasks, facts to remember, an
+email or an invitation); Engine.work then writes the tasks and proposals and
+starts a separate mail or invite run, which stops for approval. The question is the
 owner's own instruction. Pasted material is outside text: it travels as marked
 data, and instruction-like text inside it is flagged and never obeyed. The model
 has no tools here: no web, no files. The instruction says so, and asks it to
@@ -22,8 +25,7 @@ from personal_agent.clients import parse_document
 from langgraph.graph import END, START, StateGraph
 from pydantic import BaseModel, Field
 
-from personal_agent.engine import web
-from personal_agent.engine.graph import ROLE
+from personal_agent.engine import follow, web
 from personal_agent.harness.budgets import BudgetTracker
 from personal_agent.harness.context import build_context
 from personal_agent.harness.contract import StepContract
@@ -139,6 +141,7 @@ class ThinkState(TypedDict, total=False):
     answer: str
     caveats: list[str]
     sources: list[dict]
+    follow: dict | None  # what the message asks for beyond the answer (engine/follow.py)
     fallback_used: bool
     error: str | None
 
@@ -195,7 +198,7 @@ def build_think_graph(h):
         payload = {"question": inputs.get("question", ""), "material": material}
         tracker = BudgetTracker(h.settings.budgets)
         context, flags = build_context(
-            ROLE + h.standing(state["client"]), "", [], talk + ([("pasted material", material)] if material else []) + pages,
+            h.role() + h.standing(state["client"]), "", [], talk + ([("pasted material", material)] if material else []) + pages,
             {"question": payload["question"], "client": state["client"]},
         )
         runner = h.node_runner(tracker, state["run_id"])
@@ -213,5 +216,7 @@ def build_think_graph(h):
     builder = StateGraph(ThinkState)
     builder.add_node("think", think)
     builder.add_edge(START, "think")
-    builder.add_edge("think", END)
+    builder.add_node("follow", lambda state: follow.run_step(h, state))
+    builder.add_edge("think", "follow")
+    builder.add_edge("follow", END)
     return builder

@@ -15,6 +15,8 @@ application that signs in as itself (client credentials). Two things use it:
   attendee about a new time or a cancellation as soon as it is made.
 - busy_periods: the read-class lookup of when a calendar is busy. It asks for
   free and busy times only, so no meeting's subject or attendees reach the agent.
+- events_between and unread: read-class, for the owner's day on the home page
+  only (engine/briefing.py). They are not tools: no model ever sees them.
 
 n8n still watches the mailbox; this module never polls it.
 
@@ -343,6 +345,50 @@ class GraphMail:
             (moment(item["start"]), moment(item["end"]))
             for item in schedules[0].get("scheduleItems", [])
             if item.get("status") not in ("free", "workingElsewhere")
+        ]
+
+    # --- read, for the home page only (never handed to a model) -------------------------------
+    def events_between(self, start: datetime, end: datetime, limit: int = 20) -> list[dict]:
+        """The calendar's events between start and end: subject, times (UTC), place and attendee count."""
+        stamp = lambda moment: moment.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S")  # noqa: E731
+        response = self._call(
+            "GET", f"/users/{quote(self.calendar)}/calendarView", ok=(200,),
+            params={"startDateTime": stamp(start), "endDateTime": stamp(end), "$top": str(limit),
+                    "$orderby": "start/dateTime",
+                    "$select": "id,subject,start,end,location,attendees,isAllDay,isCancelled,isOnlineMeeting"},
+            headers={"Prefer": 'outlook.timezone="UTC"'},
+        )
+
+        def moment(value: dict) -> str:
+            return datetime.fromisoformat(value["dateTime"].split(".")[0]).replace(tzinfo=timezone.utc).isoformat()
+
+        return [
+            {"id": e.get("id"), "subject": e.get("subject") or "(no subject)", "start": moment(e["start"]),
+             "end": moment(e["end"]), "all_day": bool(e.get("isAllDay")),
+             "place": ((e.get("location") or {}).get("displayName") or "") or ("Online" if e.get("isOnlineMeeting") else ""),
+             "attendees": len(e.get("attendees") or [])}
+            for e in response.json().get("value", []) if not e.get("isCancelled")
+        ]
+
+    def unread(self, since: datetime, limit: int = 10) -> list[dict]:
+        """Unread mail in the inbox since a moment, newest first: who, subject and a short preview."""
+        stamp = since.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        response = self._call(
+            "GET", f"{self._mailbox_path()}/mailFolders/inbox/messages", ok=(200,),
+            params={"$filter": f"isRead eq false and receivedDateTime ge {stamp}", "$top": str(limit),
+                    "$orderby": "receivedDateTime desc",
+                    "$select": "id,subject,receivedDateTime,from,bodyPreview,importance"},
+        )
+
+        def sender(m: dict) -> dict:
+            return (m.get("from") or {}).get("emailAddress") or {}
+
+        return [
+            {"id": m.get("id"), "received_at": m.get("receivedDateTime"),
+             "from": sender(m).get("name") or sender(m).get("address"), "address": sender(m).get("address"),
+             "subject": m.get("subject") or "(no subject)", "preview": (m.get("bodyPreview") or "")[:200],
+             "important": m.get("importance") == "high"}
+            for m in response.json().get("value", [])
         ]
 
 

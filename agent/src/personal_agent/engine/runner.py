@@ -24,6 +24,9 @@ from personal_agent import connectors
 from personal_agent.config import Settings, TierRoute
 from personal_agent.db import Database, new_id
 from personal_agent.engine.graph import DraftIn, DraftOut, build_test_graph
+from personal_agent.engine.act import act_contracts, act_outputs, build_invite_graph, build_mail_graph
+from personal_agent.engine import follow
+from personal_agent.engine.follow import follow_contracts
 from personal_agent.engine.think import build_think_graph, think_contracts, think_outputs
 from personal_agent.graph_mail import GraphError, GraphMail, from_settings as graph_from_settings
 from personal_agent.gateway.tools import ToolClass, ToolGateway, ToolSpec, content_hash
@@ -49,6 +52,17 @@ class Harness:
     mail: GraphMail | None = None  # the Microsoft Graph mailbox, when connected
     tools: ToolGateway = field(init=False)
     clients: ClientStore = field(init=False)
+
+    def role(self) -> str:
+        """Who the agent is, from config/character.yaml: the same in every step, so two
+        conversations a week apart read as the same agent."""
+        c, owner = self.settings.character, self.settings.owner_name
+        lines = [f"You are {c.name}, {owner}'s personal agent. {c.about}".strip(),
+                 f"You prepare work; {owner} approves everything that leaves the system. "
+                 f"Speak to {owner} directly, as yourself."]
+        if c.voice:
+            lines.append("How you talk:\n" + "\n".join(f"- {v}" for v in c.voice))
+        return "\n".join(lines)
 
     def standing(self, client: str | None) -> str:
         """What the owner has laid down, for every model step: the Core principles,
@@ -155,7 +169,8 @@ class Harness:
             raise GraphError("there is no calendar connection")
         return self.mail.create_event(
             payload["subject"], datetime.fromisoformat(payload["start"]), datetime.fromisoformat(payload["end"]),
-            payload["to"], payload["note"],
+            # "body" when the event came through an editable approval (engine/act.py).
+            payload["to"], payload.get("note", payload.get("body", "")),
             # The same approved event always carries the same id, so Microsoft creates it once.
             transaction_id=content_hash(payload)[:36],
             online=True,
@@ -262,6 +277,9 @@ WORKFLOWS: dict[str, Workflow] = {
     # A draft that waits for approval, then releases through a stub tool: proves the gate end to end.
     "foundation-test": Workflow(build_test_graph, _test_outputs),
     "think": Workflow(build_think_graph, think_outputs),
+    # Started from a conversation (engine/follow.py); each stops for the owner before it sends.
+    "mail": Workflow(build_mail_graph, act_outputs),
+    "invite": Workflow(build_invite_graph, act_outputs),
 }
 
 
@@ -316,7 +334,7 @@ class Engine:
             settings=settings,
             db=db,
             gateway=gateway or ModelGateway(settings.route_table),
-            contracts={**default_contracts(), **think_contracts()},
+            contracts={**default_contracts(), **think_contracts(), **act_contracts(), **follow_contracts()},
             mail=mail or graph_from_settings(settings),
         )
         self.checkpointer = open_checkpointer(settings)
@@ -379,6 +397,12 @@ class Engine:
         """Run a created run until it finishes, fails or stops for the owner."""
         run = self.db.get_run(run_id)
         self._invoke(run_id, None, {"run_id": run_id, "client": run["client"], "inputs": run["inputs"]})
+        if run["workflow"] == "think":
+            # The answer is in; now what the message asked for beyond it (engine/follow.py).
+            done = self.db.get_run(run_id)
+            if done["status"] == "done":
+                snap = self._graph(run_id).get_state({"configurable": {"thread_id": run_id}})
+                follow.apply(self, done, (snap.values or {}).get("follow"))
 
     def approve(self, run_id: str, decision: str, comment: str | None, edited_body: str | None = None,
                 decided_by: str = "owner") -> dict:
@@ -492,6 +516,10 @@ class Engine:
                     "action": pending.get("action", "release"),
                     "notes": pending.get("notes", []),
                     "editable": pending.get("editable", False),
+                    # The page files an item under its conversation, and names what it is.
+                    "chat_id": (run["inputs"] or {}).get("chat_id"),
+                    "kind": pending.get("kind", run["workflow"]),
+                    "created_at": run["created_at"],
                 }
             )
         return items

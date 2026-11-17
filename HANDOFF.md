@@ -304,3 +304,12 @@ background. The essay page names it as its link-preview image, so a shared
 link shows the essay rather than a generic photo. It is redrawn when the
 title or summary changes.
 
+
+### The desk (the personal agent's page)
+
+`/desk/` is the agent's page, built from `agent/ui/` (`npm run build` there
+writes `desk/`; commit it). It is plain files, so the normal deploy publishes
+it, and `robots.txt` keeps it out of search. Until the agent service runs on the
+VPS (agent/README.md, "Deploy on the VPS"), the page says "The agent isn't
+running" and does nothing else. Its states are listed in
+[docs/STATE-MACHINES.md](docs/STATE-MACHINES.md).

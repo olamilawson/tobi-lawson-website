@@ -19,6 +19,7 @@ def make_approval_node(
     db: Database,
     payload_of: Callable[[dict], dict],
     about: Callable[[dict], dict] | None = None,
+    editable: bool = False,
 ):
     """payload_of(state) returns the exact content the owner is asked to approve.
 
@@ -27,6 +28,10 @@ def make_approval_node(
 
     about(state) adds what the owner needs beside the content and is not part
     of it: "action" (what approving does) and "notes" (lines shown above it).
+
+    editable: the owner may change the content's "body" before approving. The
+    approval then covers the owner's version, the node returns it as
+    "edited_body", and the release step sends that instead of the draft.
     """
 
     def approval(state: dict) -> dict:
@@ -41,9 +46,14 @@ def make_approval_node(
                 "content": payload,
                 "content_hash": p_hash,
                 "error": state.get("approval_error"),
+                "editable": editable,
                 **(about(state) if about else {}),
             }
         )
+        edited = resume.get("edited_body") if editable else None
+        if edited is not None:
+            # Engine.approve recorded the approval against the owner's version.
+            p_hash = content_hash({**payload, "body": edited})
         rec = db.get_approval(resume["approval_id"])
         if (
             rec
@@ -51,7 +61,8 @@ def make_approval_node(
             and not rec["lapsed"]
             and rec["content_hash"] == p_hash
         ):
-            return {"approval_error": None, "approved_hash": p_hash}
+            return {"approval_error": None, "approved_hash": p_hash,
+                    **({"edited_body": edited} if edited is not None else {})}
         if rec and rec["content_hash"] != p_hash:
             # Content changed after approval: the approval lapses.
             db.lapse_approval(rec["id"])

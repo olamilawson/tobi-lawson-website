@@ -1,9 +1,9 @@
 # The personal agent
 
 The engine behind Tobi's personal agent, served as a JSON API at
-`https://tobilawson.com/api/agent/`. It has no pages: the front end is designed
-separately and calls this API. What it is for, and what comes next, is in
-[PRD.md](PRD.md).
+`https://tobilawson.com/api/agent/`. Its page, the desk, is at
+`https://tobilawson.com/desk/`: source in [ui/](ui/), built into `/desk/` at the
+repository root. What it is for, and what comes next, is in [PRD.md](PRD.md).
 
 The engine is ported from the Ijeoma.Pro agent (Chidimma Okoli's), keeping the
 parts any personal agent needs and leaving out her client business.
@@ -16,6 +16,16 @@ parts any personal agent needs and leaving out her client business.
   message). One answer at a time.
 - **Web research.** With `web` on, the agent searches the web through Exa first
   and cites each page it used.
+- **Follow-through from a conversation.** After each answer a cheap model reads
+  your message for what it asks beyond the answer: a reminder or task, a fact to
+  remember, an email or a meeting invitation. Tasks are written at once; facts
+  become suggestions you keep or dismiss; an email or invitation is drafted and
+  waits for your yes. Nothing is invented: no address in the message, no email.
+- **Your day.** `GET /briefing` lists what waits for you, reminders that have
+  come due, tasks due today, and today's calendar and unread mail from Outlook.
+  Each Outlook part says `ok`, `down` (with the reason) or `not_connected`.
+- **The agent's character.** Its name, a line about it, how it talks, and its
+  waking hours are in `config/character.yaml`.
 - **Nothing leaves without your yes.** Sending mail or a calendar invitation
   waits for an approval that matches the exact content (a hash); change one
   character and it asks again. Each release runs once, under an idempotency key.
@@ -52,12 +62,12 @@ set up. Changes must come from a page on the same site.
 
 | Route | Does |
 |---|---|
-| `GET /health` | `{ok, agent}` |
+| `GET /health` | `{ok, agent, service}` |
 | `GET /session` · `POST /session` · `DELETE /session` | Sign-in state, sign in (`{email, password, code}`), sign out |
 | `GET /me` | Names, model routes, mailbox and connector status (names only, never keys), this month's spend |
 | `GET /chats` | Conversations, newest first, each with `state` |
 | `POST /chats` | multipart: `message`, `files`, `space`, `mode` (ask, research, create, analyse, plan), `depth` (quick, considered, deep), `web`, `material`. Returns 202 `{chat, run_id, state}` |
-| `GET /chats/{id}` | The conversation: turns, files, state |
+| `GET /chats/{id}` | The conversation: turns, files, state, and what it led to: `actions` (emails and invitations), `tasks`, `proposals` |
 | `POST /chats/{id}/messages` | A follow-up; 409 while the agent is still answering |
 | `GET /chats/{id}/state` | `{state: ready or waiting, turns, last_turn: {id, status}}`: poll this while waiting |
 | `GET /approvals` | What waits on you: `{approvals, questions}` |
@@ -67,6 +77,11 @@ set up. Changes must come from a page on the same site.
 | `GET /runs` · `GET /runs/{id}` | Runs, and one run with its model calls |
 | `GET /audit` | The latest audit entries |
 | `GET /memory` · `POST /memory` · `DELETE /memory/{id}` | Notes per space |
+| `GET /briefing` | The day: `approvals`, `reminders`, `due`, `proposals` (count), `calendar` and `inbox` (each `{state, reason?, items}`), `awake`, `wake`, `next_wake` |
+| `GET /tasks` · `POST /tasks` | Tasks (`{title, due, space}`; `due` is local `YYYY-MM-DDTHH:MM`) |
+| `PATCH /tasks/{id}` · `DELETE /tasks/{id}` | Change `title`, `due`, `status` (todo, done) or `snooze_minutes` |
+| `GET /reminders` · `POST /tasks/{id}/remind` | Reminders due now; mark one delivered (safe to repeat: `{delivered}` is true once) |
+| `GET /memory/proposals` · `POST /memory/proposals/{id}` | Suggestions to remember; `{decision: keep or dismiss, text}`, once (409 after) |
 | `GET /spaces` · `POST /spaces` | Spaces, with `restricted` and `retention_days` |
 | `GET /costs` | The month's spend by workflow and model |
 
@@ -77,7 +92,29 @@ set up. Changes must come from a page on the same site.
 | Conversation | `ready`, `waiting` | `api/app.py` (`_send`, `_state`) | `GET /chats/{id}/state` |
 | Run | `queued`, `running`, `waiting_for_approval`, `waiting_for_input`, `done`, `failed`, `cancelled` | `engine/runner.py` | `GET /runs/{id}` |
 | Approval | pending, approved, rejected, sent back, lapsed | `engine/approval.py`, `gateway/tools.py` | `GET /approvals`, the audit log |
+| Task / reminder | `todo`, `done`; a reminder is due, delivered, or snoozed | `db.py` (`_reminder_due`, one rule) | `GET /reminders`, `GET /tasks` |
+| Memory suggestion | `open`, `kept`, `dismissed` | `db.py` (`decide_proposal`) | `GET /memory/proposals` |
+| Outlook in the briefing | `ok`, `down`, `not_connected` | `engine/briefing.py` | `GET /briefing` |
 | Monthly spend | `none` (no cap), `ok`, `alert` (80%), `stopped` | `costs.py` | `GET /me` → `spend` |
+
+The page's own machines (session, approval card, the stage) are in
+[docs/STATE-MACHINES.md](../docs/STATE-MACHINES.md).
+
+## The desk (the page)
+
+React, Vite and Tailwind, ported from the Figr design. It calls the API at
+`/api/agent/` on the same site and shows only what the API returns: no sample
+data. To work on it:
+
+```bash
+cd agent/ui
+npm install
+npm run dev       # http://localhost:5173/desk/, forwarding /api/agent/ to 127.0.0.1:8200
+npm run build     # writes ../../desk/; commit that folder
+```
+
+The built folder is plain files, so the website's normal deploy publishes it.
+Without the service running, the page says so instead of failing.
 
 ## Deploy on the VPS
 

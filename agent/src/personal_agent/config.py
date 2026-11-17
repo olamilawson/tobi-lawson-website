@@ -38,6 +38,23 @@ class CoreSettings(BaseModel):
     lens: list[str] = []
 
 
+class Hours(BaseModel):
+    """When the agent is awake, in the owner's time zone (config/character.yaml)."""
+
+    timezone: str = "Africa/Lagos"
+    wake: str = "07:00"
+    sleep: str = "22:00"
+
+
+class Character(BaseModel):
+    """Who the agent is (config/character.yaml). Owner-written, sent with every step."""
+
+    name: str = "Agent"
+    about: str = ""
+    voice: list[str] = []
+    hours: Hours = Hours()
+
+
 class Budgets(BaseModel):
     max_total_tokens: int = 200_000
     max_tool_calls: int = 20
@@ -70,6 +87,8 @@ class Settings(BaseModel):
     # The agent's name, and the name it calls the owner.
     agent_name: str = "Agent"
     owner_name: str = "Tobi"
+    # Who the agent is and when it is awake (config/character.yaml).
+    character: Character = Character()
     # Owner sign-in (see auth.py). Email, password hash and session secret all
     # set: every request needs a session. A TOTP secret adds a one-time code.
     owner_email: str | None = None
@@ -95,7 +114,9 @@ def load_settings() -> Settings:
         return (yaml.safe_load(path.read_text(encoding="utf-8")) or {}) if path.exists() else {}
 
     providers = from_yaml("PERSONAL_AGENT_PROVIDERS", "providers.yaml")
+    character = Character(**from_yaml("PERSONAL_AGENT_CHARACTER", "character.yaml"))
     return Settings(
+        character=character,
         database_url=db,
         checkpoint_path=ckpt,
         route_table={tier: TierRoute(**r) for tier, r in from_yaml("PERSONAL_AGENT_ROUTE_TABLE", "route_table.yaml").items()},
@@ -104,7 +125,7 @@ def load_settings() -> Settings:
         confidential_providers=[str(p).lower() for p in providers.get("approved_for_confidential") or []],
         core=CoreSettings(**from_yaml("PERSONAL_AGENT_CORE", "core.yaml")),
         model_catalogue=[ModelChoice(**m) for m in from_yaml("PERSONAL_AGENT_MODELS", "models.yaml").get("models", [])],
-        agent_name=env("PERSONAL_AGENT_NAME") or "Agent",
+        agent_name=env("PERSONAL_AGENT_NAME") or character.name,
         owner_name=env("PERSONAL_AGENT_OWNER_NAME") or "Tobi",
         graph_tenant_id=env("MS_GRAPH_TENANT_ID") or None,
         graph_client_id=env("MS_GRAPH_CLIENT_ID") or None,

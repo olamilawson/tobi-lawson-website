@@ -21,7 +21,8 @@ class Heard(RecordedGateway):
         self.contexts: list[str] = []
 
     def complete(self, contract, context, images=None, providers=None):
-        self.contexts.append(context)
+        if contract.node == "think":
+            self.contexts.append(context)
         return RecordedGateway.complete(self, contract, context, images, providers)
 
 
@@ -121,3 +122,56 @@ def test_a_server_without_sign_in_refuses_everything(settings):
     settings.require_login = True
     client, _ = _client(settings)
     assert client.get("/chats").status_code == 503 and client.get("/health").status_code == 200
+
+
+def test_tasks_reminders_and_snooze(settings):
+    client, _ = _client(settings)
+    made = client.post("/tasks", json={"title": "Call Ada", "due": "2020-01-01T09:00"}).json()
+    assert made["status"] == "todo"
+    assert [t["id"] for t in client.get("/reminders").json()] == [made["id"]]
+    first = client.post(f"/tasks/{made['id']}/remind").json()
+    again = client.post(f"/tasks/{made['id']}/remind").json()
+    assert first["delivered"] is True and again["delivered"] is False
+    assert client.get("/reminders").json() == []
+    snoozed = client.patch(f"/tasks/{made['id']}", json={"snooze_minutes": 30}).json()
+    assert snoozed["snoozed_until"] and client.get("/reminders").json() == []
+    done = client.patch(f"/tasks/{made['id']}", json={"status": "done"}).json()
+    assert done["status"] == "done"
+    assert client.patch(f"/tasks/{made['id']}", json={"status": "maybe"}).status_code == 422
+    assert client.post("/tasks", json={"title": " "}).status_code == 422
+    assert client.delete(f"/tasks/{made['id']}").status_code == 204
+    assert client.patch(f"/tasks/{made['id']}", json={"status": "done"}).status_code == 404
+
+
+def test_a_memory_suggestion_is_decided_once(settings):
+    client, _ = _client(settings)
+    db = client.app.state.engine.db
+    pid = db.propose_memory("Personal", "You prefer morning calls.", None, None)
+    assert [p["id"] for p in client.get("/memory/proposals").json()] == [pid]
+    kept = client.post(f"/memory/proposals/{pid}", json={"decision": "keep", "text": "You prefer calls before noon."})
+    assert kept.status_code == 200 and kept.json()["status"] == "kept"
+    assert [m["text"] for m in client.get("/memory").json()] == ["You prefer calls before noon."]
+    assert client.post(f"/memory/proposals/{pid}", json={"decision": "dismiss"}).status_code == 409
+    assert client.get("/memory/proposals").json() == []
+
+
+def test_the_briefing_says_when_nothing_is_connected(settings):
+    client, _ = _client(settings)
+    day = client.get("/briefing").json()
+    assert day["calendar"] == {"state": "not_connected", "items": []} and day["inbox"]["state"] == "not_connected"
+    assert day["approvals"] == [] and day["reminders"] == [] and isinstance(day["awake"], bool)
+    assert client.get("/me").json()["character"]["name"]
+
+
+def test_a_calendar_that_fails_says_why(settings):
+    class Down:
+        def events_between(self, *a):
+            raise RuntimeError("Microsoft Graph could not be reached: ConnectTimeout")
+
+        def unread(self, *a):
+            return [{"id": "m1", "subject": "Hello"}]
+
+    client = TestClient(create_app(settings, gateway=Heard({}), mail=Down()))
+    day = client.get("/briefing").json()
+    assert day["calendar"]["state"] == "down" and "could not be reached" in day["calendar"]["reason"]
+    assert day["inbox"] == {"state": "ok", "items": [{"id": "m1", "subject": "Hello"}]}

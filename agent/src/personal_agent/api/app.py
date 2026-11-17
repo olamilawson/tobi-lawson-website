@@ -19,10 +19,18 @@ State machines, readable by a front end or another agent:
   an approval      GET /approvals lists what waits; POST /runs/{id}/approval decides it.
                    A release (mail, a calendar invitation) happens only after an approval
                    whose hash matches the exact content (gateway/tools.py).
+  a task           todo -> done (PATCH status); deleting removes it.
+  a reminder       due -> delivered (POST /tasks/{id}/remind, once) -> due again only
+                   after a snooze runs out (PATCH snooze_minutes). db.due_reminders holds the rule.
+  a memory         open -> kept | dismissed (POST /memory/proposals/{id}), once; a second
+  proposal         decision gets 409. Keeping writes the memory note with its conversation.
+  the day          GET /briefing: approvals, reminders, tasks due, and calendar and inbox,
+                   each ok | down (with the reason) | not_connected (engine/briefing.py).
 """
 
 from __future__ import annotations
 
+from datetime import datetime, timedelta
 from urllib.parse import urlsplit
 
 from fastapi import BackgroundTasks, FastAPI, HTTPException, Request
@@ -32,7 +40,7 @@ from pydantic import BaseModel
 from personal_agent import auth, connectors, costs, retention
 from personal_agent.config import Settings, load_settings
 from personal_agent.db import Database
-from personal_agent.engine import think
+from personal_agent.engine import briefing, think
 from personal_agent.engine.runner import Engine
 from personal_agent.harness.models import ModelGateway
 
@@ -68,6 +76,24 @@ class Note(BaseModel):
     kind: str = "note"
     title: str = ""
     text: str
+
+
+class NewTask(BaseModel):
+    title: str
+    due: str | None = None  # YYYY-MM-DDTHH:MM, the owner's local time
+    space: str = DEFAULT_SPACE
+
+
+class TaskChange(BaseModel):
+    title: str | None = None
+    due: str | None = None
+    status: str | None = None  # todo | done
+    snooze_minutes: int | None = None
+
+
+class ProposalDecision(BaseModel):
+    decision: str  # keep | dismiss
+    text: str | None = None  # the owner's wording, when they changed it before keeping
 
 
 class Space(BaseModel):
@@ -110,7 +136,7 @@ def create_app(settings: Settings | None = None, gateway: ModelGateway | None = 
     # --- health and sign-in ------------------------------------------------------------
     @app.get("/health")
     def health() -> dict:
-        return {"ok": True, "agent": settings.agent_name}
+        return {"ok": True, "agent": settings.agent_name, "service": "personal-agent"}
 
     @app.get("/session")
     def session(request: Request) -> dict:
@@ -142,6 +168,8 @@ def create_app(settings: Settings | None = None, gateway: ModelGateway | None = 
     def me() -> dict:
         return {
             "agent_name": settings.agent_name, "owner_name": settings.owner_name,
+            "character": {"name": settings.character.name, "about": settings.character.about,
+                          "hours": settings.character.hours.model_dump()},
             "models": {tier: route.primary for tier, route in settings.route_table.items()},
             "mailbox_connected": engine.harness.mail is not None,
             "connectors": connectors.status(),
@@ -160,10 +188,41 @@ def create_app(settings: Settings | None = None, gateway: ModelGateway | None = 
             "forgotten": inputs.get("question") is None,
         }
 
+    def _actions(chat_id: str) -> list[dict]:
+        """Mail and invitations the conversation asked for (engine/act.py), oldest first."""
+        out = []
+        for r in sorted((r for r in db.list_runs() if r["workflow"] in ("mail", "invite")
+                         and (r["inputs"] or {}).get("chat_id") == chat_id), key=lambda r: r["created_at"]):
+            inputs, outputs = r["inputs"] or {}, r["outputs"] or {}
+            content = dict(outputs)
+            pending = None
+            if r["status"] == "waiting_for_approval":
+                try:
+                    pending = engine.pending_approval(r["id"])
+                    content = dict(pending["content"])
+                except ValueError:
+                    pass
+            released = outputs.get("released") or {}
+            out.append({
+                "run_id": r["id"], "kind": r["workflow"], "status": r["status"], "created_at": r["created_at"],
+                "to": content.get("to") or inputs.get("to"), "subject": content.get("subject") or inputs.get("subject"),
+                "body": content.get("body"), "start": content.get("start") or inputs.get("start"),
+                "end": content.get("end") or inputs.get("end"),
+                "editable": bool(pending and pending.get("editable")), "approval_error": pending and pending.get("error"),
+                # Sent through the mailbox, or held in the local outbox because none is connected.
+                "held": r["status"] == "done" and released.get("sent") is False,
+                "error": r["error_reason"] if r["status"] in ("failed", "cancelled") else None,
+            })
+        return out
+
     def _state(chat_id: str) -> dict:
         chat_turns = think.turns(db, chat_id)
         last = chat_turns[-1] if chat_turns else None
-        return {"chat": chat_id, "state": "waiting" if last and last["status"] in WORKING else "ready",
+        # Busy while an answer is being written, or a mail it asked for is being drafted.
+        drafting = any(r["status"] in WORKING for r in db.list_runs() if r["workflow"] in ("mail", "invite")
+                       and (r["inputs"] or {}).get("chat_id") == chat_id)
+        busy = bool(last and last["status"] in WORKING) or drafting
+        return {"chat": chat_id, "state": "waiting" if busy else "ready",
                 "turns": len(chat_turns), "last_turn": {"id": last["id"], "status": last["status"]} if last else None}
 
     def _title(chat_turns: list[dict]) -> str:
@@ -242,6 +301,9 @@ def create_app(settings: Settings | None = None, gateway: ModelGateway | None = 
                 "files": [{"name": f["name"], "kind": f["kind"], "size": f["size"], "added_at": f["created_at"]}
                           for f in db.list_chat_files(chat_id)],
                 "turns": [_turn(r) for r in chat_turns],
+                "actions": _actions(chat_id),
+                "tasks": [briefing._task(t) for t in db.tasks_for_chat(chat_id)],
+                "proposals": [_proposal(p) for p in db.list_proposals(chat_id=chat_id)],
                 **{k: v for k, v in _state(chat_id).items() if k not in ("chat", "turns")}}
 
     @app.post("/chats/{chat_id}/messages", status_code=202)
@@ -311,7 +373,113 @@ def create_app(settings: Settings | None = None, gateway: ModelGateway | None = 
     def audit(limit: int = 50) -> list[dict]:
         return db.recent_audit(max(1, min(500, limit)))
 
+    # --- the day, tasks and reminders ---------------------------------------------------------
+    @app.get("/briefing")
+    def day() -> dict:
+        return briefing.build(engine)
+
+    def _local_stamp(minutes: int = 0) -> str:
+        w = briefing.day_window(settings)
+        return (w["now"] + timedelta(minutes=minutes)).strftime("%Y-%m-%dT%H:%M")
+
+    def _due(text: str | None) -> str | None:
+        if not text:
+            return None
+        try:
+            return datetime.fromisoformat(text.strip()).strftime("%Y-%m-%dT%H:%M")
+        except ValueError:
+            raise HTTPException(422, "due is a local date and time, YYYY-MM-DDTHH:MM")
+
+    def _task_or_404(task_id: str) -> dict:
+        found = db.get_task(task_id)
+        if not found:
+            raise HTTPException(404, "no such task")
+        return found
+
+    @app.get("/tasks")
+    def task_list(status: str | None = None) -> list[dict]:
+        found = [briefing._task(t) for t in db.list_tasks() if not status or t["status"] == status]
+        # Open first, then by due time (undated last).
+        return sorted(found, key=lambda t: (t["status"] == "done", t["due"] or "9999", t["title"]))
+
+    @app.post("/tasks", status_code=201)
+    def add_task(body: NewTask) -> dict:
+        if not body.title.strip():
+            raise HTTPException(422, "the task has no title")
+        engine.harness.clients.ensure(body.space)
+        task_id = db.create_task(workstream=body.space, title=body.title.strip()[:200], status="todo",
+                                 owner="owner", due=_due(body.due))
+        return briefing._task(db.get_task(task_id))
+
+    @app.patch("/tasks/{task_id}")
+    def change_task(task_id: str, body: TaskChange) -> dict:
+        _task_or_404(task_id)
+        fields = {}
+        if body.title is not None:
+            if not body.title.strip():
+                raise HTTPException(422, "the task has no title")
+            fields["title"] = body.title.strip()[:200]
+        if body.due is not None:
+            fields["due"] = _due(body.due)
+            fields["reminded_at"] = None  # a new time is a new reminder
+            fields["snoozed_until"] = None
+        if body.status is not None:
+            if body.status not in ("todo", "done"):
+                raise HTTPException(422, "status is todo or done")
+            fields["status"] = body.status
+        if body.snooze_minutes is not None:
+            if not 1 <= body.snooze_minutes <= 7 * 24 * 60:
+                raise HTTPException(422, "snooze between a minute and a week")
+            fields["snoozed_until"] = _local_stamp(body.snooze_minutes)
+        if fields:
+            db.update_task(task_id, **fields)
+        return briefing._task(db.get_task(task_id))
+
+    @app.delete("/tasks/{task_id}", status_code=204)
+    def remove_task(task_id: str) -> None:
+        _task_or_404(task_id)
+        db.delete_task(task_id)
+
+    @app.get("/reminders")
+    def reminders() -> list[dict]:
+        return [briefing._task(t) for t in db.due_reminders(_local_stamp())]
+
+    @app.post("/tasks/{task_id}/remind")
+    def remind(task_id: str) -> dict:
+        """Mark a due reminder delivered. Safe to repeat: only the first call delivers."""
+        _task_or_404(task_id)
+        delivered = db.mark_reminded(task_id, _local_stamp())
+        return {"delivered": delivered, "task": briefing._task(db.get_task(task_id))}
+
     # --- memory and spaces ------------------------------------------------------------------
+    def _proposal(p: dict) -> dict:
+        return {k: p.get(k) for k in ("id", "text", "status", "chat_id", "workstream", "memory_id", "created_at", "decided_at")}
+
+    @app.get("/memory/proposals")
+    def proposals(status: str | None = "open") -> list[dict]:
+        return [_proposal(p) for p in db.list_proposals(status=status or None)]
+
+    @app.post("/memory/proposals/{proposal_id}")
+    def decide_proposal(proposal_id: str, body: ProposalDecision) -> dict:
+        found = db.get_proposal(proposal_id)
+        if not found:
+            raise HTTPException(404, "no such suggestion")
+        if body.decision not in ("keep", "dismiss"):
+            raise HTTPException(422, "decision is keep or dismiss")
+        if found["status"] != "open":
+            raise HTTPException(409, f"this suggestion was already {found['status']}")
+        memory_id = None
+        if body.decision == "keep":
+            text = (body.text or found["text"]).strip()
+            if not text:
+                raise HTTPException(422, "the note is empty")
+            memory_id = db.add_memory(found["workstream"], "note", text[:60], text, source_chat_id=found["chat_id"])
+        if not db.decide_proposal(proposal_id, "kept" if memory_id else "dismissed", memory_id):
+            if memory_id:  # decided elsewhere in the meantime: undo this one's note
+                db.delete_memory(memory_id)
+            raise HTTPException(409, "this suggestion was already decided")
+        return _proposal(db.get_proposal(proposal_id))
+
     @app.get("/memory")
     def memory(space: str | None = None) -> list[dict]:
         return db.list_memory(space)

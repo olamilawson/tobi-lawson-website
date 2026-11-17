@@ -3,9 +3,24 @@
   "configurations": [
     {
       "name": "site",
-      "runtimeExecutable": "C:\\Users\\tobi-\\AppData\\Local\\hermes\\node\\node.exe",
-      "runtimeArgs": [".claude/serve.mjs", "8899"],
+      "runtimeExecutable": "C:/Users/tobi-/AppData/Local/hermes/node/node.exe",
+      "runtimeArgs": [
+        ".claude/serve.mjs",
+        "8899"
+      ],
       "port": 8899
+    },
+    {
+      "name": "desk",
+      "runtimeExecutable": "C:/Users/tobi-/AppData/Local/hermes/node/node.exe",
+      "runtimeArgs": [
+        "agent/ui/node_modules/vite/bin/vite.js",
+        "agent/ui",
+        "--port",
+        "5173",
+        "--strictPort"
+      ],
+      "port": 5173
     }
   ]
 }

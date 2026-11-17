@@ -3,6 +3,7 @@ Allow: /
 Disallow: /admin
 Disallow: /admin.html
 Disallow: /admin/
+Disallow: /desk/
 
 # Allow all AI Crawlers & LLM Bots
 User-agent: GPTBot
