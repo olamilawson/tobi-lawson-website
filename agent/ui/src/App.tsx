@@ -8,6 +8,7 @@ import Memory from "./screens/Memory";
 import Settings from "./screens/Settings";
 import SignIn from "./screens/SignIn";
 import Blocked from "./screens/Blocked";
+import Poses from "./screens/Poses";
 
 export default function App() {
   return (
@@ -46,6 +47,7 @@ function Gate() {
             <Route path="/tasks" element={<Tasks />} />
             <Route path="/memory" element={<Memory />} />
             <Route path="/settings" element={<Settings />} />
+            {import.meta.env.DEV && <Route path="/poses" element={<Poses />} />}
             <Route
               path="*"
               element={

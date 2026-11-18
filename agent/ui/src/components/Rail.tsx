@@ -1,5 +1,6 @@
 import { NavLink } from "react-router-dom";
 import { House, Inbox, ListChecks, BookOpen, Settings } from "lucide-react";
+import { AgentPortrait } from "./Agent";
 
 const items = [
   { to: "/", label: "Home", icon: House },
@@ -16,9 +17,8 @@ export default function Rail({ waiting = 0 }: { waiting?: number }) {
   return (
     <>
       <nav aria-label="Main" className="hidden w-[72px] shrink-0 flex-col items-center gap-2 bg-muted py-5 md:flex">
-        <div className="mb-4 flex size-10 items-center justify-center gap-1.5 rounded-xl bg-face" aria-hidden="true">
-          <span className="h-3.5 w-1.5 animate-blink rounded-full bg-white" />
-          <span className="h-3.5 w-1.5 animate-blink rounded-full bg-white" />
+        <div className="mb-4">
+          <AgentPortrait size={42} />
         </div>
         {items.map((it) => (
           <Item key={it.to} {...it} waiting={it.to === "/approvals" ? waiting : 0} />
