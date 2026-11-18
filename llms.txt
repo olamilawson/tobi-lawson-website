@@ -1,0 +1,52 @@
+# Tobi Lawson
+
+> Tobi Lawson builds the software African businesses run on, and writes about capital, cities and how economies grow.
+
+Every page is plain HTML with the full text in it, so fetching a URL is enough to read it. The main pages (home, about, writing, books, projects, course) also carry schema.org data in a JSON-LD script tag.
+
+## Pages
+
+- [Home](https://tobilawson.com/)
+- [About](https://tobilawson.com/about/): Technology does not create economic value and prosperity, but it can be a positive force for public good.
+- [Writing](https://tobilawson.com/writing/): Essays, book reviews, and field notes on capital, cities, and African development.
+- [Books](https://tobilawson.com/books/): Who Made This? — a microhistory of everyday things, and other volumes in progress.
+- [Projects](https://tobilawson.com/projects/): Companies and institutions Tobi Lawson has started or co-founded.
+- [Course](https://tobilawson.com/course/): A free course on artificial intelligence for a general audience in Africa: how it works, who builds it, and what it means for work.
+
+## Essays
+
+- [Why Some Things Are Harder Than Others](https://tobilawson.com/writing/why-some-things-are-harder-than-others): Oct 2026. Difficulty often arises when an environment fails to make the right action clear, possible, or socially available.
+- [Products Rule](https://tobilawson.com/writing/product-rules): Oct 2026. Why African tech companies should enter AI at the application layer.
+
+## Books
+
+- [WHO MADE THIS?: A microhistory of everyday things](https://tobilawson.com/books/): FORTHCOMING • IN WRITING. The stories behind 26 everyday objects, most of them part of daily life in Nigeria: the okada, the generator, garri, pure water, ankara, the jerry can and the plastic chair.
+- [Read the first chapter free](https://tobilawson.com/books/chapter#book=who-made-this&chapter=01-the-okada)
+
+## Projects
+
+- [Briclair](https://briclair.com/): Fintech Infrastructure / Founder. Identity, accounts and compliance infrastructure for Nigerian fintechs.
+- [Praiki](https://praiki.com/): Business Infrastructure / Founder. Infrastructure for African founders and professionals: vetted help, an operating layer for the business, and escrow that releases when the work ships.
+- [Prai](https://prai.dev/): AI Workspace / Founder. An AI workspace for chat, code and agents.
+- [Crapht](https://crapht.cloud/): Engineering Commons / Founder. An open commons for engineers who want to build hard things.
+- [Fine Friction](https://finefriction.com/): Business Technology and Consulting / Co-founder. Technology products that help businesses leverage Artificial Intelligence.
+- [Lagos Urban Project](http://lagosurban.com/): Platform / Founder. Reimagining Lagos as a more inclusive, livable, and productive city, built from how people live in it.
+- [Long Africa](http://longafrica.org/): Institution / Launching Soon. An institution dedicated to the civilisational foundations of African prosperity across multi-decade horizons.
+- [1914 Reader](https://www.1914reader.com/): Publication / Co-founder. A publication co-founded with Feyi Fawehinmi reading African stories through the lens of global economic change.
+
+## Course
+
+- How AI runs (Planned): The chips, data centres, power and connections AI depends on, and where Africa sits in that chain.
+- The models (Planned): What a model is, how it learns from data, and why a handful of companies build most of them.
+- The applications (Planned): The products built on top of models, and the problems they can and cannot solve yet.
+- Work and disruption (Planned): Which jobs AI changes first, and what that means for workers and employers in African economies.
+- The opportunities (Planned): Where Africans can build, invest and find work as AI spreads.
+
+## Feeds
+
+- [Essays as RSS](https://tobilawson.com/feed.xml)
+- [Every public page](https://tobilawson.com/sitemap.xml)
+
+## Private
+
+/desk/ and /admin are private working pages for Tobi. There is nothing public to read there.

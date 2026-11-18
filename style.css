@@ -1053,18 +1053,65 @@ footer .meta-links a:hover::after {
   padding-bottom: 6rem;
 }
 
+/* The book as an object: the cover is the front of a box with a spine on the
+   left and page edges on the right, turned so the spine shows. --book-depth
+   is the thickness. The spine's words come from the book's content. */
 .book-cover-container {
-  perspective: 1200px;
+  --book-depth: 40px;
+  perspective: 1400px;
+  padding: 1rem 0 2.5rem;
+  position: relative;
+}
+
+.book-cover-container::after {
+  /* the shadow on the table */
+  content: "";
+  position: absolute;
+  left: 8%;
+  right: 4%;
+  bottom: 0.9rem;
+  height: 26px;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(0, 0, 0, 0.22), rgba(0, 0, 0, 0));
+  filter: blur(6px);
+  transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.7s;
+  z-index: -1;
+}
+
+.book-object {
+  position: relative;
+  transform-style: preserve-3d;
+  transform: rotateY(34deg) rotateX(4deg);
+  transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .book-cover-frame {
+  position: relative;
   width: 100%;
-  border-radius: 4px;
-  box-shadow: -16px 24px 48px rgba(0, 0, 0, 0.14), 0 4px 12px rgba(0, 0, 0, 0.08);
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 2px 5px 5px 2px;
   overflow: hidden;
-  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-  transform-style: preserve-3d;
+  transform: translateZ(calc(var(--book-depth) / 2));
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+  backface-visibility: hidden;
+}
+
+.book-cover-frame::before {
+  /* the crease where a hardback's cover hinges */
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 7px;
+  width: 3px;
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.1), rgba(255, 255, 255, 0.35), rgba(0, 0, 0, 0.06));
+  pointer-events: none;
+}
+
+.book-cover-frame::after {
+  /* light across the cover */
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0) 40%, rgba(0, 0, 0, 0.05));
+  pointer-events: none;
 }
 
 .book-cover-frame img {
@@ -1073,9 +1120,64 @@ footer .meta-links a:hover::after {
   display: block;
 }
 
-.book-cover-container:hover .book-cover-frame {
-  transform: rotateY(-6deg) rotateX(3deg) translateY(-6px);
-  box-shadow: -22px 32px 56px rgba(0, 0, 0, 0.2), 0 8px 18px rgba(0, 0, 0, 0.1);
+.book-spine {
+  position: absolute;
+  top: 0;
+  left: calc(var(--book-depth) / -2);
+  width: var(--book-depth);
+  height: 100%;
+  transform: rotateY(-90deg);
+  background: linear-gradient(90deg, #dcd8d0, #f6f4ef 35%, #ebe8e1 70%, #d4d0c7);
+  border-radius: 3px 0 0 3px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.1rem 0 1rem;
+  overflow: hidden;
+}
+
+.book-spine-title,
+.book-spine-author {
+  writing-mode: vertical-rl;
+  white-space: nowrap;
+  color: #141414;
+  line-height: 1;
+}
+
+.book-spine-title {
+  font-family: var(--font-display);
+  font-size: 0.82rem;
+  letter-spacing: 0.04em;
+}
+
+.book-spine-author {
+  font-family: var(--font-sans, sans-serif);
+  font-size: 0.56rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding-top: 0.6rem;
+  border-top: 2px solid var(--accent);
+}
+
+.book-edge {
+  /* the pages, seen past the front cover's right edge */
+  position: absolute;
+  top: 1.5%;
+  right: calc(var(--book-depth) / -2);
+  width: var(--book-depth);
+  height: 97%;
+  transform: rotateY(90deg);
+  background: repeating-linear-gradient(90deg, #f3f0ea 0 1px, #e2ded5 1px 2px);
+}
+
+.book-cover-container:hover .book-object {
+  transform: rotateY(18deg) rotateX(2deg) translateY(-6px);
+}
+
+.book-cover-container:hover::after {
+  transform: scaleX(0.92);
+  opacity: 0.8;
 }
 
 .book-info {
@@ -1417,11 +1519,12 @@ footer .meta-links a:hover::after {
   a.venture-row:focus-visible .venture-arrow {
     transform: none;
   }
-  .book-cover-frame {
+  .book-object,
+  .book-cover-container::after {
     transition: none !important;
   }
-  .book-cover-container:hover .book-cover-frame {
-    transform: none !important;
+  .book-cover-container:hover .book-object {
+    transform: rotateY(34deg) rotateX(4deg);
   }
 }
 

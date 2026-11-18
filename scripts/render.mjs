@@ -10,7 +10,8 @@
 //   node scripts/render.mjs              render in place (the server's web root)
 //   node scripts/render.mjs --out DIR    write the rendered site into DIR instead
 //
-// Also draws a share image per essay into og/ (share-image.mjs).
+// Also draws a share image per essay into og/ (share-image.mjs), and writes
+// llms.txt: a plain guide to the site for AI assistants and search agents.
 // Needs Node 18.19 or newer (module.register) and `npm ci --omit=dev` for linkedom.
 import { register } from "node:module";
 import fs from "node:fs";
@@ -40,7 +41,8 @@ try {
 
 // Pages that are not part of the public site, or not rendered from content.
 const SKIP = new Set(["admin.html", "admin/index.html", "now.html", "now/index.html"]);
-const SKIP_DIRS = new Set(["node_modules", "scripts", "assets"]);
+// agent/ is the personal agent (its own service); desk/ is its built page, not content.
+const SKIP_DIRS = new Set(["node_modules", "scripts", "assets", "agent", "desk", "docs"]);
 
 function pages(dir = root, rel = "") {
   return fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
@@ -134,6 +136,62 @@ ${items}
 `;
 }
 
+/**
+ * llms.txt (llmstxt.org): who this is, what is here, and where, in plain
+ * Markdown, built from the same content as the pages so it never goes stale.
+ */
+function llms(doc) {
+  const s = doc.settings;
+  const one = (t) => String(t ?? "").replace(/\s+/g, " ").trim();
+  const line = (title, url, text) => `- [${one(title)}](${absolute(url)})${one(text) ? ": " + one(text) : ""}`;
+  const c = doc.collections;
+  const out = [
+    `# ${one(s.siteTitle) || "Tobi Lawson"}`,
+    "",
+    `> ${one(s.seoHomeDescription)}`,
+    "",
+    "Every page is plain HTML with the full text in it, so fetching a URL is enough to read it. The main pages (home, about, writing, books, projects, course) also carry schema.org data in a JSON-LD script tag.",
+    "",
+    "## Pages",
+    "",
+    line("Home", "/", ""),
+    line("About", "/about/", s.seoAboutDescription),
+    line("Writing", "/writing/", s.seoWritingDescription),
+    line("Books", "/books/", s.seoBooksDescription),
+    line("Projects", "/projects/", s.seoProjectsDescription),
+    line("Course", "/course/", s.seoCourseDescription),
+  ];
+  if (c.posts.length) {
+    out.push("", "## Essays", "");
+    for (const p of c.posts) out.push(line(p.title, p.url, [p.date, p.summary].filter(Boolean).join(". ")));
+  }
+  if (c.books.length) {
+    out.push("", "## Books", "");
+    for (const b of c.books) {
+      out.push(line([b.title, b.subtitle].filter(Boolean).join(": "), "/books/", [b.statusTag, b.synopsisP1].filter(Boolean).join(". ")));
+      if (b.previewUrl) out.push(line("Read the first chapter free", b.previewUrl, ""));
+    }
+  }
+  if (c.projects.length) {
+    out.push("", "## Projects", "");
+    for (const p of c.projects) out.push(line(p.title, p.link || "/projects/", [p.roleTag, p.description].filter(Boolean).join(". ")));
+  }
+  const lessons = c.lessons.filter((l) => one(l.title));
+  if (lessons.length) {
+    out.push("", "## Course", "");
+    for (const l of lessons) out.push(`- ${one(l.title)}${one(l.status) ? " (" + one(l.status) + ")" : ""}${one(l.summary) ? ": " + one(l.summary) : ""}`);
+  }
+  out.push(
+    "", "## Feeds", "",
+    line("Essays as RSS", "/feed.xml", ""),
+    line("Every public page", "/sitemap.xml", ""),
+    "", "## Private", "",
+    "/desk/ and /admin are private working pages for Tobi. There is nothing public to read there.",
+    ""
+  );
+  return out.join("\n");
+}
+
 function sitemap(doc) {
   const day = String(doc.updatedAt || new Date().toISOString()).slice(0, 10);
   const fixed = ["/", "/writing/", "/projects/", "/books/", "/about/", "/course/"];
@@ -204,5 +262,6 @@ const changed = [
 ];
 if (writeIfChanged("feed.xml", feed(doc))) changed.push("feed.xml");
 if (writeIfChanged("sitemap.xml", sitemap(doc))) changed.push("sitemap.xml");
+if (writeIfChanged("llms.txt", llms(doc))) changed.push("llms.txt");
 
 if (changed.length) console.log(`${new Date().toISOString()} rendered ${changed.length}: ${changed.join(", ")}`);

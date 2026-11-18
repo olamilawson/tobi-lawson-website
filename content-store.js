@@ -5,8 +5,8 @@
  * Owns: local cache, cloud merge, defaults, and escaping.
  */
 
-import { GROUPS, COLLECTIONS, SEED_COLLECTIONS, SCHEMA_VERSION, defaultSettings } from "/content-schema.js?v=3.19.0";
-import { fetchCloudDoc, saveCloudDoc, fetchLegacyDoc, isSupabaseConfigured } from "/supabase.js?v=3.19.0";
+import { GROUPS, COLLECTIONS, SEED_COLLECTIONS, SCHEMA_VERSION, defaultSettings } from "/content-schema.js?v=3.20.0";
+import { fetchCloudDoc, saveCloudDoc, fetchLegacyDoc, isSupabaseConfigured } from "/supabase.js?v=3.20.0";
 
 const STORAGE_KEY = "tobi_site_content_v3";
 const LEGACY_KEYS = ["tobi_site_data_v2", "tobi_site_data_v1", "tobi_site_data"];
@@ -544,6 +544,18 @@ const MIGRATIONS = [
       const seed = SEED_COLLECTIONS.posts.find((p) => p.id === "why-some-things-are-harder-than-others");
       const post = doc.collections.posts.find((p) => p.id === seed?.id);
       if (post && textHash(String(post.bodyProse || "").trim()) === "vv0yl1") post.bodyProse = seed.bodyProse;
+    }
+  },
+  {
+    // Every page's tab and search title was "Tobi Lawson". Give each page its
+    // own, but only where the title is still that default: one set in the
+    // console stays as it is.
+    id: "2026-11-page-titles",
+    run(doc) {
+      const defaults = defaultSettings();
+      for (const key of ["seoAboutTitle", "seoWritingTitle", "seoBooksTitle", "seoCourseTitle"]) {
+        if (String(doc.settings[key] || "").trim() === "Tobi Lawson") doc.settings[key] = defaults[key];
+      }
     }
   }
 ];

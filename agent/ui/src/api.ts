@@ -73,6 +73,8 @@ export async function request<T>(path: string, init: RequestInit & { json?: unkn
   const isJson = (res.headers.get("content-type") || "").includes("application/json");
   if (!isJson) {
     if (res.status === 204) return { ok: true, data: undefined as T };
+    // nginx answers a burst of requests itself, with a page, before the agent sees them.
+    if (res.status === 429) return { ok: false, kind: "locked", status: 429, message: "Too many requests at once. Wait a minute and try again." };
     // Without the service, nginx answers with a page or a gateway error.
     return { ok: false, kind: "not_running", status: res.status, message: "The agent isn't running on the server." };
   }

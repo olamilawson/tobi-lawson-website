@@ -10,7 +10,20 @@ import tailwindcss from "@tailwindcss/vite";
 export default defineConfig({
   base: "/desk/",
   plugins: [react(), tailwindcss()],
-  build: { outDir: "../../desk", emptyOutDir: true },
+  build: {
+    outDir: "../../desk",
+    emptyOutDir: true,
+    // Libraries in their own files: they change rarely, so a small change to
+    // the page does not make browsers download React again.
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          react: ["react", "react-dom", "react-router-dom"],
+          icons: ["lucide-react"],
+        },
+      },
+    },
+  },
   server: {
     port: 5173,
     proxy: {
