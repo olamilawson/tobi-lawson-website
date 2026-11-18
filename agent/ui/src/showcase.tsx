@@ -6,9 +6,10 @@
 // It shows what Ola does, in general words. It never shows data: no names, no
 // mail, no dates. Each step's line says what he is doing.
 //
-// The tour (one place, TOUR below):
-//   asleep -> waking -> building the day -> standing by -> thinking -> drafting
-//   -> waiting for a yes -> approved, sent -> reminder fetched -> delivered -> standing by -> (again)
+// The tour (one place, TOUR below), after a wave hello the first time:
+//   asleep -> waking -> coffee -> setting out the day -> standing by -> thinking
+//   -> drafting -> waiting for a yes -> sent -> a small dance -> reading attached
+//   files -> checking the time -> reminder fetched -> delivered -> standing by -> (again)
 // Pause stops it; it also stops while scrolled out of view. Clicking Ola while
 // he sleeps wakes him; otherwise he hops or tumbles, as on the desk.
 
@@ -17,6 +18,7 @@ import { createRoot } from "react-dom/client";
 import { Pause, Play } from "lucide-react";
 import Stage from "./components/Stage";
 import type { Activity, Source } from "./activity";
+import type { Pose } from "./components/Agent";
 import css from "./index.css?inline";
 
 type Step = {
@@ -25,22 +27,33 @@ type Step = {
   detail: string;
   ms: number; // how long the step lasts; 0 waits for the stage (the reminder fetch)
   waking?: boolean;
+  act?: Pose; // a pose held in place of the activity's own
   send?: boolean; // the paper plane: the approved email leaves
 };
+
+// Played once, when he first comes on screen; the loop starts after it.
+const HELLO: Step = { activity: "idle", act: "wave", status: "Hello", detail: "This is Ola, Tobi's personal agent", ms: 3000 };
 
 const TOUR: Step[] = [
   { activity: "sleeping", status: "Asleep", detail: "Until the morning", ms: 3200 },
   { activity: "sleeping", waking: true, status: "Waking up…", detail: "", ms: 1200 },
+  { activity: "idle", act: "coffee", status: "Coffee first", detail: "Then the day", ms: 4200 },
   { activity: "briefing", status: "Setting out the day", detail: "Reading the calendar and the unread mail", ms: 5200 },
-  { activity: "idle", status: "Standing by", detail: "The day is laid out for Tobi", ms: 4200 },
+  { activity: "idle", status: "Standing by", detail: "The day is laid out for Tobi", ms: 3600 },
   { activity: "thinking", status: "Thinking…", detail: "Tobi has asked for an email", ms: 2600 },
   { activity: "drafting", status: "Drafting…", detail: "Writing it the way Tobi writes", ms: 3800 },
   { activity: "waiting", status: "Waiting for a yes", detail: "Nothing goes out until Tobi approves it", ms: 4800 },
-  { activity: "idle", send: true, status: "Approved", detail: "The email goes out", ms: 3400 },
+  { activity: "idle", send: true, status: "Approved", detail: "The email goes out", ms: 2400 },
+  { activity: "idle", act: "dance", status: "Sent", detail: "A small dance", ms: 2700 },
+  { activity: "idle", act: "read", status: "Reading", detail: "The files Tobi attached to a message", ms: 4600 },
+  { activity: "idle", act: "watch", status: "Keeping time", detail: "A reminder is nearly due", ms: 2600 },
   { activity: "fetching", status: "Reminder due", detail: "Fetching it", ms: 0 },
   { activity: "delivering", status: "Reminder due", detail: "Brought to Tobi once, on time", ms: 3600 },
-  { activity: "idle", status: "Standing by", detail: "", ms: 6500 },
+  { activity: "idle", status: "Standing by", detail: "", ms: 7000 },
 ];
+
+// The hello, then the loop: index 0 is the hello, 1… the tour.
+const STEPS: Step[] = [HELLO, ...TOUR];
 
 const BRIEFING_SOURCES: Source[] = [
   { kind: "cal", label: "Calendar" },
@@ -55,10 +68,10 @@ function Tour() {
   const [celebrate, setCelebrate] = useState(0);
   const [ping, setPing] = useState(0);
   const box = useRef<HTMLDivElement>(null);
-  const step = TOUR[i];
+  const step = STEPS[i];
   const running = !paused && visible;
 
-  const next = useCallback(() => setI((n) => (n + 1) % TOUR.length), []);
+  const next = useCallback(() => setI((n) => (n + 1 >= STEPS.length ? 1 : n + 1)), []);
 
   // The reminder step ends when Ola has fetched the note. If the tour is paused
   // by then, it moves on when play resumes.
@@ -70,7 +83,7 @@ function Tour() {
   const advanceFromFetch = () => {
     if (!fetched.current) return;
     fetched.current = false;
-    setI((n) => (TOUR[n].activity === "fetching" ? n + 1 : n));
+    setI((n) => (STEPS[n].activity === "fetching" ? n + 1 : n));
   };
   useEffect(() => {
     if (running) advanceFromFetch();
@@ -116,7 +129,8 @@ function Tour() {
         celebrateKey={celebrate}
         celebratePlane
         pingKey={ping}
-        onWake={() => setI(1)}
+        onWake={() => setI(2)}
+        act={step.act}
         onFetched={onFetched}
         announce={false}
       />

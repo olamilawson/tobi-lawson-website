@@ -15,6 +15,7 @@ type Props = {
   onWake: () => void;
   onFetched: () => void;
   announce?: boolean; // false: no live region (the public tour, which changes every few seconds)
+  act?: Pose; // a pose to hold in place of the activity's own (the public tour: coffee, reading, the watch)
 };
 
 const FULL = 172; // rendered width of the character on a wide stage
@@ -45,6 +46,7 @@ export default function Stage({
   onWake,
   onFetched,
   announce = true,
+  act,
 }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const [w, setW] = useState(760);
@@ -160,30 +162,50 @@ export default function Stage({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activity, w]);
 
-  // idle life: wander, hop, look around
+  // idle life: wander, hop, look around, and now and then something of his
+  // own (a sip of coffee, a page or two, a wave, a little dance), never the
+  // same thing twice in a row.
   useEffect(() => {
-    if (activity !== "idle" || still) return;
+    if (activity !== "idle" || still || act) return;
     let alive = true;
+    let last = "";
+    const BITS: { name: string; weight: number; run: () => number }[] = [
+      { name: "walk", weight: 34, run: () => (walkTo(80 + Math.random() * (w - 160)), 0) },
+      { name: "hop", weight: 12, run: () => hold("hop", 720) },
+      { name: "look", weight: 12, run: () => (setLook(Math.random() < 0.5 ? -1 : 1), later(() => setLook(0), 1400), 1400) },
+      { name: "read", weight: 11, run: () => hold("read", 4200) },
+      { name: "coffee", weight: 10, run: () => hold("coffee", 4600) },
+      { name: "wave", weight: 9, run: () => hold("wave", 2400) },
+      { name: "dance", weight: 7, run: () => hold("dance", 2700) },
+      { name: "watch", weight: 5, run: () => hold("watch", 2000) },
+    ];
+    const hold = (p: Pose, ms: number) => {
+      setAction(p);
+      later(() => setAction(null), ms);
+      return ms;
+    };
+    const pick = () => {
+      const pool = BITS.filter((b) => b.name !== last);
+      let r = Math.random() * pool.reduce((n, b) => n + b.weight, 0);
+      for (const b of pool) {
+        r -= b.weight;
+        if (r <= 0) return b;
+      }
+      return pool[0];
+    };
     const tick = () => {
       if (!alive) return;
-      const r = Math.random();
-      if (r < 0.5) {
-        walkTo(80 + Math.random() * (w - 160));
-      } else if (r < 0.72) {
-        setAction("hop");
-        later(() => setAction(null), 720);
-      } else {
-        setLook(Math.random() < 0.5 ? -1 : 1);
-        later(() => setLook(0), 1400);
-      }
-      later(tick, 3200 + Math.random() * 2600);
+      const bit = pick();
+      last = bit.name;
+      const busy = bit.run();
+      later(tick, busy + 1800 + Math.random() * 2200);
     };
     later(tick, 1800);
     return () => {
       alive = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activity, w, still]);
+  }, [activity, w, still, act]);
 
   // celebrate a release or a finished task
   useEffect(() => {
@@ -229,7 +251,7 @@ export default function Stage({
     fetching: "idle",
     delivering: "wait",
   };
-  const pose: Pose = action ?? (waking ? "wake" : walking ? "walk" : basePose[activity]);
+  const pose: Pose = action ?? (waking ? "wake" : walking ? "walk" : act ?? basePose[activity]);
   const night = activity === "sleeping" && !waking;
   const held = activity === "delivering" || (activity === "fetching" && grabbed);
   const working = activity === "thinking" || activity === "researching" || activity === "drafting" || activity === "briefing";

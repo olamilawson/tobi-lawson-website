@@ -38,5 +38,5 @@ see which state it is in.
 
 | Machine | States | Transitions live in | Observe it |
 |---|---|---|---|
-| Stage tour | asleep → waking → setting out the day → standing by → thinking → drafting → waiting for a yes → approved → reminder fetched → delivered → standing by → (again); paused stops it, and it stops while off screen | `agent/ui/src/showcase.tsx` (`TOUR`) | `[data-ola-stage="live"]`; inside its shadow root, `data-state` and `data-paused` |
+| Stage tour | hello (once) → asleep → waking → coffee → setting out the day → standing by → thinking → drafting → waiting for a yes → approved → a small dance → reading attached files → checking the time → reminder fetched → delivered → standing by → (again); paused stops it, and it stops while off screen | `agent/ui/src/showcase.tsx` (`TOUR`) | `[data-ola-stage="live"]`; inside its shadow root, `data-state` and `data-paused` |
 | Loading the stage | still picture → live (when the stage comes near the screen; stays the still picture if scripts fail) | `app.js` `initOlaStage` | `[data-ola-stage]` is empty, or `"live"` |

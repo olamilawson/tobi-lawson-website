@@ -70,6 +70,10 @@
   --animate-fade-in: fade-in 0.22s ease-out;
   --animate-flash: flash 1.2s ease-out;
   --animate-letter: letter 0.9s ease-out infinite;
+  --animate-sip: sip 2.6s ease-in-out infinite;
+  --animate-sip-cup: sip-cup 2.6s ease-in-out infinite;
+  --animate-flip: flip 1.8s ease-in-out infinite;
+  --animate-dance: dance 0.9s ease-in-out infinite;
 
   @keyframes blink {
     0%, 91%, 100% { transform: scaleY(1); }
@@ -205,6 +209,28 @@
     0% { opacity: 0; transform: translate(0, 0); }
     30% { opacity: 1; }
     100% { opacity: 0; transform: translate(-6px, -26px); }
+  }
+  /* the cup comes up for a sip, then down */
+  @keyframes sip {
+    0%, 100% { transform: rotate(-40deg); }
+    35%, 60% { transform: rotate(-120deg); }
+  }
+  /* the cup turns against the arm, so it stays upright, and tips a little at the sip */
+  @keyframes sip-cup {
+    0%, 100% { transform: rotate(40deg); }
+    35%, 60% { transform: rotate(104deg); }
+  }
+  /* a page turns over the spine */
+  @keyframes flip {
+    0%, 20% { transform: scaleX(1); }
+    60%, 100% { transform: scaleX(-1); }
+  }
+  /* a small side-to-side dance */
+  @keyframes dance {
+    0%, 100% { transform: translateX(0) rotate(0deg); }
+    25% { transform: translateX(-7px) rotate(-6deg) translateY(-3px); }
+    50% { transform: translateX(0) rotate(0deg); }
+    75% { transform: translateX(7px) rotate(6deg) translateY(-3px); }
   }
 }
 

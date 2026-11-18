@@ -13,7 +13,8 @@ The owner creates the sign-in on the server:
     python -m personal_agent.auth
 
 That asks for an email address and a password, then prints the lines for the
-server's .env file.
+server's .env file. A forgotten password: `python -m personal_agent.auth
+--reset-password` prints only a new password line; the rest stays.
 """
 
 from __future__ import annotations
@@ -159,9 +160,30 @@ def qr_text(uri: str) -> str:
     return out.getvalue()
 
 
+def ask_new_password(getpass_fn) -> str | None:
+    """A new password, typed twice. None, with the reason printed, if it will not do."""
+    password = getpass_fn("Choose a password (12 characters or more): ")
+    if len(password) < 12:
+        print("That password has fewer than 12 characters. Nothing was changed.")
+        return None
+    if getpass_fn("Type it again: ") != password:
+        print("The two entries differ. Nothing was changed.")
+        return None
+    return password
+
+
 def main() -> int:
     import getpass
     import sys
+
+    # A forgotten password: a new hash only. The email, the session secret and
+    # the authenticator stay as they are, so the app on the phone keeps working.
+    if "--reset-password" in sys.argv:
+        password = ask_new_password(getpass.getpass)
+        if password is None:
+            return 1
+        print(f"PERSONAL_AGENT_OWNER_PASSWORD_HASH={hash_password(password)}")
+        return 0
 
     with_code = "--with-code" in sys.argv
     # Prompts go to the terminal even when the printed lines are sent to a file.

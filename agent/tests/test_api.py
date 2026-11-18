@@ -175,3 +175,19 @@ def test_a_calendar_that_fails_says_why(settings):
     day = client.get("/briefing").json()
     assert day["calendar"]["state"] == "down" and "could not be reached" in day["calendar"]["reason"]
     assert day["inbox"] == {"state": "ok", "items": [{"id": "m1", "subject": "Hello"}]}
+
+
+def test_a_password_reset_prints_only_the_new_hash(monkeypatch, capsys):
+    answers = iter(["a new long password", "a new long password"])
+    monkeypatch.setattr("getpass.getpass", lambda prompt="": next(answers))
+    monkeypatch.setattr("sys.argv", ["auth", "--reset-password"])
+    assert auth.main() == 0
+    [line] = capsys.readouterr().out.strip().splitlines()
+    name, value = line.split("=", 1)
+    assert name == "PERSONAL_AGENT_OWNER_PASSWORD_HASH" and auth.verify_password("a new long password", value)
+
+
+def test_a_password_reset_refuses_a_short_password(monkeypatch, capsys):
+    monkeypatch.setattr("getpass.getpass", lambda prompt="": "short")
+    monkeypatch.setattr("sys.argv", ["auth", "--reset-password"])
+    assert auth.main() == 1 and "Nothing was changed" in capsys.readouterr().out

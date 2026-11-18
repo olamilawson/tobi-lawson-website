@@ -2,7 +2,7 @@
 // side by side, by day and by night, for design work. Not in the built page.
 import Agent, { AgentPortrait, type Pose } from "../components/Agent";
 
-const POSES: Pose[] = ["idle", "think", "research", "draft", "wait", "cheer", "sleep", "wake", "down", "walk"];
+const POSES: Pose[] = ["idle", "wave", "coffee", "read", "watch", "dance", "think", "research", "draft", "wait", "cheer", "sleep", "wake", "down", "walk"];
 
 export default function Poses() {
   return (
