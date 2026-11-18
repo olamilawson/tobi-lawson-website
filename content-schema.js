@@ -106,6 +106,24 @@ export const GROUPS = [
   },
 
   {
+    id: "ola",
+    label: "Ola",
+    heading: "Ola Page",
+    blurb: "The public page about Ola, your personal agent, at /ola/. It describes what he does, never what he has done.",
+    fields: [
+      { key: "olaHeroTitle", label: "Headline", type: "text", default: "Ola" },
+      { key: "olaHeroSubtitle", label: "Lead Paragraph", type: "textarea", rows: 2,
+        default: "My personal agent. He prepares the work, and nothing leaves until I approve it." },
+      { key: "olaBodyProse", label: "Page Prose", type: "prose", rows: 12,
+        default: "Each morning at seven, Ola reads my calendar and my unread mail and sets out the day: the meetings, the messages waiting for a reply, the tasks that fall due, and anything he has prepared for my approval.\n\nThrough the day I write to him the way I would write to an assistant. If I ask him to email someone, he drafts the email and waits. If I ask for a meeting, he prepares the invitation and waits. I read the draft, change it if I want to, and approve it. Then it goes out. If the text changes after I approve it, my approval lapses and he asks me again.\n\nHe keeps my reminders and brings each one to me once, when it falls due. If I mention a preference, he asks whether to keep it, and keeps it when I say yes.\n\nOla runs on my own server and calls open-weight language models that Groq hosts. The desk where I work with him is private.",
+        help: "Leave a blank line between paragraphs. Use [label](https://example.com) for links." },
+      { key: "olaImageAlt", label: "Picture Alt Text", type: "text",
+        default: "Ola, drawn as a felt robot in a knitted scarf, waving and holding up an email",
+        help: "Describes the picture for screen readers." }
+    ]
+  },
+
+  {
     id: "projects",
     label: "Projects",
     heading: "Projects Page",
@@ -225,6 +243,9 @@ export const GROUPS = [
       { key: "seoBooksTitle", label: "Books — Tab Title", type: "text", default: "Who Made This? · Tobi Lawson" },
       { key: "seoBooksDescription", label: "Books — Description", type: "textarea", rows: 2,
         default: "Who Made This? — a microhistory of everyday things, and other volumes in progress." },
+      { key: "seoOlaTitle", label: "Ola — Tab Title", type: "text", default: "Ola · Tobi Lawson" },
+      { key: "seoOlaDescription", label: "Ola — Description", type: "textarea", rows: 2,
+        default: "Ola is Tobi Lawson's personal agent. He drafts emails and meeting invitations and keeps reminders, and nothing goes out until Tobi approves it." },
       { key: "seoCourseTitle", label: "Course — Tab Title", type: "text", default: "Course · Tobi Lawson" },
       { key: "seoCourseDescription", label: "Course — Description", type: "textarea", rows: 2,
         default: "A free course on artificial intelligence for a general audience in Africa: how it works, who builds it, and what it means for work." }
@@ -408,6 +429,10 @@ export const SEED_COLLECTIONS = {
       group: "software", featured: "no",
       description: "Holding company for Bombell and Gistbird.",
       link: "https://finefriction.com" },
+    { id: "ola", title: "Ola", roleTag: "Personal Agent / Builder", status: "Active",
+      group: "software", featured: "no",
+      description: "My personal agent. He drafts emails and invitations and keeps my reminders, and sends nothing until I approve it.",
+      link: "/ola/" },
     { id: "lagos-urban", title: "Lagos Urban Project", roleTag: "Platform / Founder", status: "Active",
       group: "cities", featured: "yes",
       description: "Reimagining Lagos as a more inclusive, livable, and productive city, built from how people live in it.",

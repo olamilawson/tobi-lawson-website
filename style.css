@@ -1644,3 +1644,45 @@ footer .meta-links a:hover::after {
 .about-portrait-wrapper[hidden] {
   display: none;
 }
+
+/* Ola, the personal agent's public page (/ola/): the picture beside the prose,
+   on the warm ground the desk uses for his portrait. */
+.ola-layout {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: 4rem;
+  align-items: start;
+  margin-bottom: 6rem;
+}
+
+.ola-figure {
+  margin: 0;
+  aspect-ratio: 4 / 5;
+  border-radius: 6px;
+  background: radial-gradient(circle at 35% 30%, #fde9df, #f3c7b4 70%, #e9ae96);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.ola-figure img {
+  width: 82%;
+  height: auto;
+  display: block;
+  margin-bottom: 4%;
+}
+
+.ola-prose {
+  max-width: 640px;
+}
+
+@media (max-width: 900px) {
+  .ola-layout {
+    grid-template-columns: 1fr;
+    gap: 2.5rem;
+  }
+  .ola-figure {
+    max-width: 280px;
+  }
+}

@@ -178,11 +178,11 @@ Public pages: `index`, `about`, `books`, `projects`, `course`, `writing/index`, 
 ### The duplicated page files
 
 `about.html` and `about/index.html` are byte-identical copies, as are `books`,
-`projects`, `course`, and `admin`. They exist so both `/about` and `/about/` resolve.
+`projects`, `course`, `ola`, and `admin`. They exist so both `/about` and `/about/` resolve.
 **If you edit one, copy it over the other**, or they will drift:
 
 ```bash
-for p in about books projects course admin; do cp $p.html $p/index.html; done
+for p in about books projects course ola admin; do cp $p.html $p/index.html; done
 ```
 
 ---

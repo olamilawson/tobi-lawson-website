@@ -5,8 +5,8 @@
  * Owns: local cache, cloud merge, defaults, and escaping.
  */
 
-import { GROUPS, COLLECTIONS, SEED_COLLECTIONS, SCHEMA_VERSION, defaultSettings } from "/content-schema.js?v=3.20.0";
-import { fetchCloudDoc, saveCloudDoc, fetchLegacyDoc, isSupabaseConfigured } from "/supabase.js?v=3.20.0";
+import { GROUPS, COLLECTIONS, SEED_COLLECTIONS, SCHEMA_VERSION, defaultSettings } from "/content-schema.js?v=3.21.0";
+import { fetchCloudDoc, saveCloudDoc, fetchLegacyDoc, isSupabaseConfigured } from "/supabase.js?v=3.21.0";
 
 const STORAGE_KEY = "tobi_site_content_v3";
 const LEGACY_KEYS = ["tobi_site_data_v2", "tobi_site_data_v1", "tobi_site_data"];
@@ -556,6 +556,18 @@ const MIGRATIONS = [
       for (const key of ["seoAboutTitle", "seoWritingTitle", "seoBooksTitle", "seoCourseTitle"]) {
         if (String(doc.settings[key] || "").trim() === "Tobi Lawson") doc.settings[key] = defaults[key];
       }
+    }
+  },
+  {
+    // Ola, the personal agent, gets a public page (/ola/) and a line on the
+    // Projects page, after the software projects. Added once; deleting it in
+    // the console keeps it deleted.
+    id: "2026-11-ola-page",
+    run(doc) {
+      if (doc.collections.projects.some((p) => p.id === "ola")) return;
+      const seed = SEED_COLLECTIONS.projects.find((p) => p.id === "ola");
+      const after = doc.collections.projects.map((p) => p.group).lastIndexOf("software");
+      doc.collections.projects.splice(after + 1, 0, { ...seed });
     }
   }
 ];

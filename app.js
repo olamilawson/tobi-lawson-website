@@ -12,9 +12,9 @@
  * All author-supplied text is escaped before it reaches innerHTML.
  */
 
-import { loadContent, onContentUpdated, esc, escUrl, renderProse, renderLines } from "/content-store.js?v=3.20.0";
-import { subscribeToCloud } from "/supabase.js?v=3.20.0";
-import { FIELD_BY_KEY, PROJECT_GROUPS } from "/content-schema.js?v=3.20.0";
+import { loadContent, onContentUpdated, esc, escUrl, renderProse, renderLines } from "/content-store.js?v=3.21.0";
+import { subscribeToCloud } from "/supabase.js?v=3.21.0";
+import { FIELD_BY_KEY, PROJECT_GROUPS } from "/content-schema.js?v=3.21.0";
 
 // ---------------------------------------------------------------------------
 // Singleton fields
@@ -227,6 +227,8 @@ function ventureRow(p, i, { status = false } = {}) {
   // Skip the status when the role tag already says it ("Institution / Launching Soon").
   const repeats = String(p.roleTag || "").toLowerCase().includes(String(p.status || "").toLowerCase());
   const role = status && p.status && !repeats ? `${p.status} · ${p.roleTag}` : p.roleTag;
+  // A page on this site ("/ola/") opens in the same tab, with a plain arrow.
+  const internal = String(p.link || "").startsWith("/");
   const body = `
     <span class="venture-index" aria-hidden="true">${index}</span>
     <div class="venture-head">
@@ -236,14 +238,14 @@ function ventureRow(p, i, { status = false } = {}) {
     <div class="venture-body">
       <p class="venture-desc">${esc(p.description)}</p>
       ${p.link
-        ? `<span class="meta venture-host">${hostLabel(p.link)}</span>`
+        ? `<span class="meta venture-host">${internal ? "tobilawson.com" + esc(String(p.link).replace(/\/$/, "")) : hostLabel(p.link)}</span>`
         : `<span class="meta venture-host venture-host--pending">Not yet public</span>`}
     </div>
-    ${p.link ? `<span class="venture-arrow" aria-hidden="true">↗</span>` : ""}`;
+    ${p.link ? `<span class="venture-arrow" aria-hidden="true">${internal ? "→" : "↗"}</span>` : ""}`;
 
   const anim = `fade-up delay-${(i % 3) + 1}`;
   return p.link
-    ? `<a class="venture-row ${anim}" href="${escUrl(p.link)}" target="_blank" rel="noopener noreferrer">${body}</a>`
+    ? `<a class="venture-row ${anim}" href="${escUrl(p.link)}"${internal ? "" : ' target="_blank" rel="noopener noreferrer"'}>${body}</a>`
     : `<div class="venture-row venture-row--pending ${anim}">${body}</div>`;
 }
 

@@ -160,6 +160,7 @@ function llms(doc) {
     line("Books", "/books/", s.seoBooksDescription),
     line("Projects", "/projects/", s.seoProjectsDescription),
     line("Course", "/course/", s.seoCourseDescription),
+    line("Ola", "/ola/", s.seoOlaDescription),
   ];
   if (c.posts.length) {
     out.push("", "## Essays", "");
@@ -186,7 +187,7 @@ function llms(doc) {
     line("Essays as RSS", "/feed.xml", ""),
     line("Every public page", "/sitemap.xml", ""),
     "", "## Private", "",
-    "/desk/ and /admin are private working pages for Tobi. There is nothing public to read there.",
+    "/desk/ and /admin are private working pages for Tobi. There is nothing public to read there; /ola/ describes the agent.",
     ""
   );
   return out.join("\n");
@@ -194,7 +195,7 @@ function llms(doc) {
 
 function sitemap(doc) {
   const day = String(doc.updatedAt || new Date().toISOString()).slice(0, 10);
-  const fixed = ["/", "/writing/", "/projects/", "/books/", "/about/", "/course/"];
+  const fixed = ["/", "/writing/", "/projects/", "/books/", "/about/", "/course/", "/ola/"];
   // Fragment URLs (console essays, chapters) are one page to a crawler, so
   // only essays with a path of their own get an entry.
   const essays = doc.collections.posts.map((p) => String(p.url || "")).filter((u) => u && !u.includes("#"));

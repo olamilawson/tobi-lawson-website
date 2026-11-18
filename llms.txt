@@ -12,6 +12,7 @@ Every page is plain HTML with the full text in it, so fetching a URL is enough t
 - [Books](https://tobilawson.com/books/): Who Made This? — a microhistory of everyday things, and other volumes in progress.
 - [Projects](https://tobilawson.com/projects/): Companies and institutions Tobi Lawson has started or co-founded.
 - [Course](https://tobilawson.com/course/): A free course on artificial intelligence for a general audience in Africa: how it works, who builds it, and what it means for work.
+- [Ola](https://tobilawson.com/ola/): Ola is Tobi Lawson's personal agent. He drafts emails and meeting invitations and keeps reminders, and nothing goes out until Tobi approves it.
 
 ## Essays
 
@@ -30,6 +31,7 @@ Every page is plain HTML with the full text in it, so fetching a URL is enough t
 - [Prai](https://prai.dev/): AI Workspace / Founder. An AI workspace for chat, code and agents.
 - [Crapht](https://crapht.cloud/): Engineering Commons / Founder. An open commons for engineers who want to build hard things.
 - [Fine Friction](https://finefriction.com/): Business Technology and Consulting / Co-founder. Technology products that help businesses leverage Artificial Intelligence.
+- [Ola](https://tobilawson.com/ola/): Personal Agent / Builder. My personal agent. He drafts emails and invitations and keeps my reminders, and sends nothing until I approve it.
 - [Lagos Urban Project](http://lagosurban.com/): Platform / Founder. Reimagining Lagos as a more inclusive, livable, and productive city, built from how people live in it.
 - [Long Africa](http://longafrica.org/): Institution / Launching Soon. An institution dedicated to the civilisational foundations of African prosperity across multi-decade horizons.
 - [1914 Reader](https://www.1914reader.com/): Publication / Co-founder. A publication co-founded with Feyi Fawehinmi reading African stories through the lens of global economic change.
@@ -49,4 +51,4 @@ Every page is plain HTML with the full text in it, so fetching a URL is enough t
 
 ## Private
 
-/desk/ and /admin are private working pages for Tobi. There is nothing public to read there.
+/desk/ and /admin are private working pages for Tobi. There is nothing public to read there; /ola/ describes the agent.

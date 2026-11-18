@@ -43,6 +43,12 @@ export default function Blocked({ kind, detail, onRetry }: { kind: keyof typeof 
       >
         {checking ? <Loader2 size={14} className="animate-spin" /> : <RotateCw size={14} />} Check again
       </button>
+      <p className="text-sm text-ink-3">
+        This is Tobi's private desk.{" "}
+        <a href="/ola/" className="font-medium text-ink underline-offset-2 hover:underline">
+          Read about Ola
+        </a>
+      </p>
     </main>
   );
 }
