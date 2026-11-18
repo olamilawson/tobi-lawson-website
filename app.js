@@ -12,9 +12,9 @@
  * All author-supplied text is escaped before it reaches innerHTML.
  */
 
-import { loadContent, onContentUpdated, esc, escUrl, renderProse, renderLines } from "/content-store.js?v=3.24.0";
-import { subscribeToCloud } from "/supabase.js?v=3.24.0";
-import { FIELD_BY_KEY, PROJECT_GROUPS } from "/content-schema.js?v=3.24.0";
+import { loadContent, onContentUpdated, esc, escUrl, renderProse, renderLines } from "/content-store.js?v=3.25.0";
+import { subscribeToCloud } from "/supabase.js?v=3.25.0";
+import { FIELD_BY_KEY, PROJECT_GROUPS } from "/content-schema.js?v=3.25.0";
 
 // ---------------------------------------------------------------------------
 // Singleton fields
@@ -599,7 +599,7 @@ function initOlaStage() {
   const load = () => {
     if (started) return;
     started = true;
-    import("/desk/assets/showcase.js?v=3.24.0").catch(() => {});
+    import("/desk/assets/showcase.js?v=3.25.0").catch(() => {});
   };
   if (typeof IntersectionObserver === "undefined") return load();
   const io = new IntersectionObserver((entries) => {

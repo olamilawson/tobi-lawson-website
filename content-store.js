@@ -5,8 +5,8 @@
  * Owns: local cache, cloud merge, defaults, and escaping.
  */
 
-import { GROUPS, COLLECTIONS, SEED_COLLECTIONS, SCHEMA_VERSION, defaultSettings } from "/content-schema.js?v=3.24.0";
-import { fetchCloudDoc, saveCloudDoc, fetchLegacyDoc, isSupabaseConfigured } from "/supabase.js?v=3.24.0";
+import { GROUPS, COLLECTIONS, SEED_COLLECTIONS, SCHEMA_VERSION, defaultSettings } from "/content-schema.js?v=3.25.0";
+import { fetchCloudDoc, saveCloudDoc, fetchLegacyDoc, isSupabaseConfigured } from "/supabase.js?v=3.25.0";
 
 const STORAGE_KEY = "tobi_site_content_v3";
 const LEGACY_KEYS = ["tobi_site_data_v2", "tobi_site_data_v1", "tobi_site_data"];
@@ -568,6 +568,15 @@ const MIGRATIONS = [
       const seed = SEED_COLLECTIONS.projects.find((p) => p.id === "ola");
       const after = doc.collections.projects.map((p) => p.group).lastIndexOf("software");
       doc.collections.projects.splice(after + 1, 0, { ...seed });
+    }
+  },
+  {
+    // Third essay, from the swarm-intelligence research note. Newest first, so
+    // it leads the homepage. Added once; if the author deletes it, it stays deleted.
+    id: "2026-11-third-essay",
+    run(doc) {
+      const seed = SEED_COLLECTIONS.posts.find((p) => p.id === "ants-pigeons-and-the-org-chart");
+      if (seed && !doc.collections.posts.some((p) => p.id === seed.id)) doc.collections.posts.unshift({ ...seed });
     }
   }
 ];
