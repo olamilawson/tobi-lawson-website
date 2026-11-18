@@ -5,8 +5,8 @@
  * Owns: local cache, cloud merge, defaults, and escaping.
  */
 
-import { GROUPS, COLLECTIONS, SEED_COLLECTIONS, SCHEMA_VERSION, defaultSettings } from "/content-schema.js?v=3.25.0";
-import { fetchCloudDoc, saveCloudDoc, fetchLegacyDoc, isSupabaseConfigured } from "/supabase.js?v=3.25.0";
+import { GROUPS, COLLECTIONS, SEED_COLLECTIONS, SCHEMA_VERSION, defaultSettings } from "/content-schema.js?v=3.26.0";
+import { fetchCloudDoc, saveCloudDoc, fetchLegacyDoc, isSupabaseConfigured } from "/supabase.js?v=3.26.0";
 
 const STORAGE_KEY = "tobi_site_content_v3";
 const LEGACY_KEYS = ["tobi_site_data_v2", "tobi_site_data_v1", "tobi_site_data"];
@@ -577,6 +577,17 @@ const MIGRATIONS = [
     run(doc) {
       const seed = SEED_COLLECTIONS.posts.find((p) => p.id === "ants-pigeons-and-the-org-chart");
       if (seed && !doc.collections.posts.some((p) => p.id === seed.id)) doc.collections.posts.unshift({ ...seed });
+    }
+  },
+  {
+    // The third essay rewritten as connected prose (the first version read
+    // choppy). Replaces the text only if it is still the first published
+    // version, word for word (checked by hash), so a console edit survives.
+    id: "2026-11-third-essay-rewrite",
+    run(doc) {
+      const seed = SEED_COLLECTIONS.posts.find((p) => p.id === "ants-pigeons-and-the-org-chart");
+      const post = doc.collections.posts.find((p) => p.id === seed?.id);
+      if (post && textHash(String(post.bodyProse || "").trim()) === "1hyzetj") post.bodyProse = seed.bodyProse;
     }
   }
 ];
