@@ -16,7 +16,11 @@ export default defineConfig({
     // Libraries in their own files: they change rarely, so a small change to
     // the page does not make browsers download React again.
     rollupOptions: {
+      // The desk (index.html), and Ola's stage for the public site (src/showcase.tsx),
+      // which the site loads by a fixed name: /desk/assets/showcase.js.
+      input: { index: "index.html", showcase: "src/showcase.tsx" },
       output: {
+        entryFileNames: (chunk) => (chunk.name === "showcase" ? "assets/showcase.js" : "assets/[name]-[hash].js"),
         manualChunks: {
           react: ["react", "react-dom", "react-router-dom"],
           icons: ["lucide-react"],

@@ -80,7 +80,12 @@ export const GROUPS = [
       { key: "homeProjectsMore", label: "Projects Section — Link to All", type: "text", default: "All projects →" },
       { key: "homeWritingHeading", label: "Writing Section — Heading", type: "text", default: "Recent Essays & Notes" },
       { key: "homeWritingEyebrow", label: "Writing Section — Eyebrow", type: "text", default: "01 / WRITING" },
-      { key: "homeWritingMore", label: "Writing Section — Link to All", type: "text", default: "All writing →" }
+      { key: "homeWritingMore", label: "Writing Section — Link to All", type: "text", default: "All writing →" },
+      { key: "homeOlaHeading", label: "Ola Section — Heading", type: "text", default: "Ola, my personal agent" },
+      { key: "homeOlaEyebrow", label: "Ola Section — Eyebrow", type: "text", default: "03 / AGENT" },
+      { key: "homeOlaText", label: "Ola Section — Line", type: "textarea", rows: 2,
+        default: "He sets out my day, drafts my emails and invitations, and keeps my reminders. Nothing leaves until I approve it." },
+      { key: "homeOlaMore", label: "Ola Section — Link", type: "text", default: "About Ola →" }
     ]
   },
 

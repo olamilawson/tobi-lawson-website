@@ -14,6 +14,7 @@ type Props = {
   pingKey: number;
   onWake: () => void;
   onFetched: () => void;
+  announce?: boolean; // false: no live region (the public tour, which changes every few seconds)
 };
 
 const FULL = 172; // rendered width of the character on a wide stage
@@ -43,6 +44,7 @@ export default function Stage({
   pingKey,
   onWake,
   onFetched,
+  announce = true,
 }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const [w, setW] = useState(760);
@@ -237,7 +239,7 @@ export default function Stage({
     <div
       ref={ref}
       data-state={activity}
-      role="status"
+      role={announce ? "status" : undefined}
       aria-label={`${name}: ${status}${detail ? ". " + detail : ""}`}
       className={
         night

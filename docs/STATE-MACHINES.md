@@ -33,3 +33,10 @@ see which state it is in.
 | Composer | `ready`, `busy` (an answer is being written), `sending`, send failed (the text is kept) | `screens/Home.tsx` `Composer` | `<form data-state>`, the send button's `aria-describedby` |
 | Asleep / awake | asleep outside the agent's hours until woken (per day, remembered in this browser); a message also wakes | `screens/Home.tsx` (`asleep`, `wakeUp`) | the stage's `data-state="sleeping"` |
 | Task row, memory row | `idle` → `confirming` → `deleting` / `forgetting` (deleting asks first) | `screens/Tasks.tsx`, `screens/Memory.tsx` | `data-state` on the row |
+
+## Ola on the public site (homepage and /ola/)
+
+| Machine | States | Transitions live in | Observe it |
+|---|---|---|---|
+| Stage tour | asleep → waking → setting out the day → standing by → thinking → drafting → waiting for a yes → approved → reminder fetched → delivered → standing by → (again); paused stops it, and it stops while off screen | `agent/ui/src/showcase.tsx` (`TOUR`) | `[data-ola-stage="live"]`; inside its shadow root, `data-state` and `data-paused` |
+| Loading the stage | still picture → live (when the stage comes near the screen; stays the still picture if scripts fail) | `app.js` `initOlaStage` | `[data-ola-stage]` is empty, or `"live"` |

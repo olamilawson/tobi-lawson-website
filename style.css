@@ -1645,44 +1645,59 @@ footer .meta-links a:hover::after {
   display: none;
 }
 
-/* Ola, the personal agent's public page (/ola/): the picture beside the prose,
-   on the warm ground the desk uses for his portrait. */
-.ola-layout {
-  display: grid;
-  grid-template-columns: 300px minmax(0, 1fr);
-  gap: 4rem;
-  align-items: start;
+/* Ola's stage (homepage and /ola/). The script draws the live stage inside
+   this box; until it loads, or without scripts, the still picture shows on
+   the same ground, at the same height, so nothing jumps. */
+.ola-stage {
+  position: relative;
+  display: block;
+  height: 300px;
+  border-radius: 16px;
+  background: #ecece9;
+  overflow: hidden;
+  margin: 0.5rem 0 1.5rem;
+}
+
+.ola-stage > img {
+  position: absolute;
+  left: 50%;
+  bottom: 12px;
+  height: 82%;
+  width: auto;
+  transform: translateX(-50%);
+}
+
+.ola-stage[data-ola-stage="live"] {
+  background: transparent;
+}
+
+.ola-home-line {
+  max-width: 640px;
+  font-size: 1.1rem;
+  color: var(--text-muted);
+  margin-bottom: 1.25rem;
+}
+
+.ola-page {
   margin-bottom: 6rem;
 }
 
-.ola-figure {
-  margin: 0;
-  aspect-ratio: 4 / 5;
-  border-radius: 6px;
-  background: radial-gradient(circle at 35% 30%, #fde9df, #f3c7b4 70%, #e9ae96);
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  overflow: hidden;
-}
-
-.ola-figure img {
-  width: 82%;
-  height: auto;
-  display: block;
-  margin-bottom: 4%;
+.ola-page .ola-stage {
+  margin-bottom: 3rem;
 }
 
 .ola-prose {
-  max-width: 640px;
+  max-width: 680px;
 }
 
-@media (max-width: 900px) {
-  .ola-layout {
-    grid-template-columns: 1fr;
-    gap: 2.5rem;
+@media (prefers-color-scheme: dark) {
+  .ola-stage {
+    background: #1d1f24;
   }
-  .ola-figure {
-    max-width: 280px;
+}
+
+@media (max-width: 560px) {
+  .ola-stage {
+    height: 250px;
   }
 }

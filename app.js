@@ -12,9 +12,9 @@
  * All author-supplied text is escaped before it reaches innerHTML.
  */
 
-import { loadContent, onContentUpdated, esc, escUrl, renderProse, renderLines } from "/content-store.js?v=3.21.0";
-import { subscribeToCloud } from "/supabase.js?v=3.21.0";
-import { FIELD_BY_KEY, PROJECT_GROUPS } from "/content-schema.js?v=3.21.0";
+import { loadContent, onContentUpdated, esc, escUrl, renderProse, renderLines } from "/content-store.js?v=3.22.0";
+import { subscribeToCloud } from "/supabase.js?v=3.22.0";
+import { FIELD_BY_KEY, PROJECT_GROUPS } from "/content-schema.js?v=3.22.0";
 
 // ---------------------------------------------------------------------------
 // Singleton fields
@@ -587,8 +587,33 @@ function initSmoothScroll() {
   });
 }
 
+/**
+ * Ola's stage (the homepage and /ola/). The script and React load only when a
+ * stage comes near the screen; until then, and if they fail, the still picture
+ * inside [data-ola-stage] stays.
+ */
+function initOlaStage() {
+  const hosts = document.querySelectorAll("[data-ola-stage]");
+  if (!hosts.length) return;
+  let started = false;
+  const load = () => {
+    if (started) return;
+    started = true;
+    import("/desk/assets/showcase.js?v=3.22.0").catch(() => {});
+  };
+  if (typeof IntersectionObserver === "undefined") return load();
+  const io = new IntersectionObserver((entries) => {
+    if (entries.some((e) => e.isIntersecting)) {
+      io.disconnect();
+      load();
+    }
+  }, { rootMargin: "400px 0px" });
+  hosts.forEach((h) => io.observe(h));
+}
+
 function init() {
   initSmoothScroll();
+  initOlaStage();
   initSidenotes();
   hydrate();
   onContentUpdated(hydrate);
