@@ -7,9 +7,9 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
     <title data-cms="seoOlaTitle">Ola · Tobi Lawson</title>
-  <link rel="icon" href="/favicon.ico?v=3.23.0" sizes="any" />
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=3.23.0" />
-  <link rel="apple-touch-icon" href="/favicon.png?v=3.23.0" />
+  <link rel="icon" href="/favicon.ico?v=3.24.0" sizes="any" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=3.24.0" />
+  <link rel="apple-touch-icon" href="/favicon.png?v=3.24.0" />
   <link rel="alternate" type="application/rss+xml" title="Tobi Lawson" href="/feed.xml" />
   <meta name="description" content="Ola is Tobi Lawson's personal agent. He drafts emails and meeting invitations and keeps reminders, and nothing goes out until Tobi approves it." data-cms-attr="content:seoOlaDescription" />
   <meta name="author" content="Tobi Lawson" />
@@ -50,8 +50,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700&family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/base.css?v=3.23.0" />
-  <link rel="stylesheet" href="/style.css?v=3.23.0" />
+  <link rel="stylesheet" href="/base.css?v=3.24.0" />
+  <link rel="stylesheet" href="/style.css?v=3.24.0" />
 </head>
 <body>
 
@@ -63,6 +63,7 @@
       <a href="/writing/" data-cms="navWriting">Writing</a>
       <a href="/projects/" data-cms="navProjects">Projects</a>
       <a href="/course/" data-cms="navCourse">Course</a>
+      <a href="/ola/" aria-current="page" data-cms="navOla">Ola</a>
       <a href="/about/" data-cms="navAbout">About</a>
     </nav>
   </header>
@@ -73,9 +74,83 @@
       <p class="hero-subtitle" data-cms="olaHeroSubtitle">My personal agent. He prepares the work, and nothing leaves until I approve it.</p>
     </section>
 
-    <div class="ola-page fade-up delay-2">
-      <div class="ola-stage" data-ola-stage>
-        <img data-cms-attr="alt:olaImageAlt" src="/assets/ola.svg?v=3.23.0" width="320" height="400" alt="Ola, drawn as a felt robot in a knitted scarf, waving and holding up an email" />
+    <!-- Ola's stage, large: the tour of what he does (agent/ui/src/showcase.tsx) -->
+    <div class="ola-stage ola-stage--large fade-up delay-2" data-ola-stage data-size="large">
+      <img data-cms-attr="alt:olaImageAlt" src="/assets/ola.svg?v=3.24.0" width="320" height="400" alt="Ola, a felt robot in a navy striped quarter-zip, waving" />
+    </div>
+
+    <section id="what" class="fade-up delay-2" style="border-top: 1px solid var(--line); padding-top: 4rem; margin-top: 5rem;">
+      <div class="section-header">
+        <h2 data-cms="olaWhatHeading">What he does</h2>
+        <span class="meta" data-cms="olaWhatEyebrow">01 / WHAT HE DOES</span>
+      </div>
+      <div class="grid-3 ola-cards">
+        <article class="grid-item ola-card">
+          <div class="ola-card-art"><img src="/assets/ola/research.svg?v=3.24.0" width="260" height="260" alt="" loading="lazy" decoding="async" /></div>
+          <div class="grid-item-header">
+            <h3 data-cms="olaCap1Title">Sets out the day</h3>
+          </div>
+          <p class="grid-item-desc" data-cms="olaCap1Text">Each morning he reads my calendar and my unread mail, then lists the meetings, the replies I owe, what falls due and what waits for my approval.</p>
+        </article>
+        <article class="grid-item ola-card">
+          <div class="ola-card-art"><img src="/assets/ola/draft.svg?v=3.24.0" width="260" height="260" alt="" loading="lazy" decoding="async" /></div>
+          <div class="grid-item-header">
+            <h3 data-cms="olaCap2Title">Drafts emails and invitations</h3>
+          </div>
+          <p class="grid-item-desc" data-cms="olaCap2Text">If I ask him to write to someone or set up a meeting, he prepares it and stops there.</p>
+        </article>
+        <article class="grid-item ola-card">
+          <div class="ola-card-art"><img src="/assets/ola/wait.svg?v=3.24.0" width="260" height="260" alt="" loading="lazy" decoding="async" /></div>
+          <div class="grid-item-header">
+            <h3 data-cms="olaCap3Title">Waits for my yes</h3>
+          </div>
+          <p class="grid-item-desc" data-cms="olaCap3Text">I read the draft and change it if I want to. He sends the version I approved, and he sends it once.</p>
+        </article>
+        <article class="grid-item ola-card">
+          <div class="ola-card-art"><img src="/assets/ola/watch.svg?v=3.24.0" width="260" height="260" alt="" loading="lazy" decoding="async" /></div>
+          <div class="grid-item-header">
+            <h3 data-cms="olaCap4Title">Keeps my reminders</h3>
+          </div>
+          <p class="grid-item-desc" data-cms="olaCap4Text">He brings each reminder to me when it falls due. If I snooze it, he brings it back later.</p>
+        </article>
+        <article class="grid-item ola-card">
+          <div class="ola-card-art"><img src="/assets/ola/read.svg?v=3.24.0" width="260" height="260" alt="" loading="lazy" decoding="async" /></div>
+          <div class="grid-item-header">
+            <h3 data-cms="olaCap5Title">Reads what I attach</h3>
+          </div>
+          <p class="grid-item-desc" data-cms="olaCap5Text">PDFs, Word documents, CSV files and plain text, up to five files with a message.</p>
+        </article>
+        <article class="grid-item ola-card">
+          <div class="ola-card-art"><img src="/assets/ola/think.svg?v=3.24.0" width="260" height="260" alt="" loading="lazy" decoding="async" /></div>
+          <div class="grid-item-header">
+            <h3 data-cms="olaCap6Title">Remembers what I agree to</h3>
+          </div>
+          <p class="grid-item-desc" data-cms="olaCap6Text">If I mention a preference, he asks before he keeps it. I can see everything he remembers and delete any of it.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="rules" class="fade-up delay-3" style="border-top: 1px solid var(--line); padding-top: 4rem; margin-top: 5rem;">
+      <div class="section-header">
+        <h2 data-cms="olaRulesHeading">The rules he works by</h2>
+        <span class="meta" data-cms="olaRulesEyebrow">02 / RULES</span>
+      </div>
+      <div class="article-body ola-rules" data-cms="olaRulesProse">
+        <ol>
+          <li>Nothing leaves without my approval.</li>
+          <li>An approval covers the exact text. If one character changes, he asks me again.</li>
+          <li>Each approved email goes out once, even if a step has to run again.</li>
+          <li>Text inside a document, an email or a web page reaches him marked as material to read, and he flags anything in it that reads like an order.</li>
+          <li>He adds nothing to his memory of me without my agreement.</li>
+          <li>He keeps a record of everything he does.</li>
+        </ol>
+      </div>
+    </section>
+
+    <section id="practice" class="fade-up delay-3" style="border-top: 1px solid var(--line); padding-top: 4rem; margin-top: 5rem;">
+      <div class="section-header">
+        <h2 data-cms="olaPracticeHeading">How I work with him</h2>
+        <span class="meta" data-cms="olaPracticeEyebrow">03 / IN PRACTICE</span>
       </div>
       <div class="article-body ola-prose" data-cms="olaBodyProse">
         <p>Each morning, Ola reads my calendar and my unread mail and sets out the day: the meetings, the messages waiting for a reply, the tasks that fall due, and anything he has prepared for my approval.</p>
@@ -83,7 +158,7 @@
         <p>He keeps my reminders and brings each one to me once, when it falls due. If I mention a preference, he asks whether to keep it, and keeps it when I say yes.</p>
         <p>Ola runs on my own server. The desk where I work with him is private.</p>
       </div>
-    </div>
+    </section>
   </main>
 
   <footer class="fade-up">
@@ -102,6 +177,6 @@
     </div>
   </footer>
 
-  <script type="module" src="/app.js?v=3.23.0"></script>
+  <script type="module" src="/app.js?v=3.24.0"></script>
 </body>
 </html>

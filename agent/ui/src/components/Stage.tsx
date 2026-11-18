@@ -15,6 +15,7 @@ type Props = {
   onWake: () => void;
   onFetched: () => void;
   announce?: boolean; // false: no live region (the public tour, which changes every few seconds)
+  large?: boolean; // the Ola page: a taller stage, a bigger Ola
   act?: Pose; // a pose to hold in place of the activity's own (the public tour: coffee, reading, the watch)
 };
 
@@ -46,6 +47,7 @@ export default function Stage({
   onWake,
   onFetched,
   announce = true,
+  large = false,
   act,
 }: Props) {
   const ref = useRef<HTMLDivElement>(null);
@@ -61,7 +63,7 @@ export default function Stage({
   const [grabbed, setGrabbed] = useState(false);
   const still = useReducedMotion();
   // Phones: a smaller character on a shorter stage.
-  const CHAR = w < 560 ? 96 : FULL;
+  const CHAR = w < 560 ? (large ? 120 : 96) : large ? 236 : FULL;
   const k = CHAR / FULL;
   const xRef = useRef(x);
   xRef.current = x;
@@ -265,8 +267,8 @@ export default function Stage({
       aria-label={`${name}: ${status}${detail ? ". " + detail : ""}`}
       className={
         night
-          ? "relative h-[250px] shrink-0 overflow-hidden rounded-2xl bg-night transition-colors duration-500 sm:h-[300px]" /* ds-ok: stage height */
-          : "relative h-[250px] shrink-0 overflow-hidden rounded-2xl bg-muted transition-colors duration-500 sm:h-[300px]" /* ds-ok: stage height */
+          ? `relative ${large ? "h-[300px] sm:h-[460px]" : "h-[250px] sm:h-[300px]"} shrink-0 overflow-hidden rounded-2xl bg-night transition-colors duration-500` /* ds-ok: stage height */
+          : `relative ${large ? "h-[300px] sm:h-[460px]" : "h-[250px] sm:h-[300px]"} shrink-0 overflow-hidden rounded-2xl bg-muted transition-colors duration-500` /* ds-ok: stage height */
       }
     >
       {/* name and status */}

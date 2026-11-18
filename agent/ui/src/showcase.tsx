@@ -61,7 +61,7 @@ const BRIEFING_SOURCES: Source[] = [
   { kind: "task", label: "Tasks" },
 ];
 
-function Tour() {
+function Tour({ large = false }: { large?: boolean }) {
   const [i, setI] = useState(0);
   const [paused, setPaused] = useState(false);
   const [visible, setVisible] = useState(true);
@@ -133,6 +133,7 @@ function Tour() {
         act={step.act}
         onFetched={onFetched}
         announce={false}
+        large={large}
       />
       <button
         type="button"
@@ -179,7 +180,7 @@ export function mount(host: HTMLElement) {
   host.dataset.olaStage = "live";
   createRoot(mountPoint).render(
     <StrictMode>
-      <Tour />
+      <Tour large={host.dataset.size === "large"} />
     </StrictMode>,
   );
 }

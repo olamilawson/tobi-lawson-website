@@ -1678,13 +1678,6 @@ footer .meta-links a:hover::after {
   margin-bottom: 1.25rem;
 }
 
-.ola-page {
-  margin-bottom: 6rem;
-}
-
-.ola-page .ola-stage {
-  margin-bottom: 3rem;
-}
 
 .ola-prose {
   max-width: 680px;
@@ -1699,5 +1692,66 @@ footer .meta-links a:hover::after {
 @media (max-width: 560px) {
   .ola-stage {
     height: 250px;
+  }
+}
+
+/* The full Ola page: a large stage, cards with a drawing of Ola doing each
+   thing, and the rules as a numbered list. */
+.ola-stage--large {
+  height: 460px;
+  margin: 1rem 0 0;
+}
+
+.ola-card-art {
+  aspect-ratio: 4 / 3;
+  border-radius: 12px;
+  background: #ecece9;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  overflow: hidden;
+  margin-bottom: 1.25rem;
+}
+
+.ola-card-art img {
+  /* drawings, not photos: in colour, uncropped (the grid greys and crops photos) */
+  height: 88%;
+  width: auto;
+  aspect-ratio: auto;
+  object-fit: contain;
+  filter: none;
+  display: block;
+}
+
+.ola-rules ol {
+  max-width: 720px;
+  padding-left: 1.4rem;
+}
+
+.ola-rules li {
+  margin-bottom: 1rem;
+  padding-left: 0.4rem;
+  font-size: 1.2rem;
+  line-height: 1.5;
+}
+
+.ola-rules li::marker {
+  color: var(--accent);
+  font-family: var(--font-display);
+}
+
+#practice {
+  margin-bottom: 6rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  .ola-card-art {
+    background: #1d1f24;
+  }
+}
+
+@media (max-width: 560px) {
+  .ola-stage--large {
+    height: 300px;
   }
 }
